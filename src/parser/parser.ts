@@ -183,7 +183,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
 
   visitExpression?: ((ctx: ExpressionContext) => es.Expression) | undefined
 
-  visitStart(ctx: StartContext): es.Expression  {
+  visitStart(ctx: StartContext): es.Expression {
     return this.visit(ctx.sequence())
   }
 
@@ -192,7 +192,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
   }
 
   visitChildren(node: RuleNode): es.Expression {
-    throw new Error("Visit method not defined for type")
+    throw new Error('Visit method not defined for type')
   }
 
   visitSequence(ctx: SequenceContext): es.Expression {

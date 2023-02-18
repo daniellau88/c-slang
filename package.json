@@ -52,6 +52,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:ci": "prettier --list-different \"src/**/*.{ts,tsx}\"",
     "jsdoc": "./scripts/jsdoc.sh",
+    "precommit-fix": "yarn eslint --fix && yarn format && yarn eslint",
     "prepublishOnly": "tsc",
     "prepare": "husky install",
     "publish_sicp_package": "./scripts/publish_sicp_package.sh",
