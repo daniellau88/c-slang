@@ -13,6 +13,7 @@ import {
   DivisionContext,
   ExpressionContext,
   MultiplicationContext,
+  NameContext,
   NumberContext,
   ParenthesesContext,
   PowerContext,
@@ -127,6 +128,13 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       type: 'Literal',
       value: parseInt(ctx.text),
       raw: ctx.text,
+      loc: contextToLocation(ctx),
+    }
+  }
+  visitName(ctx: NameContext): es.Expression {
+    return {
+      type: 'Identifier',
+      name: ctx.text,
       loc: contextToLocation(ctx),
     }
   }

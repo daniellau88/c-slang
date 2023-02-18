@@ -9,6 +9,7 @@ DIV: '/';
 ADD: '+';
 SUB: '-';
 NUMBER: [0-9]+;
+NAME: [a-zA-Z_][a-zA-Z_0-9]*;
 WHITESPACE: [ \r\n\t]+ -> skip;
 
 /*
@@ -20,6 +21,7 @@ sequence : (expression ';')+;
 
 expression
    : NUMBER                                         # Number
+   | NAME                                           # Name
    | '(' inner=expression ')'                       # Parentheses
    | left=expression operator=POW right=expression  # Power
    | left=expression operator=MUL right=expression  # Multiplication

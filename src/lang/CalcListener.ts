@@ -3,6 +3,7 @@
 import { ParseTreeListener } from 'antlr4ts/tree/ParseTreeListener'
 
 import { NumberContext } from './CalcParser'
+import { NameContext } from './CalcParser'
 import { ParenthesesContext } from './CalcParser'
 import { PowerContext } from './CalcParser'
 import { MultiplicationContext } from './CalcParser'
@@ -30,6 +31,19 @@ export interface CalcListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitNumber?: (ctx: NumberContext) => void
+
+  /**
+   * Enter a parse tree produced by the `Name`
+   * labeled alternative in `CalcParser.expression`.
+   * @param ctx the parse tree
+   */
+  enterName?: (ctx: NameContext) => void
+  /**
+   * Exit a parse tree produced by the `Name`
+   * labeled alternative in `CalcParser.expression`.
+   * @param ctx the parse tree
+   */
+  exitName?: (ctx: NameContext) => void
 
   /**
    * Enter a parse tree produced by the `Parentheses`

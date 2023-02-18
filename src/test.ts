@@ -27,6 +27,7 @@ const isEqualToMustHave = (value: ParserValues, mustHaveValue: ParserValues): bo
 const testExpresion = (expr: string, expectedMustHave: ParserValues) => {
   const context = createContext()
   const parsedProgram = parse(expr, context)
+  console.log(JSON.stringify(parsedProgram))
 
   if (!parsedProgram || !parsedProgram.body) {
     assert(false)
@@ -96,3 +97,67 @@ const testMultiplication_1: ParserValues = [
   },
 ]
 testExpresion('2 * 3;', testMultiplication_1)
+
+const testMultipicationPrecedence_1: ParserValues = [
+  {
+    type: 'ExpressionStatement',
+    expression: {
+      type: 'SequenceExpression',
+      expressions: [
+        {
+          type: 'BinaryExpression',
+          operator: '+',
+          left: {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: {
+              type: 'Literal',
+              value: 3,
+            },
+            right: {
+              type: 'BinaryExpression',
+              operator: '*',
+              left: {
+                type: 'Literal',
+                value: 2,
+              },
+              right: {
+                type: 'Literal',
+                value: 1,
+              },
+            },
+          },
+          right: {
+            type: 'Literal',
+            value: 4,
+          },
+        },
+      ],
+    },
+  },
+]
+testExpresion('3 + 2 * 1 + 4;', testMultipicationPrecedence_1)
+
+const testIdentifier_1: ParserValues = [
+  {
+    type: 'ExpressionStatement',
+    expression: {
+      type: 'SequenceExpression',
+      expressions: [
+        {
+          type: 'BinaryExpression',
+          operator: '*',
+          left: {
+            type: 'Literal',
+            value: 2,
+          },
+          right: {
+            type: 'Identifier',
+            name: 'a',
+          },
+        },
+      ],
+    },
+  },
+]
+testExpresion('2 * a;', testIdentifier_1)
