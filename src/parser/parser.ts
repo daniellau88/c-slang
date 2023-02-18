@@ -16,6 +16,7 @@ import {
   NumberContext,
   ParenthesesContext,
   PowerContext,
+  SequenceContext,
   StartContext,
   SubtractionContext
 } from '../lang/CalcParser'
@@ -181,21 +182,30 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
   }
 
   visitExpression?: ((ctx: ExpressionContext) => es.Expression) | undefined
-  visitStart?: ((ctx: StartContext) => es.Expression) | undefined
+
+  visitStart(ctx: StartContext): es.Expression  {
+    return this.visit(ctx.sequence())
+  }
 
   visit(tree: ParseTree): es.Expression {
     return tree.accept(this)
   }
+
   visitChildren(node: RuleNode): es.Expression {
-    const expressions: es.Expression[] = []
-    for (let i = 0; i < node.childCount; i++) {
-      expressions.push(node.getChild(i).accept(this))
-    }
+    throw new Error("Visit method not defined for type")
+  }
+
+  visitSequence(ctx: SequenceContext): es.Expression {
+    const expressions: es.Expression[] = ctx.expression().map(expr => {
+      return this.visit(expr)
+    })
     return {
       type: 'SequenceExpression',
-      expressions
+      expressions: expressions,
+      loc: contextToLocation(ctx)
     }
   }
+
   visitTerminal(node: TerminalNode): es.Expression {
     return node.accept(this)
   }
@@ -245,7 +255,7 @@ export function parse(source: string, context: Context) {
     const parser = new CalcParser(tokenStream)
     parser.buildParseTree = true
     try {
-      const tree = parser.expression()
+      const tree = parser.start()
       program = convertSource(tree)
     } catch (error) {
       if (error instanceof FatalSyntaxError) {

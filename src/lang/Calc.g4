@@ -14,7 +14,9 @@ WHITESPACE: [ \r\n\t]+ -> skip;
 /*
  * Productions
  */
-start : expression;
+start : sequence;
+
+sequence : (expression ';')+;
 
 expression
    : NUMBER                                         # Number
