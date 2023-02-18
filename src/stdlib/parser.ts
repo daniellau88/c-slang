@@ -43,7 +43,7 @@ function makeBlockIfNeeded(exs: es.Node[]) {
 function hasDeclarationAtToplevel(exs: es.Node[]) {
   return exs.reduce(
     (b, ex) => b || ex.type === 'VariableDeclaration' || ex.type === 'FunctionDeclaration',
-    false
+    false,
   )
 }
 
@@ -55,21 +55,21 @@ const transformers: ASTTransformers = new Map([
     (node: es.Node) => {
       node = node as es.Program
       return makeSequenceIfNeeded(node.body)
-    }
+    },
   ],
 
   [
     'BlockStatement',
     (node: es.BlockStatement) => {
       return makeBlockIfNeeded(node.body)
-    }
+    },
   ],
 
   [
     'ExpressionStatement',
     (node: es.ExpressionStatement) => {
       return transform(node.expression)
-    }
+    },
   ],
 
   [
@@ -81,9 +81,9 @@ const transformers: ASTTransformers = new Map([
         transform(node.consequent),
         node.alternate === null
           ? makeSequenceIfNeeded([])
-          : transform(node.alternate as es.Statement)
+          : transform(node.alternate as es.Statement),
       ])
-    }
+    },
   ],
 
   [
@@ -93,9 +93,9 @@ const transformers: ASTTransformers = new Map([
         'function_declaration',
         transform(node.id as es.Identifier),
         vector_to_list(node.params.map(transform)),
-        makeBlockIfNeeded(node.body.body)
+        makeBlockIfNeeded(node.body.body),
       ])
-    }
+    },
   ],
 
   [
@@ -105,26 +105,26 @@ const transformers: ASTTransformers = new Map([
         return vector_to_list([
           'variable_declaration',
           transform(node.declarations[0].id),
-          transform(node.declarations[0].init as es.Expression)
+          transform(node.declarations[0].init as es.Expression),
         ])
       } else if (node.kind === 'const') {
         return vector_to_list([
           'constant_declaration',
           transform(node.declarations[0].id),
-          transform(node.declarations[0].init as es.Expression)
+          transform(node.declarations[0].init as es.Expression),
         ])
       } else {
         unreachable()
         throw new ParseError('Invalid declaration kind')
       }
-    }
+    },
   ],
 
   [
     'ReturnStatement',
     (node: es.ReturnStatement) => {
       return vector_to_list(['return_statement', transform(node.argument as es.Expression)])
-    }
+    },
   ],
 
   [
@@ -133,9 +133,9 @@ const transformers: ASTTransformers = new Map([
       return vector_to_list([
         'application',
         transform(node.callee),
-        vector_to_list(node.arguments.map(transform))
+        vector_to_list(node.arguments.map(transform)),
       ])
-    }
+    },
   ],
 
   [
@@ -144,9 +144,9 @@ const transformers: ASTTransformers = new Map([
       return vector_to_list([
         'unary_operator_combination',
         node.operator === '-' ? '-unary' : node.operator,
-        transform(node.argument)
+        transform(node.argument),
       ])
-    }
+    },
   ],
 
   [
@@ -156,9 +156,9 @@ const transformers: ASTTransformers = new Map([
         'binary_operator_combination',
         node.operator,
         transform(node.left),
-        transform(node.right)
+        transform(node.right),
       ])
-    }
+    },
   ],
 
   [
@@ -168,9 +168,9 @@ const transformers: ASTTransformers = new Map([
         'logical_composition',
         node.operator,
         transform(node.left),
-        transform(node.right)
+        transform(node.right),
       ])
-    }
+    },
   ],
 
   [
@@ -180,9 +180,9 @@ const transformers: ASTTransformers = new Map([
         'conditional_expression',
         transform(node.test),
         transform(node.consequent),
-        transform(node.alternate)
+        transform(node.alternate),
       ])
-    }
+    },
   ],
 
   [
@@ -196,23 +196,23 @@ const transformers: ASTTransformers = new Map([
             // The body of a function is the statement
             // inside the curly braces.
             makeBlockIfNeeded(node.body.body)
-          : vector_to_list(['return_statement', transform(node.body)])
+          : vector_to_list(['return_statement', transform(node.body)]),
       ])
-    }
+    },
   ],
 
   [
     'Identifier',
     (node: es.Identifier) => {
       return vector_to_list(['name', node.name])
-    }
+    },
   ],
 
   [
     'Literal',
     (node: es.Literal) => {
       return vector_to_list(['literal', node.value])
-    }
+    },
   ],
 
   [
@@ -220,9 +220,9 @@ const transformers: ASTTransformers = new Map([
     (node: es.ArrayExpression) => {
       return vector_to_list([
         'array_expression',
-        vector_to_list((node.elements as ContiguousArrayElements).map(transform))
+        vector_to_list((node.elements as ContiguousArrayElements).map(transform)),
       ])
-    }
+    },
   ],
 
   [
@@ -232,19 +232,19 @@ const transformers: ASTTransformers = new Map([
         return vector_to_list([
           'assignment',
           transform(node.left as es.Identifier),
-          transform(node.right)
+          transform(node.right),
         ])
       } else if (node.left.type === 'MemberExpression') {
         return vector_to_list([
           'object_assignment',
           transform(node.left as es.Expression),
-          transform(node.right)
+          transform(node.right),
         ])
       } else {
         unreachable()
         throw new ParseError('Invalid assignment')
       }
-    }
+    },
   ],
 
   [
@@ -255,37 +255,37 @@ const transformers: ASTTransformers = new Map([
         transform(node.init as es.VariableDeclaration | es.Expression),
         transform(node.test as es.Expression),
         transform(node.update as es.Expression),
-        transform(node.body)
+        transform(node.body),
       ])
-    }
+    },
   ],
 
   [
     'WhileStatement',
     (node: es.WhileStatement) => {
       return vector_to_list(['while_loop', transform(node.test), transform(node.body)])
-    }
+    },
   ],
 
   [
     'BreakStatement',
     (_node: es.BreakStatement) => {
       return vector_to_list(['break_statement'])
-    }
+    },
   ],
 
   [
     'ContinueStatement',
     (_node: es.ContinueStatement) => {
       return vector_to_list(['continue_statement'])
-    }
+    },
   ],
 
   [
     'ObjectExpression',
     (node: es.ObjectExpression) => {
       return vector_to_list(['object_expression', vector_to_list(node.properties.map(transform))])
-    }
+    },
   ],
 
   [
@@ -301,9 +301,9 @@ const transformers: ASTTransformers = new Map([
         transform(node.object),
         !node.computed && node.property.type === 'Identifier'
           ? vector_to_list(['property', node.property.name])
-          : transform(node.property)
+          : transform(node.property),
       ])
-    }
+    },
   ],
 
   [
@@ -316,9 +316,9 @@ const transformers: ASTTransformers = new Map([
         node.key.type === 'Identifier'
           ? vector_to_list(['property', node.key.name])
           : transform(node.key),
-        transform(node.value)
+        transform(node.value),
       ])
-    }
+    },
   ],
 
   [
@@ -327,23 +327,23 @@ const transformers: ASTTransformers = new Map([
       return vector_to_list([
         'import_declaration',
         vector_to_list(node.specifiers.map(transform)),
-        node.source.value
+        node.source.value,
       ])
-    }
+    },
   ],
 
   [
     'ImportSpecifier',
     (node: es.ImportSpecifier) => {
       return vector_to_list(['name', node.imported.name])
-    }
+    },
   ],
 
   [
     'ImportDefaultSpecifier',
     (_node: es.ImportDefaultSpecifier) => {
       return vector_to_list(['default'])
-    }
+    },
   ],
 
   [
@@ -351,23 +351,23 @@ const transformers: ASTTransformers = new Map([
     (node: es.ExportNamedDeclaration) => {
       return vector_to_list([
         'export_named_declaration',
-        node.declaration ? transform(node.declaration) : node.specifiers.map(transform)
+        node.declaration ? transform(node.declaration) : node.specifiers.map(transform),
       ])
-    }
+    },
   ],
 
   [
     'ExportDefaultDeclaration',
     (node: es.ExportDefaultDeclaration) => {
       return vector_to_list(['export_default_declaration', transform(node.declaration)])
-    }
+    },
   ],
 
   [
     'ExportSpecifier',
     (node: es.ExportSpecifier) => {
       return vector_to_list(['name', node.exported.name])
-    }
+    },
   ],
 
   [
@@ -381,10 +381,10 @@ const transformers: ASTTransformers = new Map([
           node.superClass === null || node.superClass === undefined
             ? null
             : transform(node.superClass),
-          node.body.body.map(transform)
-        ])
+          node.body.body.map(transform),
+        ]),
       ])
-    }
+    },
   ],
 
   [
@@ -393,9 +393,9 @@ const transformers: ASTTransformers = new Map([
       return vector_to_list([
         'new_expression',
         transform(node.callee),
-        vector_to_list(node.arguments.map(transform))
+        vector_to_list(node.arguments.map(transform)),
       ])
-    }
+    },
   ],
 
   [
@@ -406,9 +406,9 @@ const transformers: ASTTransformers = new Map([
         node.kind,
         node.static,
         transform(node.key),
-        transform(node.value)
+        transform(node.value),
       ])
-    }
+    },
   ],
 
   [
@@ -417,23 +417,23 @@ const transformers: ASTTransformers = new Map([
       return vector_to_list([
         'lambda_expression',
         vector_to_list(node.params.map(transform)),
-        makeBlockIfNeeded(node.body.body)
+        makeBlockIfNeeded(node.body.body),
       ])
-    }
+    },
   ],
 
   [
     'ThisExpression',
     (_node: es.ThisExpression) => {
       return vector_to_list(['this_expression'])
-    }
+    },
   ],
 
   [
     'Super',
     (_node: es.Super) => {
       return vector_to_list(['super_expression'])
-    }
+    },
   ],
 
   [
@@ -445,28 +445,28 @@ const transformers: ASTTransformers = new Map([
         node.handler === null || node.handler === undefined
           ? null
           : vector_to_list(['name', (node.handler.param as es.Identifier).name]),
-        node.handler === null || node.handler === undefined ? null : transform(node.handler.body)
+        node.handler === null || node.handler === undefined ? null : transform(node.handler.body),
       ])
-    }
+    },
   ],
   [
     'ThrowStatement',
     (node: es.ThrowStatement) => {
       return vector_to_list(['throw_statement', transform(node.argument)])
-    }
+    },
   ],
   [
     'SpreadElement',
     (node: es.SpreadElement) => {
       return vector_to_list(['spread_element', transform(node.argument)])
-    }
+    },
   ],
   [
     'RestElement',
     (node: es.RestElement) => {
       return vector_to_list(['rest_element', transform(node.argument)])
-    }
-  ]
+    },
+  ],
 ])
 
 function transform(node: es.Node) {

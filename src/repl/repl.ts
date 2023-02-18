@@ -11,7 +11,7 @@ function startRepl(
   variant: Variant = Variant.DEFAULT,
   useSubst: boolean = false,
   useRepl: boolean,
-  prelude = ''
+  prelude = '',
 ) {
   // use defaults for everything
   const context = createContext(variant, undefined, undefined)
@@ -19,7 +19,7 @@ function startRepl(
     scheduler: 'preemptive',
     executionMethod,
     variant,
-    useSubst
+    useSubst,
   }
   runInContext(prelude, context, options).then(preludeResult => {
     if (preludeResult.status === 'finished' || preludeResult.status === 'suspended-non-det') {
@@ -46,10 +46,10 @@ function startRepl(
               ? output.toString()
               : inspect(output, {
                   depth: 1000,
-                  colors: true
+                  colors: true,
                 })
-          }
-        }
+          },
+        },
       )
     } else {
       console.error(parseError(context.errors))
@@ -73,7 +73,7 @@ function main() {
     .create([
       ['v', 'variant=VARIANT', 'set the Source variant (i.e., calc)', 'calc'],
       ['h', 'help', 'display this help'],
-      ['e', 'eval', "don't show REPL, only display output of evaluation"]
+      ['e', 'eval', "don't show REPL, only display output of evaluation"],
     ])
     .bindHelp()
     .setHelp('Usage: js-slang [PROGRAM_STRING] [OPTION]\n\n[[OPTIONS]]')
@@ -83,7 +83,7 @@ function main() {
   const areValidChapterVariant: boolean = validChapterVariant(variant)
   if (!areValidChapterVariant) {
     throw new Error(
-      'The chapter and variant combination provided is unsupported. Use the -h option to view valid chapters and variants.'
+      'The chapter and variant combination provided is unsupported. Use the -h option to view valid chapters and variants.',
     )
   }
 

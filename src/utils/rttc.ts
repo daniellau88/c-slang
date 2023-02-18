@@ -59,7 +59,7 @@ export const checkBinaryExpression = (
   node: es.Node,
   operator: es.BinaryOperator,
   left: Value,
-  right: Value
+  right: Value,
 ) => {
   switch (operator) {
     case '-':

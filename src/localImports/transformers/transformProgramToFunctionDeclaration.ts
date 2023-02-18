@@ -6,16 +6,16 @@ import {
   createFunctionDeclaration,
   createIdentifier,
   createLiteral,
-  createReturnStatement
+  createReturnStatement,
 } from '../constructors/baseConstructors'
 import {
   createImportedNameDeclaration,
   createListCallExpression,
-  createPairCallExpression
+  createPairCallExpression,
 } from '../constructors/contextSpecificConstructors'
 import {
   transformFilePathToValidFunctionName,
-  transformFunctionNameToInvokedFunctionResultVariableName
+  transformFunctionNameToInvokedFunctionResultVariableName,
 } from '../filePaths'
 import { isDeclaration, isDirective, isModuleDeclaration, isStatement } from '../typeGuards'
 import { isSourceModule } from './removeNonSourceModuleImports'
@@ -24,7 +24,7 @@ type ImportSpecifier = es.ImportSpecifier | es.ImportDefaultSpecifier | es.Impor
 
 export const getInvokedFunctionResultVariableNameToImportSpecifiersMap = (
   nodes: es.ModuleDeclaration[],
-  currentDirPath: string
+  currentDirPath: string,
 ): Record<string, ImportSpecifier[]> => {
   const invokedFunctionResultVariableNameToImportSpecifierMap: Record<string, ImportSpecifier[]> =
     {}
@@ -36,7 +36,7 @@ export const getInvokedFunctionResultVariableNameToImportSpecifiersMap = (
     const importSource = node.source.value
     if (typeof importSource !== 'string') {
       throw new Error(
-        'Encountered an ImportDeclaration node with a non-string source. This should never occur.'
+        'Encountered an ImportDeclaration node with a non-string source. This should never occur.',
       )
     }
     // Only handle import declarations for non-Source modules.
@@ -80,7 +80,7 @@ export const getInvokedFunctionResultVariableNameToImportSpecifiersMap = (
       invokedFunctionResultVariableNameToImportSpecifierMap[invokedFunctionResultVariableName] = []
     }
     invokedFunctionResultVariableNameToImportSpecifierMap[invokedFunctionResultVariableName].push(
-      ...node.specifiers
+      ...node.specifiers,
     )
   })
   return invokedFunctionResultVariableNameToImportSpecifierMap
@@ -91,7 +91,7 @@ const getIdentifier = (node: es.Declaration): es.Identifier | null => {
     case 'FunctionDeclaration':
       if (node.id === null) {
         throw new Error(
-          'Encountered a FunctionDeclaration node without an identifier. This should have been caught when parsing.'
+          'Encountered a FunctionDeclaration node without an identifier. This should have been caught when parsing.',
         )
       }
       return node.id
@@ -108,7 +108,7 @@ const getIdentifier = (node: es.Declaration): es.Identifier | null => {
 }
 
 const getExportedNameToIdentifierMap = (
-  nodes: es.ModuleDeclaration[]
+  nodes: es.ModuleDeclaration[],
 ): Record<string, es.Identifier> => {
   const exportedNameToIdentifierMap: Record<string, es.Identifier> = {}
   nodes.forEach((node: es.ModuleDeclaration): void => {
@@ -142,7 +142,7 @@ const getExportedNameToIdentifierMap = (
 
 const getDefaultExportExpression = (
   nodes: es.ModuleDeclaration[],
-  exportedNameToIdentifierMap: Partial<Record<string, es.Identifier>>
+  exportedNameToIdentifierMap: Partial<Record<string, es.Identifier>>,
 ): es.Expression | null => {
   let defaultExport: es.Expression | null = null
 
@@ -186,11 +186,11 @@ const getDefaultExportExpression = (
 }
 
 export const createAccessImportStatements = (
-  invokedFunctionResultVariableNameToImportSpecifiersMap: Record<string, ImportSpecifier[]>
+  invokedFunctionResultVariableNameToImportSpecifiersMap: Record<string, ImportSpecifier[]>,
 ): es.VariableDeclaration[] => {
   const importDeclarations: es.VariableDeclaration[] = []
   for (const [invokedFunctionResultVariableName, importSpecifiers] of Object.entries(
-    invokedFunctionResultVariableNameToImportSpecifiersMap
+    invokedFunctionResultVariableNameToImportSpecifiersMap,
   )) {
     importSpecifiers.forEach((importSpecifier: ImportSpecifier): void => {
       let importDeclaration
@@ -199,14 +199,14 @@ export const createAccessImportStatements = (
           importDeclaration = createImportedNameDeclaration(
             invokedFunctionResultVariableName,
             importSpecifier.local,
-            importSpecifier.imported.name
+            importSpecifier.imported.name,
           )
           break
         case 'ImportDefaultSpecifier':
           importDeclaration = createImportedNameDeclaration(
             invokedFunctionResultVariableName,
             importSpecifier.local,
-            defaultExportLookupName
+            defaultExportLookupName,
           )
           break
         case 'ImportNamespaceSpecifier':
@@ -220,29 +220,29 @@ export const createAccessImportStatements = (
 }
 
 const createReturnListArguments = (
-  exportedNameToIdentifierMap: Record<string, es.Identifier>
+  exportedNameToIdentifierMap: Record<string, es.Identifier>,
 ): Array<es.Expression | es.SpreadElement> => {
   return Object.entries(exportedNameToIdentifierMap).map(
     ([exportedName, identifier]: [string, es.Identifier]): es.SimpleCallExpression => {
       const head = createLiteral(exportedName)
       const tail = identifier
       return createPairCallExpression(head, tail)
-    }
+    },
   )
 }
 
 const removeDirectives = (
-  nodes: Array<es.Directive | es.Statement | es.ModuleDeclaration>
+  nodes: Array<es.Directive | es.Statement | es.ModuleDeclaration>,
 ): Array<es.Statement | es.ModuleDeclaration> => {
   return nodes.filter(
     (
-      node: es.Directive | es.Statement | es.ModuleDeclaration
-    ): node is es.Statement | es.ModuleDeclaration => !isDirective(node)
+      node: es.Directive | es.Statement | es.ModuleDeclaration,
+    ): node is es.Statement | es.ModuleDeclaration => !isDirective(node),
   )
 }
 
 const removeModuleDeclarations = (
-  nodes: Array<es.Statement | es.ModuleDeclaration>
+  nodes: Array<es.Statement | es.ModuleDeclaration>,
 ): es.Statement[] => {
   const statements: es.Statement[] = []
   nodes.forEach((node: es.Statement | es.ModuleDeclaration): void => {
@@ -284,7 +284,7 @@ const removeModuleDeclarations = (
  */
 export const transformProgramToFunctionDeclaration = (
   program: es.Program,
-  currentFilePath: string
+  currentFilePath: string,
 ): es.FunctionDeclaration => {
   const moduleDeclarations = program.body.filter(isModuleDeclaration)
   const currentDirPath = path.resolve(currentFilePath, '..')
@@ -293,21 +293,21 @@ export const transformProgramToFunctionDeclaration = (
   const invokedFunctionResultVariableNameToImportSpecifiersMap =
     getInvokedFunctionResultVariableNameToImportSpecifiersMap(moduleDeclarations, currentDirPath)
   const accessImportStatements = createAccessImportStatements(
-    invokedFunctionResultVariableNameToImportSpecifiersMap
+    invokedFunctionResultVariableNameToImportSpecifiersMap,
   )
 
   // Create the return value of all exports for the function.
   const exportedNameToIdentifierMap = getExportedNameToIdentifierMap(moduleDeclarations)
   const defaultExportExpression = getDefaultExportExpression(
     moduleDeclarations,
-    exportedNameToIdentifierMap
+    exportedNameToIdentifierMap,
   )
   const defaultExport = defaultExportExpression ?? createLiteral(null)
   const namedExports = createListCallExpression(
-    createReturnListArguments(exportedNameToIdentifierMap)
+    createReturnListArguments(exportedNameToIdentifierMap),
   )
   const returnStatement = createReturnStatement(
-    createPairCallExpression(defaultExport, namedExports)
+    createPairCallExpression(defaultExport, namedExports),
   )
 
   // Assemble the function body.
@@ -319,7 +319,7 @@ export const transformProgramToFunctionDeclaration = (
 
   // Set the equivalent variable names of imported modules as the function parameters.
   const functionParams = Object.keys(invokedFunctionResultVariableNameToImportSpecifiersMap).map(
-    createIdentifier
+    createIdentifier,
   )
 
   return createFunctionDeclaration(functionName, functionParams, functionBody)

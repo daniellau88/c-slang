@@ -48,28 +48,28 @@ const testAddition_1: ParserValues = [
           operator: '+',
           left: {
             type: 'Literal',
-            value: 1
+            value: 1,
           },
           right: {
             type: 'Literal',
-            value: 2
-          }
+            value: 2,
+          },
         },
         {
           type: 'BinaryExpression',
           operator: '+',
           left: {
             type: 'Literal',
-            value: 2
+            value: 2,
           },
           right: {
             type: 'Literal',
-            value: 3
-          }
-        }
-      ]
-    }
-  }
+            value: 3,
+          },
+        },
+      ],
+    },
+  },
 ]
 testExpresion('1 + 2;2 + 3;', testAddition_1)
 
@@ -84,15 +84,15 @@ const testMultiplication_1: ParserValues = [
           operator: '*',
           left: {
             type: 'Literal',
-            value: 2
+            value: 2,
           },
           right: {
             type: 'Literal',
-            value: 3
-          }
-        }
-      ]
-    }
-  }
+            value: 3,
+          },
+        },
+      ],
+    },
+  },
 ]
 testExpresion('2 * 3;', testMultiplication_1)

@@ -50,7 +50,7 @@ export class CalcParser extends Parser {
     "'*'",
     "'/'",
     "'+'",
-    "'-'"
+    "'-'",
   ]
   private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
     undefined,
@@ -63,12 +63,12 @@ export class CalcParser extends Parser {
     'ADD',
     'SUB',
     'NUMBER',
-    'WHITESPACE'
+    'WHITESPACE',
   ]
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
     CalcParser._LITERAL_NAMES,
     CalcParser._SYMBOLIC_NAMES,
-    []
+    [],
   )
 
   // @Override
@@ -95,7 +95,7 @@ export class CalcParser extends Parser {
 
   protected createFailedPredicateException(
     predicate?: string,
-    message?: string
+    message?: string,
   ): FailedPredicateException {
     return new FailedPredicateException(this, predicate, message)
   }
@@ -246,7 +246,7 @@ export class CalcParser extends Parser {
                 case 2:
                   {
                     _localctx = new MultiplicationContext(
-                      new ExpressionContext(_parentctx, _parentState)
+                      new ExpressionContext(_parentctx, _parentState),
                     )
                     ;(_localctx as MultiplicationContext)._left = _prevctx
                     this.pushNewRecursionContext(_localctx, _startState, CalcParser.RULE_expression)
@@ -296,7 +296,7 @@ export class CalcParser extends Parser {
                 case 5:
                   {
                     _localctx = new SubtractionContext(
-                      new ExpressionContext(_parentctx, _parentState)
+                      new ExpressionContext(_parentctx, _parentState),
                     )
                     ;(_localctx as SubtractionContext)._left = _prevctx
                     this.pushNewRecursionContext(_localctx, _startState, CalcParser.RULE_expression)
@@ -385,7 +385,7 @@ export class CalcParser extends Parser {
   public static get _ATN(): ATN {
     if (!CalcParser.__ATN) {
       CalcParser.__ATN = new ATNDeserializer().deserialize(
-        Utils.toCharArray(CalcParser._serializedATN)
+        Utils.toCharArray(CalcParser._serializedATN),
       )
     }
 

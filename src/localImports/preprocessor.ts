@@ -9,18 +9,18 @@ import { createInvokedFunctionResultVariableDeclaration } from './constructors/c
 import { DirectedGraph } from './directedGraph'
 import {
   transformFilePathToValidFunctionName,
-  transformFunctionNameToInvokedFunctionResultVariableName
+  transformFunctionNameToInvokedFunctionResultVariableName,
 } from './filePaths'
 import { hoistAndMergeImports } from './transformers/hoistAndMergeImports'
 import { removeExports } from './transformers/removeExports'
 import {
   isSourceModule,
-  removeNonSourceModuleImports
+  removeNonSourceModuleImports,
 } from './transformers/removeNonSourceModuleImports'
 import {
   createAccessImportStatements,
   getInvokedFunctionResultVariableNameToImportSpecifiersMap,
-  transformProgramToFunctionDeclaration
+  transformProgramToFunctionDeclaration,
 } from './transformers/transformProgramToFunctionDeclaration'
 import { isImportDeclaration, isModuleDeclaration } from './typeGuards'
 
@@ -36,7 +36,7 @@ import { isImportDeclaration, isModuleDeclaration } from './typeGuards'
  */
 export const getImportedLocalModulePaths = (
   program: es.Program,
-  currentFilePath: string
+  currentFilePath: string,
 ): Set<string> => {
   if (!path.isAbsolute(currentFilePath)) {
     throw new Error(`Current file path '${currentFilePath}' is not absolute.`)
@@ -61,7 +61,7 @@ export const getImportedLocalModulePaths = (
 const parseProgramsAndConstructImportGraph = (
   files: Partial<Record<string, string>>,
   entrypointFilePath: string,
-  context: Context
+  context: Context,
 ): {
   programs: Record<string, es.Program>
   importGraph: DirectedGraph
@@ -117,7 +117,7 @@ const parseProgramsAndConstructImportGraph = (
 
   return {
     programs,
-    importGraph
+    importGraph,
   }
 }
 
@@ -158,13 +158,13 @@ const getSourceModuleImports = (programs: Record<string, es.Program>): es.Import
 const preprocessFileImports = (
   files: Partial<Record<string, string>>,
   entrypointFilePath: string,
-  context: Context
+  context: Context,
 ): es.Program | undefined => {
   // Parse all files into ASTs and build the import graph.
   const { programs, importGraph } = parseProgramsAndConstructImportGraph(
     files,
     entrypointFilePath,
-    context
+    context,
   )
   // Return 'undefined' if there are errors while parsing.
   if (context.errors.length !== 0) {
@@ -188,10 +188,10 @@ const preprocessFileImports = (
   const entrypointProgramInvokedFunctionResultVariableNameToImportSpecifiersMap =
     getInvokedFunctionResultVariableNameToImportSpecifiersMap(
       entrypointProgramModuleDeclarations,
-      entrypointDirPath
+      entrypointDirPath,
     )
   const entrypointProgramAccessImportStatements = createAccessImportStatements(
-    entrypointProgramInvokedFunctionResultVariableNameToImportSpecifiersMap
+    entrypointProgramInvokedFunctionResultVariableNameToImportSpecifiersMap,
   )
 
   // Transform all programs into their equivalent function declaration
@@ -209,7 +209,7 @@ const preprocessFileImports = (
     const functionName = functionDeclaration.id?.name
     if (functionName === undefined) {
       throw new Error(
-        'A transformed function declaration is missing its name. This should never happen.'
+        'A transformed function declaration is missing its name. This should never happen.',
       )
     }
 
@@ -233,14 +233,14 @@ const preprocessFileImports = (
     const functionParams = functionDeclaration.params.filter(isIdentifier)
     if (functionParams.length !== functionDeclaration.params.length) {
       throw new Error(
-        'Function declaration contains non-Identifier AST nodes as params. This should never happen.'
+        'Function declaration contains non-Identifier AST nodes as params. This should never happen.',
       )
     }
 
     const invokedFunctionResultVariableDeclaration = createInvokedFunctionResultVariableDeclaration(
       functionName,
       invokedFunctionResultVariableName,
-      functionParams
+      functionParams,
     )
     invokedFunctionResultVariableDeclarations.push(invokedFunctionResultVariableDeclaration)
   })
@@ -256,8 +256,8 @@ const preprocessFileImports = (
       ...Object.values(functionDeclarations),
       ...invokedFunctionResultVariableDeclarations,
       ...entrypointProgramAccessImportStatements,
-      ...entrypointProgram.body
-    ]
+      ...entrypointProgram.body,
+    ],
   }
 
   // After this pre-processing step, all export-related nodes in the AST

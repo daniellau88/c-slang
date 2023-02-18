@@ -109,7 +109,7 @@ export function set_head(xs: any, x: any) {
     return undefined
   } else {
     throw new Error(
-      'set_head(xs,x) expects a pair as argument xs, but encountered ' + stringify(xs)
+      'set_head(xs,x) expects a pair as argument xs, but encountered ' + stringify(xs),
     )
   }
 }
@@ -124,7 +124,7 @@ export function set_tail(xs: any, x: any) {
     return undefined
   } else {
     throw new Error(
-      'set_tail(xs,x) expects a pair as argument xs, but encountered ' + stringify(xs)
+      'set_tail(xs,x) expects a pair as argument xs, but encountered ' + stringify(xs),
     )
   }
 }

@@ -18,7 +18,7 @@ import {
   PowerContext,
   SequenceContext,
   StartContext,
-  SubtractionContext
+  SubtractionContext,
 } from '../lang/CalcParser'
 import { CalcVisitor } from '../lang/CalcVisitor'
 import { Context, ErrorSeverity, ErrorType, SourceError } from '../types'
@@ -113,12 +113,12 @@ function contextToLocation(ctx: ExpressionContext): es.SourceLocation {
   return {
     start: {
       line: ctx.start.line,
-      column: ctx.start.charPositionInLine
+      column: ctx.start.charPositionInLine,
     },
     end: {
       line: ctx.stop ? ctx.stop.line : ctx.start.line,
-      column: ctx.stop ? ctx.stop.charPositionInLine : ctx.start.charPositionInLine
-    }
+      column: ctx.stop ? ctx.stop.charPositionInLine : ctx.start.charPositionInLine,
+    },
   }
 }
 class ExpressionGenerator implements CalcVisitor<es.Expression> {
@@ -127,7 +127,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       type: 'Literal',
       value: parseInt(ctx.text),
       raw: ctx.text,
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
   visitParentheses(ctx: ParenthesesContext): es.Expression {
@@ -139,7 +139,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       operator: '^',
       left: this.visit(ctx._left),
       right: this.visit(ctx._right),
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -149,7 +149,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       operator: '*',
       left: this.visit(ctx._left),
       right: this.visit(ctx._right),
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
   visitDivision(ctx: DivisionContext): es.Expression {
@@ -158,7 +158,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       operator: '/',
       left: this.visit(ctx._left),
       right: this.visit(ctx._right),
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
   visitAddition(ctx: AdditionContext): es.Expression {
@@ -167,7 +167,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       operator: '+',
       left: this.visit(ctx._left),
       right: this.visit(ctx._right),
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -177,7 +177,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       operator: '-',
       left: this.visit(ctx._left),
       right: this.visit(ctx._right),
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -202,7 +202,7 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
     return {
       type: 'SequenceExpression',
       expressions: expressions,
-      loc: contextToLocation(ctx)
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -215,14 +215,14 @@ class ExpressionGenerator implements CalcVisitor<es.Expression> {
       {
         start: {
           line: node.symbol.line,
-          column: node.symbol.charPositionInLine
+          column: node.symbol.charPositionInLine,
         },
         end: {
           line: node.symbol.line,
-          column: node.symbol.charPositionInLine + 1
-        }
+          column: node.symbol.charPositionInLine + 1,
+        },
       },
-      `invalid syntax ${node.text}`
+      `invalid syntax ${node.text}`,
     )
   }
 }
@@ -239,9 +239,9 @@ function convertSource(expression: ExpressionContext): es.Program {
     body: [
       {
         type: 'ExpressionStatement',
-        expression: convertExpression(expression)
-      }
-    ]
+        expression: convertExpression(expression),
+      },
+    ],
   }
 }
 

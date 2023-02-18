@@ -13,16 +13,16 @@ export const MAX_LIST_DISPLAY_LENGTH = 100
 export const UNKNOWN_LOCATION: es.SourceLocation = {
   start: {
     line: -1,
-    column: -1
+    column: -1,
   },
   end: {
     line: -1,
-    column: -1
-  }
+    column: -1,
+  },
 }
 export const JSSLANG_PROPERTIES = {
   maxExecTime: 1000,
-  factorToIncreaseBy: 10
+  factorToIncreaseBy: 10,
 }
 
 export const sourceLanguages: Language[] = [{ chapter: Chapter.CALC, variant: Variant.DEFAULT }]

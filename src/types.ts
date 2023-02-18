@@ -25,12 +25,12 @@ export interface CustomBuiltIns {
 export enum ErrorType {
   SYNTAX = 'Syntax',
   TYPE = 'Type',
-  RUNTIME = 'Runtime'
+  RUNTIME = 'Runtime',
 }
 
 export enum ErrorSeverity {
   WARNING = 'Warning',
-  ERROR = 'Error'
+  ERROR = 'Error',
 }
 
 // any and all errors ultimately implement this interface. as such, changes to this will affect every type of error.
@@ -61,11 +61,11 @@ export interface Comment {
 export type ExecutionMethod = 'native' | 'interpreter' | 'auto'
 
 export enum Chapter {
-  CALC = 1
+  CALC = 1,
 }
 
 export enum Variant {
-  DEFAULT = 'calc'
+  DEFAULT = 'calc',
 }
 
 export interface Language {

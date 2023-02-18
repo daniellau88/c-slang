@@ -40,7 +40,7 @@ export class CalcLexer extends Lexer {
     'ADD',
     'SUB',
     'NUMBER',
-    'WHITESPACE'
+    'WHITESPACE',
   ]
 
   private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -52,7 +52,7 @@ export class CalcLexer extends Lexer {
     "'*'",
     "'/'",
     "'+'",
-    "'-'"
+    "'-'",
   ]
   private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
     undefined,
@@ -65,12 +65,12 @@ export class CalcLexer extends Lexer {
     'ADD',
     'SUB',
     'NUMBER',
-    'WHITESPACE'
+    'WHITESPACE',
   ]
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
     CalcLexer._LITERAL_NAMES,
     CalcLexer._SYMBOLIC_NAMES,
-    []
+    [],
   )
 
   // @Override
@@ -138,7 +138,7 @@ export class CalcLexer extends Lexer {
   public static get _ATN(): ATN {
     if (!CalcLexer.__ATN) {
       CalcLexer.__ATN = new ATNDeserializer().deserialize(
-        Utils.toCharArray(CalcLexer._serializedATN)
+        Utils.toCharArray(CalcLexer._serializedATN),
       )
     }
 

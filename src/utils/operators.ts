@@ -5,7 +5,7 @@ import {
   CallingNonFunctionValue,
   ExceptionError,
   GetInheritedPropertyError,
-  InvalidNumberOfArguments
+  InvalidNumberOfArguments,
 } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { Thunk } from '../types'
@@ -66,7 +66,7 @@ export function callIfFuncAndRightArgs(
 ) {
   const dummy = create.callExpression(create.locationDummyNode(line, column), args, {
     start: { line, column },
-    end: { line, column }
+    end: { line, column },
   })
 
   if (typeof candidate === 'function') {
@@ -82,7 +82,7 @@ export function callIfFuncAndRightArgs(
         dummy,
         hasVarArgs ? candidate.minArgsNeeded : expectedLength,
         receivedLength,
-        hasVarArgs
+        hasVarArgs,
       )
     }
     try {
@@ -130,7 +130,7 @@ export function unaryOp(operator: UnaryOperator, argument: any, line: number, co
   const error = rttc.checkUnaryExpression(
     create.locationDummyNode(line, column),
     operator,
-    argument
+    argument,
   )
   if (error === undefined) {
     return evaluateUnaryExpression(operator, argument)
@@ -156,7 +156,7 @@ export function binaryOp(
   left: any,
   right: any,
   line: number,
-  column: number
+  column: number,
 ) {
   left = forceIt(left)
   right = forceIt(right)
@@ -164,7 +164,7 @@ export function binaryOp(
     create.locationDummyNode(line, column),
     operator,
     left,
-    right
+    right,
   )
   if (error === undefined) {
     return evaluateBinaryExpression(operator, left, right)

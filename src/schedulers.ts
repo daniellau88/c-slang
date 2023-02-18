@@ -38,7 +38,7 @@ export class PreemptiveScheduler implements Scheduler {
               status: 'suspended',
               it,
               scheduler: this,
-              context
+              context,
             })
           } else {
             resolve({ status: 'finished', context, value: itValue.value })

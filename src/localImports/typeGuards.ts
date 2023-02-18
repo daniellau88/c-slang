@@ -25,12 +25,12 @@ export const isModuleDeclaration = (node: es.Node): node is es.ModuleDeclaration
     'ImportDeclaration',
     'ExportNamedDeclaration',
     'ExportDefaultDeclaration',
-    'ExportAllDeclaration'
+    'ExportAllDeclaration',
   ].includes(node.type)
 }
 
 export const isStatement = (
-  node: es.Directive | es.Statement | es.ModuleDeclaration
+  node: es.Directive | es.Statement | es.ModuleDeclaration,
 ): node is es.Statement => {
   return !isDirective(node) && !isModuleDeclaration(node)
 }

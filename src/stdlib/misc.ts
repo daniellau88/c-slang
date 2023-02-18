@@ -24,7 +24,7 @@ export function timed(
   // tslint:disable-next-line:ban-types
   f: Function,
   externalContext: any,
-  displayBuiltin: (value: Value, str: string, externalContext: any) => Value
+  displayBuiltin: (value: Value, str: string, externalContext: any) => Value,
 ) {
   return (...args: any[]) => {
     const start = get_time()
@@ -95,7 +95,7 @@ export function parse_int(str: string, radix: number) {
     return parseInt(str, radix)
   } else {
     throw new Error(
-      'parse_int expects two arguments a string s, and a positive integer i between 2 and 36, inclusive.'
+      'parse_int expects two arguments a string s, and a positive integer i between 2 and 36, inclusive.',
     )
   }
 }

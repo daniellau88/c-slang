@@ -21,7 +21,7 @@ const DEFAULT_SOURCE_OPTIONS: IOptions = {
   originalMaxExecTime: 1000,
   useSubst: false,
   isPrelude: false,
-  throwInfiniteLoops: true
+  throwInfiniteLoops: true,
 }
 
 function runInterpreter(program: es.Program, context: Context, options: IOptions): Promise<Result> {
@@ -33,7 +33,7 @@ function runInterpreter(program: es.Program, context: Context, options: IOptions
 export async function sourceRunner(
   code: string,
   context: Context,
-  options: Partial<IOptions> = {}
+  options: Partial<IOptions> = {},
 ): Promise<Result> {
   const theOptions: IOptions = { ...DEFAULT_SOURCE_OPTIONS, ...options }
   context.variant = determineVariant(context, options)
@@ -74,7 +74,7 @@ export async function sourceFilesRunner(
   files: Partial<Record<string, string>>,
   entrypointFilePath: string,
   context: Context,
-  options: Partial<IOptions> = {}
+  options: Partial<IOptions> = {},
 ): Promise<Result> {
   const entrypointCode = files[entrypointFilePath]
   if (entrypointCode === undefined) {
