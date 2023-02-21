@@ -51,6 +51,18 @@ SHIFT_RIGHT: '>>';
 WHITESPACE: [ \r\n\t]+ -> skip;
 
 SIZE_OF: 'sizeof';
+CASE: 'case';
+DEFAULT: 'default';
+IF: 'if';
+ELSE: 'else';
+SWITCH: 'switch';
+WHILE: 'while';
+DO: 'do';
+FOR: 'for';
+GOTO: 'goto';
+CONTINUE: 'continue';
+BREAK: 'break';
+RETURN: 'return';
 
 unary_operator
    : AMPERSAND // As address
@@ -127,15 +139,29 @@ IDENTIFIER: ALPHABET_AND_UNDERSCORE (ALPHABET_AND_UNDERSCORE | DIGIT)*;
  */
 start : statement;
 
+/*
+ * Statements
+ */
 statement
-   : declaration_statement // Separate out to be statement, so that it is easier to interpret
+   : labeled_statement
+   | declaration_statement // Separate out to be statement, so that it is easier to interpret
    | expression_statement
    | compound_statement
+   | selection_statement
+   | iteration_statement
+   | jump_statement
    ;
 
-/*
- * Declaration Statements
- */
+
+// Labeled Statement
+labeled_statement
+   : IDENTIFIER COLON statement
+   | CASE constant_expression COLON statement
+   | DEFAULT COLON statement
+   ;
+
+
+// Declaration Statement
 declaration_statement
    : (declaration_specifier)+ init_declarator_list end_statement_delimiter
    ;
@@ -180,10 +206,7 @@ initializer_list
    ;
 
 
-/*
- * Expression Statements
- */
-
+// Expression Statement
 expression_statement
    : (expression)? end_statement_delimiter
    ;
@@ -317,9 +340,32 @@ float_constant: FLOAT;
 character_constant: CHAR;
 
 
-/*
- * Compound Statement
- */
+// Compound Statement
 compound_statement
    : OPEN_CURLY_BRACKET statement CLOSE_CURLY_BRACKET
+   ;
+
+
+// Selection Statement
+selection_statement
+   : IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement
+   | IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement ELSE if_false=statement
+   | SWITCH OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES body=statement
+   ;
+
+
+// Iteration Statement
+iteration_statement
+   : WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES statement
+   | DO statement WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES end_statement_delimiter
+   | FOR OPEN_PARENTHESES (expression)? SEMICOLON (expression)? SEMICOLON (expression)? CLOSE_PARENTHESES statement
+   ;
+
+
+// Jump Statement
+jump_statement
+   : GOTO IDENTIFIER end_statement_delimiter
+   | CONTINUE end_statement_delimiter
+   | BREAK end_statement_delimiter
+   | RETURN (expression)? end_statement_delimiter
    ;
