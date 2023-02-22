@@ -98,16 +98,19 @@ FLOAT_TYPE_SPECIFIER: 'float';
 DOUBLE_TYPE_SPECIFIER: 'double';
 SIGNED_TYPE_SPECIFIER: 'signed';
 UNSIGNED_TYPE_SPECIFIER: 'unsigned';
+type_sign_specifier
+   : UNSIGNED_TYPE_SPECIFIER
+   | SIGNED_TYPE_SPECIFIER
+   ;
+
 type_specifier
    : VOID_TYPE_SPECIFIER
-   | CHAR_TYPE_SPECIFIER
-   | SHORT_TYPE_SPECIFIER
-   | INT_TYPE_SPECIFIER
-   | LONG_TYPE_SPECIFIER
+   | type_sign_specifier? CHAR_TYPE_SPECIFIER
+   | type_sign_specifier? SHORT_TYPE_SPECIFIER
+   | type_sign_specifier? INT_TYPE_SPECIFIER
+   | type_sign_specifier? LONG_TYPE_SPECIFIER
    | FLOAT_TYPE_SPECIFIER
    | DOUBLE_TYPE_SPECIFIER
-   | SIGNED_TYPE_SPECIFIER
-   | UNSIGNED_TYPE_SPECIFIER
    ;
 
 CONST_TYPE_QUALIFIER: 'const';
@@ -134,10 +137,46 @@ FLOAT: NON_ZERO_DIGIT DIGIT* FULLSTOP NON_ZERO_DIGIT DIGIT*;
 CHAR: '\'' ALPHABET '\'';
 IDENTIFIER: ALPHABET_AND_UNDERSCORE (ALPHABET_AND_UNDERSCORE | DIGIT)*;
 
+identifier: IDENTIFIER;
+
 /*
  * Productions
  */
-start : statement;
+start : program;
+
+program
+   : (function_definition | statement)*
+   ;
+
+/*
+ * Function Definition
+ */
+function_definition
+   : type=return_type name=identifier OPEN_PARENTHESES params=parameter_type_list CLOSE_PARENTHESES body=compound_statement
+   ;
+
+return_type
+   : type_specifier (pointer)*
+   ;
+
+parameter_type_list
+   : parameter_list
+   | parameter_list COMMA '...'
+   ;
+
+parameter_list
+   : parameter_declaration
+   | parameter_list COMMA parameter_declaration
+   ;
+
+parameter_declaration
+   : declaration_specifiers (pointer)* (identifier)? (array_declaration)*
+   ;
+
+array_declaration
+   : OPEN_SQUARE_BRACKET (constant_expression) CLOSE_SQUARE_BRACKET
+   ;
+
 
 /*
  * Statements
@@ -155,7 +194,7 @@ statement
 
 // Labeled Statement
 labeled_statement
-   : IDENTIFIER COLON statement
+   : identifier COLON statement
    | CASE constant_expression COLON statement
    | DEFAULT COLON statement
    ;
@@ -163,12 +202,11 @@ labeled_statement
 
 // Declaration Statement
 declaration_statement
-   : (declaration_specifier)+ init_declarator_list end_statement_delimiter
+   : type=declaration_specifiers decl=init_declarator_list end_statement_delimiter
    ;
 
-declaration_specifier
-   : type_specifier
-   | type_qualifier
+declaration_specifiers
+   : (type_qualifier)* type_specifier
    ;
 
 init_declarator_list
@@ -188,16 +226,17 @@ pointer
    ;
 
 direct_declarator
-   : IDENTIFIER
-   | OPEN_PARENTHESES declarator CLOSE_PARENTHESES
+   : identifier
+   | OPEN_PARENTHESES declarator CLOSE_PARENTHESES // int (*pointer)[10];
    | direct_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET // int a[12];
-   | direct_declarator OPEN_PARENTHESES (IDENTIFIER)* CLOSE_PARENTHESES
+   | direct_declarator OPEN_PARENTHESES parameter_type_list CLOSE_PARENTHESES // int a(1, 2, 3); (function declarators)
+   | direct_declarator OPEN_PARENTHESES (identifier)* CLOSE_PARENTHESES
    ;
 
 initializer
    : assignment_expression
-   | OPEN_CURLY_BRACKET initializer_list CLOSE_CURLY_BRACKET
-   | OPEN_CURLY_BRACKET initializer_list COMMA CLOSE_CURLY_BRACKET
+   | OPEN_CURLY_BRACKET initializer_list CLOSE_CURLY_BRACKET // For arrays
+   | OPEN_CURLY_BRACKET initializer_list COMMA CLOSE_CURLY_BRACKET // For arrays
    ;
 
 initializer_list
@@ -208,7 +247,7 @@ initializer_list
 
 // Expression Statement
 expression_statement
-   : (expression)? end_statement_delimiter
+   : (expr=expression)? end_statement_delimiter
    ;
 
 expression
@@ -276,61 +315,66 @@ shift_expression
    ;
 
 additive_expression
-   : multiplicative_expression
-   | left=additive_expression operator=PLUS right=multiplicative_expression
-   | left=additive_expression operator=MINUS right=multiplicative_expression
+   : multiplicative_expression                                                # AdditiveNormalExpression
+   | left=additive_expression operator=PLUS right=multiplicative_expression   # AdditiveAdditionExpression
+   | left=additive_expression operator=MINUS right=multiplicative_expression  # AdditiveSubtractionExpression
    ;
 
 multiplicative_expression
-   : cast_expression
-   | left=multiplicative_expression operator=ASTERICK right=cast_expression
-   | left=multiplicative_expression operator=BACKSLASH right=cast_expression
-   | left=multiplicative_expression operator=PERCENT right=cast_expression
+   : cast_expression                                                          # MultiplicativeNormalExpression
+   | left=multiplicative_expression operator=ASTERICK right=cast_expression   # MultiplicativeMultiplyExpression
+   | left=multiplicative_expression operator=BACKSLASH right=cast_expression  # MultiplicativeDivideExpression
+   | left=multiplicative_expression operator=PERCENT right=cast_expression    # MultiplicativeModuloExpression
    ;
 
 cast_expression
-   : unary_expression
-   | OPEN_PARENTHESES type_name CLOSE_PARENTHESES cast_expression
+   : unary_expression                                                         # CastNormalExpression
+   | OPEN_PARENTHESES type=type_name CLOSE_PARENTHESES expr=cast_expression   # CastTypeExpression
    ;
 
 type_name
-   : (specifier_qualifier)+
+   : (type_qualifier)* type_specifier (abstract_declarator)?
    ;
 
-specifier_qualifier
-   : type_specifier
-   | type_qualifier
+abstract_declarator
+   : pointer
+   | (pointer)? direct_abstract_declarator
+   ;
+
+direct_abstract_declarator
+   : OPEN_PARENTHESES abstract_declarator CLOSE_PARENTHESES
+   | OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
+   | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
    ;
 
 unary_expression
-   : postfix_expression
-   | INCREMENT unary_expression
-   | DECREMENT unary_expression
-   | unary_operator cast_expression
-   | SIZE_OF unary_expression
-   | SIZE_OF type_name
+   : expr=postfix_expression                                    # PostfixUnaryExpression
+   | INCREMENT expr=unary_expression                            # IncrementUnaryExpression
+   | DECREMENT expr=unary_expression                            # DecrementUnaryExpression
+   | op=unary_operator expr=cast_expression                     # CastUnaryExpression
+   | SIZE_OF OPEN_PARENTHESES type=type_name CLOSE_PARENTHESES  # SizeOfUnaryExpression
    ;
 
 postfix_expression
    : primary_expression
    | postfix_expression OPEN_SQUARE_BRACKET expression CLOSE_SQUARE_BRACKET // array
    | postfix_expression OPEN_PARENTHESES expression CLOSE_PARENTHESES // function call
-   | postfix_expression FULLSTOP IDENTIFIER
-   | postfix_expression RIGHT_ARROW IDENTIFIER
+   | postfix_expression FULLSTOP identifier
+   | postfix_expression RIGHT_ARROW identifier
    | postfix_expression INCREMENT
    | postfix_expression DECREMENT
    ;
 
 primary_expression
-   : IDENTIFIER
+   : identifier
    | constant
    | OPEN_PARENTHESES expression CLOSE_PARENTHESES
    ;
 
 constant
-   : integer_constant
-   | float_constant
-   | character_constant
+   : integer_constant     # IntegerConstant
+   | float_constant       # FloatConstant
+   | character_constant   # CharacterConstant
    ;
 
 integer_constant: INTEGER;
@@ -342,7 +386,7 @@ character_constant: CHAR;
 
 // Compound Statement
 compound_statement
-   : OPEN_CURLY_BRACKET statement CLOSE_CURLY_BRACKET
+   : OPEN_CURLY_BRACKET (statement)* CLOSE_CURLY_BRACKET
    ;
 
 
@@ -364,7 +408,7 @@ iteration_statement
 
 // Jump Statement
 jump_statement
-   : GOTO IDENTIFIER end_statement_delimiter
+   : GOTO identifier end_statement_delimiter
    | CONTINUE end_statement_delimiter
    | BREAK end_statement_delimiter
    | RETURN (expression)? end_statement_delimiter

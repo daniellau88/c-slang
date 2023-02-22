@@ -16,3 +16,4 @@ tsconfig.tsbuildinfo
 test-report.html
 
 .antlr
+.antlr4
