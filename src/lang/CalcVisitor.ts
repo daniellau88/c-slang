@@ -36,6 +36,12 @@ import { Parameter_type_listContext } from "./CalcParser";
 import { Parameter_listContext } from "./CalcParser";
 import { Parameter_declarationContext } from "./CalcParser";
 import { Array_declarationContext } from "./CalcParser";
+import { Struct_specifierContext } from "./CalcParser";
+import { Union_specifierContext } from "./CalcParser";
+import { Struct_or_union_declarationContext } from "./CalcParser";
+import { Specifier_qualifierContext } from "./CalcParser";
+import { Struct_or_union_declarator_listContext } from "./CalcParser";
+import { Struct_or_union_declaratorContext } from "./CalcParser";
 import { StatementContext } from "./CalcParser";
 import { Labeled_statementContext } from "./CalcParser";
 import { Declaration_statementContext } from "./CalcParser";
@@ -342,6 +348,48 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitArray_declaration?: (ctx: Array_declarationContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.struct_specifier`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStruct_specifier?: (ctx: Struct_specifierContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.union_specifier`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUnion_specifier?: (ctx: Union_specifierContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.struct_or_union_declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStruct_or_union_declaration?: (ctx: Struct_or_union_declarationContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.specifier_qualifier`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSpecifier_qualifier?: (ctx: Specifier_qualifierContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.struct_or_union_declarator_list`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStruct_or_union_declarator_list?: (ctx: Struct_or_union_declarator_listContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.struct_or_union_declarator`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStruct_or_union_declarator?: (ctx: Struct_or_union_declaratorContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `CalcParser.statement`.

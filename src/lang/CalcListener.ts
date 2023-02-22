@@ -36,6 +36,12 @@ import { Parameter_type_listContext } from "./CalcParser";
 import { Parameter_listContext } from "./CalcParser";
 import { Parameter_declarationContext } from "./CalcParser";
 import { Array_declarationContext } from "./CalcParser";
+import { Struct_specifierContext } from "./CalcParser";
+import { Union_specifierContext } from "./CalcParser";
+import { Struct_or_union_declarationContext } from "./CalcParser";
+import { Specifier_qualifierContext } from "./CalcParser";
+import { Struct_or_union_declarator_listContext } from "./CalcParser";
+import { Struct_or_union_declaratorContext } from "./CalcParser";
 import { StatementContext } from "./CalcParser";
 import { Labeled_statementContext } from "./CalcParser";
 import { Declaration_statementContext } from "./CalcParser";
@@ -488,6 +494,72 @@ export interface CalcListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitArray_declaration?: (ctx: Array_declarationContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.struct_specifier`.
+	 * @param ctx the parse tree
+	 */
+	enterStruct_specifier?: (ctx: Struct_specifierContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.struct_specifier`.
+	 * @param ctx the parse tree
+	 */
+	exitStruct_specifier?: (ctx: Struct_specifierContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.union_specifier`.
+	 * @param ctx the parse tree
+	 */
+	enterUnion_specifier?: (ctx: Union_specifierContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.union_specifier`.
+	 * @param ctx the parse tree
+	 */
+	exitUnion_specifier?: (ctx: Union_specifierContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.struct_or_union_declaration`.
+	 * @param ctx the parse tree
+	 */
+	enterStruct_or_union_declaration?: (ctx: Struct_or_union_declarationContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.struct_or_union_declaration`.
+	 * @param ctx the parse tree
+	 */
+	exitStruct_or_union_declaration?: (ctx: Struct_or_union_declarationContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.specifier_qualifier`.
+	 * @param ctx the parse tree
+	 */
+	enterSpecifier_qualifier?: (ctx: Specifier_qualifierContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.specifier_qualifier`.
+	 * @param ctx the parse tree
+	 */
+	exitSpecifier_qualifier?: (ctx: Specifier_qualifierContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.struct_or_union_declarator_list`.
+	 * @param ctx the parse tree
+	 */
+	enterStruct_or_union_declarator_list?: (ctx: Struct_or_union_declarator_listContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.struct_or_union_declarator_list`.
+	 * @param ctx the parse tree
+	 */
+	exitStruct_or_union_declarator_list?: (ctx: Struct_or_union_declarator_listContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.struct_or_union_declarator`.
+	 * @param ctx the parse tree
+	 */
+	enterStruct_or_union_declarator?: (ctx: Struct_or_union_declaratorContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.struct_or_union_declarator`.
+	 * @param ctx the parse tree
+	 */
+	exitStruct_or_union_declarator?: (ctx: Struct_or_union_declaratorContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `CalcParser.statement`.

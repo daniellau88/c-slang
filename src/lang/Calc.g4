@@ -63,6 +63,8 @@ GOTO: 'goto';
 CONTINUE: 'continue';
 BREAK: 'break';
 RETURN: 'return';
+STRUCT: 'struct';
+UNION: 'union';
 
 unary_operator
    : AMPERSAND // As address
@@ -113,6 +115,8 @@ type_specifier
    | type_sign_specifier? LONG_TYPE_SPECIFIER
    | FLOAT_TYPE_SPECIFIER
    | DOUBLE_TYPE_SPECIFIER
+   | struct_specifier
+   | union_specifier
    ;
 
 CONST_TYPE_QUALIFIER: 'const';
@@ -147,7 +151,10 @@ identifier: IDENTIFIER;
 start : program;
 
 program
-   : (function_definition | statement)*
+   : (function_definition
+   | (struct_specifier end_statement_delimiter)
+   | (union_specifier end_statement_delimiter)
+   | statement)*
    ;
 
 /*
@@ -177,6 +184,37 @@ parameter_declaration
 
 array_declaration
    : OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
+   ;
+
+
+/*
+ * Struct Definition
+ */
+struct_specifier
+   : STRUCT (identifier)? OPEN_CURLY_BRACKET (struct_or_union_declaration end_statement_delimiter)+ CLOSE_CURLY_BRACKET
+   | STRUCT identifier
+   ;
+
+union_specifier
+   : UNION (identifier)? OPEN_CURLY_BRACKET (struct_or_union_declaration)+ CLOSE_CURLY_BRACKET
+   | UNION identifier
+   ;
+
+struct_or_union_declaration
+   : specifier_qualifier struct_or_union_declarator_list
+   ;
+
+specifier_qualifier
+   : (type_qualifier)* type_specifier
+   ;
+
+struct_or_union_declarator_list
+   : struct_or_union_declarator
+   | struct_or_union_declarator_list COMMA struct_or_union_declarator
+   ;
+
+struct_or_union_declarator
+   : declarator
    ;
 
 
