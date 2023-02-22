@@ -89,6 +89,8 @@ assignment_operator
 
 end_statement_delimiter: SEMICOLON;
 
+pointer: ASTERICK+;
+
 VOID_TYPE_SPECIFIER: 'void';
 CHAR_TYPE_SPECIFIER: 'char';
 SHORT_TYPE_SPECIFIER: 'short';
@@ -156,7 +158,7 @@ function_definition
    ;
 
 return_type
-   : type_specifier (pointer)*
+   : type_specifier (pointer)?
    ;
 
 parameter_type_list
@@ -170,11 +172,11 @@ parameter_list
    ;
 
 parameter_declaration
-   : declaration_specifiers (pointer)* (identifier)? (array_declaration)*
+   : declaration_specifiers (pointer)? (identifier)? (array_declaration)*
    ;
 
 array_declaration
-   : OPEN_SQUARE_BRACKET (constant_expression) CLOSE_SQUARE_BRACKET
+   : OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
    ;
 
 
@@ -186,17 +188,21 @@ statement
    | declaration_statement // Separate out to be statement, so that it is easier to interpret
    | expression_statement
    | compound_statement
-   | selection_statement
-   | iteration_statement
-   | jump_statement
+   | if_statement
+   | switch_statement
+   | while_statement
+   | do_statement
+   | for_statement
+   | goto_statement
+   | continue_statement
+   | break_statement
+   | return_statement
    ;
 
 
 // Labeled Statement
 labeled_statement
    : identifier COLON statement
-   | CASE constant_expression COLON statement
-   | DEFAULT COLON statement
    ;
 
 
@@ -221,10 +227,6 @@ declarator
    : (pointer)? direct_declarator
    ;
 
-pointer
-   : ASTERICK (type_qualifier)* (pointer)?
-   ;
-
 direct_declarator
    : identifier
    | OPEN_PARENTHESES declarator CLOSE_PARENTHESES // int (*pointer)[10];
@@ -234,9 +236,8 @@ direct_declarator
    ;
 
 initializer
-   : assignment_expression
-   | OPEN_CURLY_BRACKET initializer_list CLOSE_CURLY_BRACKET // For arrays
-   | OPEN_CURLY_BRACKET initializer_list COMMA CLOSE_CURLY_BRACKET // For arrays
+   : conditional_expression
+   | OPEN_CURLY_BRACKET initializer_list (COMMA)? CLOSE_CURLY_BRACKET // For arrays
    ;
 
 initializer_list
@@ -247,7 +248,7 @@ initializer_list
 
 // Expression Statement
 expression_statement
-   : (expr=expression)? end_statement_delimiter
+   : expr=expression end_statement_delimiter
    ;
 
 expression
@@ -357,7 +358,7 @@ unary_expression
 
 postfix_expression
    : primary_expression
-   | postfix_expression OPEN_SQUARE_BRACKET expression CLOSE_SQUARE_BRACKET // array
+   | postfix_expression OPEN_SQUARE_BRACKET assignment_expression CLOSE_SQUARE_BRACKET // array
    | postfix_expression OPEN_PARENTHESES expression CLOSE_PARENTHESES // function call
    | postfix_expression FULLSTOP identifier
    | postfix_expression RIGHT_ARROW identifier
@@ -390,26 +391,67 @@ compound_statement
    ;
 
 
-// Selection Statement
-selection_statement
-   : IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement
-   | IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement ELSE if_false=statement
-   | SWITCH OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES body=statement
+// If Statement
+if_statement
+   : IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement (ELSE if_false=statement)?
    ;
 
 
-// Iteration Statement
-iteration_statement
+// Switch Statement
+switch_statement
+   : SWITCH OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES switch_body
+   ;
+
+switch_body
+   : OPEN_CURLY_BRACKET (switch_case_body)* (switch_default_body)? CLOSE_CURLY_BRACKET
+   ;
+
+switch_case_body
+   : CASE expression COLON statement
+   ;
+
+switch_default_body
+   : DEFAULT COLON statement
+   ;
+
+
+// While Statement
+while_statement
    : WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES statement
-   | DO statement WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES end_statement_delimiter
-   | FOR OPEN_PARENTHESES (expression)? SEMICOLON (expression)? SEMICOLON (expression)? CLOSE_PARENTHESES statement
    ;
 
 
-// Jump Statement
-jump_statement
+// Do Statement
+do_statement
+   : DO statement WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES end_statement_delimiter
+   ;
+
+
+// For Statement
+for_statement
+   : FOR OPEN_PARENTHESES (expression)? SEMICOLON (expression)? SEMICOLON (expression)? CLOSE_PARENTHESES statement
+   ;
+
+
+// Goto Statement
+goto_statement
    : GOTO identifier end_statement_delimiter
-   | CONTINUE end_statement_delimiter
-   | BREAK end_statement_delimiter
-   | RETURN (expression)? end_statement_delimiter
+   ;
+
+
+// Continue Statement
+continue_statement
+   : CONTINUE end_statement_delimiter
+   ;
+
+
+// Break Statement
+break_statement
+   : BREAK end_statement_delimiter
+   ;
+
+
+// Return Statement
+return_statement
+   : RETURN (expression)? end_statement_delimiter
    ;

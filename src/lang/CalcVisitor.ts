@@ -23,6 +23,7 @@ import { MultiplicativeModuloExpressionContext } from "./CalcParser";
 import { Unary_operatorContext } from "./CalcParser";
 import { Assignment_operatorContext } from "./CalcParser";
 import { End_statement_delimiterContext } from "./CalcParser";
+import { PointerContext } from "./CalcParser";
 import { Type_sign_specifierContext } from "./CalcParser";
 import { Type_specifierContext } from "./CalcParser";
 import { Type_qualifierContext } from "./CalcParser";
@@ -42,7 +43,6 @@ import { Declaration_specifiersContext } from "./CalcParser";
 import { Init_declarator_listContext } from "./CalcParser";
 import { Init_declaratorContext } from "./CalcParser";
 import { DeclaratorContext } from "./CalcParser";
-import { PointerContext } from "./CalcParser";
 import { Direct_declaratorContext } from "./CalcParser";
 import { InitializerContext } from "./CalcParser";
 import { Initializer_listContext } from "./CalcParser";
@@ -73,9 +73,18 @@ import { Integer_constantContext } from "./CalcParser";
 import { Float_constantContext } from "./CalcParser";
 import { Character_constantContext } from "./CalcParser";
 import { Compound_statementContext } from "./CalcParser";
-import { Selection_statementContext } from "./CalcParser";
-import { Iteration_statementContext } from "./CalcParser";
-import { Jump_statementContext } from "./CalcParser";
+import { If_statementContext } from "./CalcParser";
+import { Switch_statementContext } from "./CalcParser";
+import { Switch_bodyContext } from "./CalcParser";
+import { Switch_case_bodyContext } from "./CalcParser";
+import { Switch_default_bodyContext } from "./CalcParser";
+import { While_statementContext } from "./CalcParser";
+import { Do_statementContext } from "./CalcParser";
+import { For_statementContext } from "./CalcParser";
+import { Goto_statementContext } from "./CalcParser";
+import { Continue_statementContext } from "./CalcParser";
+import { Break_statementContext } from "./CalcParser";
+import { Return_statementContext } from "./CalcParser";
 
 
 /**
@@ -244,6 +253,13 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitEnd_statement_delimiter?: (ctx: End_statement_delimiterContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `CalcParser.pointer`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPointer?: (ctx: PointerContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `CalcParser.type_sign_specifier`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -375,13 +391,6 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitDeclarator?: (ctx: DeclaratorContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `CalcParser.pointer`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPointer?: (ctx: PointerContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `CalcParser.direct_declarator`.
@@ -594,24 +603,87 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitCompound_statement?: (ctx: Compound_statementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `CalcParser.selection_statement`.
+	 * Visit a parse tree produced by `CalcParser.if_statement`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitSelection_statement?: (ctx: Selection_statementContext) => Result;
+	visitIf_statement?: (ctx: If_statementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `CalcParser.iteration_statement`.
+	 * Visit a parse tree produced by `CalcParser.switch_statement`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitIteration_statement?: (ctx: Iteration_statementContext) => Result;
+	visitSwitch_statement?: (ctx: Switch_statementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `CalcParser.jump_statement`.
+	 * Visit a parse tree produced by `CalcParser.switch_body`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitJump_statement?: (ctx: Jump_statementContext) => Result;
+	visitSwitch_body?: (ctx: Switch_bodyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.switch_case_body`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSwitch_case_body?: (ctx: Switch_case_bodyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.switch_default_body`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSwitch_default_body?: (ctx: Switch_default_bodyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.while_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitWhile_statement?: (ctx: While_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.do_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDo_statement?: (ctx: Do_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.for_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitFor_statement?: (ctx: For_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.goto_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitGoto_statement?: (ctx: Goto_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.continue_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitContinue_statement?: (ctx: Continue_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.break_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBreak_statement?: (ctx: Break_statementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CalcParser.return_statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReturn_statement?: (ctx: Return_statementContext) => Result;
 }
 

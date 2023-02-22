@@ -23,6 +23,7 @@ import { MultiplicativeModuloExpressionContext } from "./CalcParser";
 import { Unary_operatorContext } from "./CalcParser";
 import { Assignment_operatorContext } from "./CalcParser";
 import { End_statement_delimiterContext } from "./CalcParser";
+import { PointerContext } from "./CalcParser";
 import { Type_sign_specifierContext } from "./CalcParser";
 import { Type_specifierContext } from "./CalcParser";
 import { Type_qualifierContext } from "./CalcParser";
@@ -42,7 +43,6 @@ import { Declaration_specifiersContext } from "./CalcParser";
 import { Init_declarator_listContext } from "./CalcParser";
 import { Init_declaratorContext } from "./CalcParser";
 import { DeclaratorContext } from "./CalcParser";
-import { PointerContext } from "./CalcParser";
 import { Direct_declaratorContext } from "./CalcParser";
 import { InitializerContext } from "./CalcParser";
 import { Initializer_listContext } from "./CalcParser";
@@ -73,9 +73,18 @@ import { Integer_constantContext } from "./CalcParser";
 import { Float_constantContext } from "./CalcParser";
 import { Character_constantContext } from "./CalcParser";
 import { Compound_statementContext } from "./CalcParser";
-import { Selection_statementContext } from "./CalcParser";
-import { Iteration_statementContext } from "./CalcParser";
-import { Jump_statementContext } from "./CalcParser";
+import { If_statementContext } from "./CalcParser";
+import { Switch_statementContext } from "./CalcParser";
+import { Switch_bodyContext } from "./CalcParser";
+import { Switch_case_bodyContext } from "./CalcParser";
+import { Switch_default_bodyContext } from "./CalcParser";
+import { While_statementContext } from "./CalcParser";
+import { Do_statementContext } from "./CalcParser";
+import { For_statementContext } from "./CalcParser";
+import { Goto_statementContext } from "./CalcParser";
+import { Continue_statementContext } from "./CalcParser";
+import { Break_statementContext } from "./CalcParser";
+import { Return_statementContext } from "./CalcParser";
 
 
 /**
@@ -338,6 +347,17 @@ export interface CalcListener extends ParseTreeListener {
 	exitEnd_statement_delimiter?: (ctx: End_statement_delimiterContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `CalcParser.pointer`.
+	 * @param ctx the parse tree
+	 */
+	enterPointer?: (ctx: PointerContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.pointer`.
+	 * @param ctx the parse tree
+	 */
+	exitPointer?: (ctx: PointerContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `CalcParser.type_sign_specifier`.
 	 * @param ctx the parse tree
 	 */
@@ -545,17 +565,6 @@ export interface CalcListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitDeclarator?: (ctx: DeclaratorContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `CalcParser.pointer`.
-	 * @param ctx the parse tree
-	 */
-	enterPointer?: (ctx: PointerContext) => void;
-	/**
-	 * Exit a parse tree produced by `CalcParser.pointer`.
-	 * @param ctx the parse tree
-	 */
-	exitPointer?: (ctx: PointerContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `CalcParser.direct_declarator`.
@@ -888,36 +897,135 @@ export interface CalcListener extends ParseTreeListener {
 	exitCompound_statement?: (ctx: Compound_statementContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `CalcParser.selection_statement`.
+	 * Enter a parse tree produced by `CalcParser.if_statement`.
 	 * @param ctx the parse tree
 	 */
-	enterSelection_statement?: (ctx: Selection_statementContext) => void;
+	enterIf_statement?: (ctx: If_statementContext) => void;
 	/**
-	 * Exit a parse tree produced by `CalcParser.selection_statement`.
+	 * Exit a parse tree produced by `CalcParser.if_statement`.
 	 * @param ctx the parse tree
 	 */
-	exitSelection_statement?: (ctx: Selection_statementContext) => void;
+	exitIf_statement?: (ctx: If_statementContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `CalcParser.iteration_statement`.
+	 * Enter a parse tree produced by `CalcParser.switch_statement`.
 	 * @param ctx the parse tree
 	 */
-	enterIteration_statement?: (ctx: Iteration_statementContext) => void;
+	enterSwitch_statement?: (ctx: Switch_statementContext) => void;
 	/**
-	 * Exit a parse tree produced by `CalcParser.iteration_statement`.
+	 * Exit a parse tree produced by `CalcParser.switch_statement`.
 	 * @param ctx the parse tree
 	 */
-	exitIteration_statement?: (ctx: Iteration_statementContext) => void;
+	exitSwitch_statement?: (ctx: Switch_statementContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `CalcParser.jump_statement`.
+	 * Enter a parse tree produced by `CalcParser.switch_body`.
 	 * @param ctx the parse tree
 	 */
-	enterJump_statement?: (ctx: Jump_statementContext) => void;
+	enterSwitch_body?: (ctx: Switch_bodyContext) => void;
 	/**
-	 * Exit a parse tree produced by `CalcParser.jump_statement`.
+	 * Exit a parse tree produced by `CalcParser.switch_body`.
 	 * @param ctx the parse tree
 	 */
-	exitJump_statement?: (ctx: Jump_statementContext) => void;
+	exitSwitch_body?: (ctx: Switch_bodyContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.switch_case_body`.
+	 * @param ctx the parse tree
+	 */
+	enterSwitch_case_body?: (ctx: Switch_case_bodyContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.switch_case_body`.
+	 * @param ctx the parse tree
+	 */
+	exitSwitch_case_body?: (ctx: Switch_case_bodyContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.switch_default_body`.
+	 * @param ctx the parse tree
+	 */
+	enterSwitch_default_body?: (ctx: Switch_default_bodyContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.switch_default_body`.
+	 * @param ctx the parse tree
+	 */
+	exitSwitch_default_body?: (ctx: Switch_default_bodyContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.while_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterWhile_statement?: (ctx: While_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.while_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitWhile_statement?: (ctx: While_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.do_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterDo_statement?: (ctx: Do_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.do_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitDo_statement?: (ctx: Do_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.for_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterFor_statement?: (ctx: For_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.for_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitFor_statement?: (ctx: For_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.goto_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterGoto_statement?: (ctx: Goto_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.goto_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitGoto_statement?: (ctx: Goto_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.continue_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterContinue_statement?: (ctx: Continue_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.continue_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitContinue_statement?: (ctx: Continue_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.break_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterBreak_statement?: (ctx: Break_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.break_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitBreak_statement?: (ctx: Break_statementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CalcParser.return_statement`.
+	 * @param ctx the parse tree
+	 */
+	enterReturn_statement?: (ctx: Return_statementContext) => void;
+	/**
+	 * Exit a parse tree produced by `CalcParser.return_statement`.
+	 * @param ctx the parse tree
+	 */
+	exitReturn_statement?: (ctx: Return_statementContext) => void;
 }
 
