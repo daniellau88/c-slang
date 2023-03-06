@@ -154,7 +154,7 @@ program
    : (function_definition
    | (struct_specifier end_statement_delimiter)
    | (union_specifier end_statement_delimiter)
-   | statement)*
+   | declaration_statement)*
    ;
 
 /*
