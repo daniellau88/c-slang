@@ -161,7 +161,7 @@ program
  * Function Definition
  */
 function_definition
-   : type=return_type name=identifier OPEN_PARENTHESES params=parameter_type_list CLOSE_PARENTHESES body=compound_statement
+   : (declaration_specifiers)? declarator (declaration_statement)* body=compound_statement
    ;
 
 return_type
@@ -179,7 +179,9 @@ parameter_list
    ;
 
 parameter_declaration
-   : declaration_specifiers (pointer)? (identifier)? (array_declaration)*
+   : declaration_specifiers declarator
+   | declaration_specifiers abstract_declarator
+   | declaration_specifiers
    ;
 
 array_declaration
@@ -383,7 +385,9 @@ abstract_declarator
 direct_abstract_declarator
    : OPEN_PARENTHESES abstract_declarator CLOSE_PARENTHESES
    | OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
+   | OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES
    | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
+   | direct_abstract_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES
    ;
 
 unary_expression
