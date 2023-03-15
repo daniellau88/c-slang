@@ -161,11 +161,7 @@ program
  * Function Definition
  */
 function_definition
-   : (declaration_specifiers)? declarator (declaration_statement)* body=compound_statement
-   ;
-
-return_type
-   : type_specifier (pointer)?
+   : (declaration_specifiers)? declarator (declaration_statement)* compound_statement
    ;
 
 parameter_type_list
@@ -179,13 +175,9 @@ parameter_list
    ;
 
 parameter_declaration
-   : declaration_specifiers declarator
-   | declaration_specifiers abstract_declarator
-   | declaration_specifiers
-   ;
-
-array_declaration
-   : OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
+   : declaration_specifiers declarator          # ParameterDeclarationTypeDeclarator
+   | declaration_specifiers abstract_declarator # ParameterDeclarationTypeAbstractDeclarator
+   | declaration_specifiers                     # ParameterDeclarationTypeNormal
    ;
 
 
@@ -224,19 +216,19 @@ struct_or_union_declarator
  * Statements
  */
 statement
-   : labeled_statement
-   | declaration_statement // Separate out to be statement, so that it is easier to interpret
-   | expression_statement
-   | compound_statement
-   | if_statement
-   | switch_statement
-   | while_statement
-   | do_statement
-   | for_statement
-   | goto_statement
-   | continue_statement
-   | break_statement
-   | return_statement
+   : labeled_statement     # StatementTypeLabeled
+   | declaration_statement # StatementTypeDeclaration
+   | expression_statement  # StatementTypeExpression
+   | compound_statement    # StatementTypeCompound
+   | if_statement          # StatementTypeIf
+   | switch_statement      # StatementTypeSwitch
+   | while_statement       # StatementTypeWhile
+   | do_statement          # StatementTypeDo
+   | for_statement         # StatementTypeFor
+   | goto_statement        # StatementTypeGoto
+   | continue_statement    # StatementTypeContinue
+   | break_statement       # StatementTypeBreak
+   | return_statement      # StatementTypeReturn
    ;
 
 
@@ -248,11 +240,11 @@ labeled_statement
 
 // Declaration Statement
 declaration_statement
-   : type=declaration_specifiers decl=init_declarator_list end_statement_delimiter
+   : declaration_specifiers init_declarator_list end_statement_delimiter
    ;
 
 declaration_specifiers
-   : (type_qualifier)* type_specifier
+   : type_specifier
    ;
 
 init_declarator_list
@@ -268,37 +260,37 @@ declarator
    ;
 
 direct_declarator
-   : identifier
-   | OPEN_PARENTHESES declarator CLOSE_PARENTHESES // int (*pointer)[10];
-   | direct_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET // int a[12];
-   | direct_declarator OPEN_PARENTHESES parameter_type_list CLOSE_PARENTHESES // int a(1, 2, 3); (function declarators)
-   | direct_declarator OPEN_PARENTHESES (identifier)* CLOSE_PARENTHESES
+   : identifier                                                                           # DirectDeclaratorTypeIdentifier
+   | OPEN_PARENTHESES declarator CLOSE_PARENTHESES                                        # DirectDeclaratorTypeNestedDeclarator // int (*pointer)[10];
+   | direct_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET    # DirectDeclaratorTypeRecursiveArray  // int a[12];
+   | direct_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES          # DirectDeclaratorTypeRecursiveFunction // int a(1, 2, 3); 
+   | direct_declarator OPEN_PARENTHESES (identifier)* CLOSE_PARENTHESES                   # DirectDeclaratorTypeRecursiveIdentifiers
    ;
 
 initializer
-   : conditional_expression
-   | OPEN_CURLY_BRACKET initializer_list (COMMA)? CLOSE_CURLY_BRACKET // For arrays
+   : conditional_expression                                             # InitializerTypeConditionalExpression
+   | OPEN_CURLY_BRACKET initializer_list (COMMA)? CLOSE_CURLY_BRACKET   # InitializerTypeArray // For arrays
    ;
 
 initializer_list
-   : initializer
-   | initializer_list COMMA initializer
+   : initializer                          # InitializerListTypeInitializer
+   | initializer_list COMMA initializer   # InitializerListTypeRecursiveInitializer
    ;
 
 
 // Expression Statement
 expression_statement
-   : expr=expression end_statement_delimiter
+   : expression end_statement_delimiter
    ;
 
 expression
-   : assignment_expression
-   | expression COMMA assignment_expression
+   : assignment_expression                   # ExpressionTypeAssignment
+   | expression COMMA assignment_expression  # ExpressionTypeExpression
    ;
 
 assignment_expression
-   : conditional_expression
-   | assg=unary_expression operator=assignment_operator expr=assignment_expression 
+   : conditional_expression                                       # AssignmentExpressionTypeConditional
+   | unary_expression assignment_operator assignment_expression   # AssignmentExpressionTypeAssignment
    ;
 
 constant_expression
@@ -306,118 +298,118 @@ constant_expression
    ;
 
 conditional_expression
-   : logical_or_expression
-   | cond=logical_or_expression QUESTION_MARK if_true=expression COLON if_false=conditional_expression
+   : logical_or_expression                                                       # ConditionalExpressionTypeLogicalOr
+   | logical_or_expression QUESTION_MARK expression COLON conditional_expression # ConditionalExpressionTypeConditional
    ;
 
 logical_or_expression
-   : logical_and_expression
-   | left=logical_or_expression operator=BOOLEAN_OR right=logical_and_expression
+   : logical_and_expression                                    # LogicalOrExpressionTypeLogicalAnd
+   | logical_or_expression BOOLEAN_OR logical_and_expression   # LogicalOrExpressionTypeLogicalOr
    ;
 
 logical_and_expression
-   : inclusive_or_expression
-   | left=logical_and_expression operator=BOOLEAN_AND right=inclusive_or_expression
+   : inclusive_or_expression                                      # LogicalAndExpressionTypeInclusiveOr
+   | logical_and_expression BOOLEAN_AND inclusive_or_expression   # LogicalAndExpressionTypeLogicalAnd
    ;
 
 inclusive_or_expression
-   : exclusive_or_expression
-   | left=inclusive_or_expression operator=VERTICAL_BAR right=exclusive_or_expression
+   : exclusive_or_expression                                      # InclusiveOrExpressionTypeExclusiveOr
+   | inclusive_or_expression VERTICAL_BAR exclusive_or_expression # InclusiveOrExpressionTypeInclusiveOr
    ;
 
 exclusive_or_expression
-   : and_expression
-   | left=exclusive_or_expression operator=CARET right=and_expression
+   : and_expression                                # ExclusiveOrExpressionTypeAnd
+   | exclusive_or_expression CARET and_expression  # ExclusiveOrExpressionTypeExclusiveOr
    ;
 
 and_expression
-   : equality_expression
-   | left=and_expression operator=AMPERSAND right=equality_expression
+   : equality_expression                           # AndExpressionTypeEquality
+   | and_expression AMPERSAND equality_expression  # AndExpressionTypeAnd
    ;
 
 equality_expression
-   : relational_expression
-   | left=equality_expression operator=EQUALITY_EQUAL right=relational_expression
-   | left=equality_expression operator=EQUALITY_NOT_EQUAL right=relational_expression
+   : relational_expression                                        # EqualityExpressionTypeRelational
+   | equality_expression EQUALITY_EQUAL relational_expression     # EqualityExpressionTypeEqualityEqual
+   | equality_expression EQUALITY_NOT_EQUAL relational_expression # EqualityExpressionTypeEqualityNotEqual
    ;
 
 relational_expression
-   : shift_expression
-   | left=relational_expression operator=RELATIONAL_GREATER_THAN right=shift_expression
-   | left=relational_expression operator=RELATIONAL_LESS_THAN right=shift_expression
-   | left=relational_expression operator=RELATIONAL_LESS_THAN_OR_EQUAL right=shift_expression
-   | left=relational_expression operator=RELATIONAL_GREATER_THAN_OR_EQUAL right=shift_expression
+   : shift_expression                                                         # RelationalExpressionTypeShift
+   | relational_expression RELATIONAL_GREATER_THAN shift_expression           # RelationalExpressionTypeRelationalGT
+   | relational_expression RELATIONAL_LESS_THAN shift_expression              # RelationalExpressionTypeRelationalLT
+   | relational_expression RELATIONAL_LESS_THAN_OR_EQUAL shift_expression     # RelationalExpressionTypeRelationalLTOE
+   | relational_expression RELATIONAL_GREATER_THAN_OR_EQUAL shift_expression  # RelationalExpressionTypeRelationalGTOE
    ;
 
 shift_expression
-   : additive_expression
-   | left=shift_expression operator=SHIFT_LEFT right=additive_expression
-   | left=shift_expression operator=SHIFT_RIGHT right=additive_expression
+   : additive_expression                              # ShfitExpressionTypeAdditive
+   | shift_expression SHIFT_LEFT additive_expression  # ShfitExpressionTypeShiftLeft
+   | shift_expression SHIFT_RIGHT additive_expression # ShfitExpressionTypeShiftRight
    ;
 
 additive_expression
-   : multiplicative_expression                                                # AdditiveNormalExpression
-   | left=additive_expression operator=PLUS right=multiplicative_expression   # AdditiveAdditionExpression
-   | left=additive_expression operator=MINUS right=multiplicative_expression  # AdditiveSubtractionExpression
+   : multiplicative_expression                            # AdditiveExpressionTypeMultiplicative
+   | additive_expression PLUS multiplicative_expression   # AdditiveExpressionTypeAdditiveAdd
+   | additive_expression MINUS multiplicative_expression  # AdditiveExpressionTypeAdditiveMinus
    ;
 
 multiplicative_expression
-   : cast_expression                                                          # MultiplicativeNormalExpression
-   | left=multiplicative_expression operator=ASTERICK right=cast_expression   # MultiplicativeMultiplyExpression
-   | left=multiplicative_expression operator=BACKSLASH right=cast_expression  # MultiplicativeDivideExpression
-   | left=multiplicative_expression operator=PERCENT right=cast_expression    # MultiplicativeModuloExpression
+   : cast_expression                                      # MultiplicativeExpressionTypeCast
+   | multiplicative_expression ASTERICK cast_expression   # MultiplicativeExpressionTypeMultiplicativeAsterick
+   | multiplicative_expression BACKSLASH cast_expression  # MultiplicativeExpressionTypeMultiplicativeBackslash
+   | multiplicative_expression PERCENT cast_expression    # MultiplicativeExpressionTypeMultiplicativePercent
    ;
 
 cast_expression
-   : unary_expression                                                         # CastNormalExpression
-   | OPEN_PARENTHESES type=type_name CLOSE_PARENTHESES expr=cast_expression   # CastTypeExpression
+   : unary_expression                                               # CastExpressionTypeUnary
+   | OPEN_PARENTHESES type_name CLOSE_PARENTHESES cast_expression   # CastExpressionTypeCast
    ;
 
 type_name
-   : (type_qualifier)* type_specifier (abstract_declarator)?
+   : type_specifier (abstract_declarator)?
    ;
 
 abstract_declarator
-   : pointer
-   | (pointer)? direct_abstract_declarator
+   : pointer                                 # AbstractDeclaratorTypePointer
+   | (pointer)? direct_abstract_declarator   # AbstractDeclaratorTypeDirectAbstractDeclarator
    ;
 
 direct_abstract_declarator
-   : OPEN_PARENTHESES abstract_declarator CLOSE_PARENTHESES
-   | OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
-   | OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES
-   | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET
-   | direct_abstract_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES
+   : OPEN_PARENTHESES abstract_declarator CLOSE_PARENTHESES                                     # DirectAbstractDeclaratorTypeNestedAbstractDeclarator
+   | OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET                            # DirectAbstractDeclaratorTypeArray
+   | OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES                                  # DirectAbstractDeclaratorTypeParameters
+   | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET # DirectAbstractDeclaratorTypeNestedArray
+   | direct_abstract_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES       # DirectAbstractDeclaratorTypeNestedParameters
    ;
 
 unary_expression
-   : expr=postfix_expression                                    # PostfixUnaryExpression
-   | INCREMENT expr=unary_expression                            # IncrementUnaryExpression
-   | DECREMENT expr=unary_expression                            # DecrementUnaryExpression
-   | op=unary_operator expr=cast_expression                     # CastUnaryExpression
-   | SIZE_OF OPEN_PARENTHESES type=type_name CLOSE_PARENTHESES  # SizeOfUnaryExpression
+   : postfix_expression                                     # UnaryExpressionTypePostfix
+   | INCREMENT unary_expression                             # UnaryExpressionTypeIncrement
+   | DECREMENT unary_expression                             # UnaryExpressionTypeDecrement
+   | unary_operator cast_expression                         # UnaryExpressionTypeUnaryOperator
+   | SIZE_OF OPEN_PARENTHESES type_name CLOSE_PARENTHESES   # UnaryExpressionTypeSizeOf
    ;
 
 postfix_expression
-   : primary_expression
-   | postfix_expression OPEN_SQUARE_BRACKET assignment_expression CLOSE_SQUARE_BRACKET // array
-   | postfix_expression OPEN_PARENTHESES expression CLOSE_PARENTHESES // function call
-   | postfix_expression FULLSTOP identifier
-   | postfix_expression RIGHT_ARROW identifier
-   | postfix_expression INCREMENT
-   | postfix_expression DECREMENT
+   : primary_expression                                                                # PostfixExpressionTypePrimary
+   | postfix_expression OPEN_SQUARE_BRACKET assignment_expression CLOSE_SQUARE_BRACKET # PostfixExpressionTypeArray // array
+   | postfix_expression OPEN_PARENTHESES expression CLOSE_PARENTHESES                  # PostfixExpressionTypeFunctionCall // function call
+   | postfix_expression FULLSTOP identifier                                            # PostfixExpressionTypeMember
+   | postfix_expression RIGHT_ARROW identifier                                         # PostfixExpressionTypeDerefMember
+   | postfix_expression INCREMENT                                                      # PostfixExpressionTypeIncrement
+   | postfix_expression DECREMENT                                                      # PostfixExpressionTypeDecrement
    ;
 
 primary_expression
-   : identifier
-   | constant
-   | OPEN_PARENTHESES expression CLOSE_PARENTHESES
+   : identifier                                    # PrimaryExpressionTypeIdentifier
+   | constant                                      # PrimaryExpressionTypeConstant
+   | OPEN_PARENTHESES expression CLOSE_PARENTHESES # PrimaryExpressionTypeNestedExpression
    ;
 
 constant
-   : integer_constant     # IntegerConstant
-   | float_constant       # FloatConstant
-   | character_constant   # CharacterConstant
+   : integer_constant     # ConstantTypeInteger
+   | float_constant       # ConstantTypeFloat
+   | character_constant   # ConstantTypeCharacter
    ;
 
 integer_constant: INTEGER;
