@@ -1,14 +1,12 @@
 import * as es from 'estree'
 
-export type CNode =
-  | CProgram
-  | CExpression
-  | CStatement
-  | CTypedIdentifier
-  | CFunctionDefinition
-  | CFunctionParameterDeclarator
-  | CDeclaration
-  | CBaseType
+export type CASTNode =
+  | CASTProgram
+  | CASTExpression
+  | CASTStatement
+  | CASTFunctionDefinition
+  | CASTDeclaration
+  | CASTBaseType
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseNode {
@@ -16,134 +14,245 @@ interface BaseNode {
   loc?: es.SourceLocation | null | undefined
 }
 
-export interface CProgram {
+export interface CASTProgram extends BaseNode {
   type: 'Program'
-  body: Array<CStatement | CFunctionDefinition>
+  children: Array<CASTStatement | CASTFunctionDefinition>
 }
 
-export interface CFunctionDefinition {
+export interface CASTFunctionDefinition {
   type: 'FunctionDefinition'
-  functionIdentifier: CTypedIdentifier
-  baseType: CBaseType
-  body: CStatement
+  identifier: CASTIdentifier
+  parameters: Array<CASTFunctionParameter>
+  body: CASTCompoundStatement
+  returnType: CASTType
 }
 
-export interface CFunctionParameterDeclarator {
-  type: 'FunctionParameterDeclarator'
-  paramTypedIdentifier: CTypedIdentifier
-  baseType: CBaseType
+export interface CASTFunctionParameter {
+  type: 'FunctionParameter'
+  identifier?: CASTIdentifier
+  paramType: CASTType
   isVarArg: boolean
 }
 
-export type CStatement =
-  | CExpressionStatement
-  | CCompoundStatement
-  | CDeclarationStatement
-  | CReturnStatement
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface BaseStatement extends BaseNode {}
 
-export interface CExpressionStatement {
+export interface CASTExpressionStatement extends BaseStatement {
   type: 'ExpressionStatement'
-  expression: CExpression
+  expressions: Array<CASTExpression>
 }
 
-export interface CDeclarationStatement {
+export interface CASTDeclarationStatement extends BaseStatement {
   type: 'DeclarationStatement'
-  declarations: Array<CDeclaration>
+  declarations: Array<CASTDeclaration>
 }
 
-export interface CDeclaration {
+export interface CASTDeclaration extends BaseNode {
   type: 'Declaration'
-  initTypedIdentifier: CTypedIdentifier
-  baseType: CBaseType
-  init?: CExpression // Or Array
+  declarationType: CASTType
+  identifier: CASTIdentifier
+  init?: CASTExpression
 }
 
-export interface CExpressionMap {
-  AssignmentExpression: CAssignmentExprssion
-  BinaryExpression: CBinaryExpression
-  Literal: CLiteral
-  UnaryExpression: CUnaryExpression
-  CastExpression: CCastExpression
-  Identifier: CIdentifier
+export interface CASTCompoundStatement extends BaseExpression {
+  type: 'CompoundStatement'
+  statements: Array<CASTStatement>
 }
+
+export interface CASTReturnStatement extends BaseExpression {
+  type: 'ReturnStatement'
+  expression?: CASTExpression
+}
+
+export type CASTStatement =
+  | CASTExpressionStatement
+  | CASTCompoundStatement
+  | CASTDeclarationStatement
+  | CASTReturnStatement
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseExpression extends BaseNode {}
 
-export interface CCompoundStatement extends BaseExpression {
-  type: 'CompoundStatement'
-  statements: Array<CStatement>
+export interface CASTExpressionMap {
+  AssignmentExpression: CASTAssignmentExprssion
+  BinaryExpression: CASTBinaryExpression
+  ConditionalExpression: CASTConditionalExprssion
+  Literal: CASTLiteral
+  UnaryExpression: CASTUnaryExpression
+  CastExpression: CASTCastExpression
+  Identifier: CASTIdentifier
+  SizeOfExpression: CASTSizeOfExpression
+  ArrayAccessExpression: CASTArrayAccessExpression
+  FunctionCallExpression: CASTFunctionCallExpression
+  ArrayExpression: CASTArrayExpression
 }
 
-export interface CReturnStatement extends BaseExpression {
-  type: 'ReturnStatement'
-  expr?: CExpression
-}
-
-export interface CAssignmentExprssion extends BaseExpression {
+export interface CASTAssignmentExprssion extends BaseExpression {
   type: 'AssignmentExpression'
-  operator: es.AssignmentOperator
-  left: CExpression
-  right: CExpression
+  operator: CASTAssignmentOperator
+  left: CASTExpression
+  right: CASTExpression
 }
 
-export interface CUnaryExpression extends BaseExpression {
+export enum CASTAssignmentOperator {
+  Equal,
+  TimesEqual,
+  DivideEqual,
+  ModuloEqual,
+  PlusEqual,
+  MinusEqual,
+  ShiftLeftEqual,
+  ShiftRightEqual,
+  BitwiseAndEqual,
+  BitwiseXorEqual,
+  BitwiseOrEqual,
+}
+
+export interface CASTConditionalExprssion extends BaseExpression {
+  type: 'ConditionalExpression'
+  predicate: CASTExpression
+  ifTrue: CASTExpression
+  ifFalse: CASTExpression
+}
+
+export enum CASTUnaryOperator {
+  PreIncrement,
+  PreDecrement,
+  Address,
+  Derefence,
+  Positive,
+  Negate,
+  BitwiseNot,
+  LogicalNot,
+  PostIncrement,
+  PostDecrement,
+}
+
+export interface CASTUnaryExpression extends BaseExpression {
   type: 'UnaryExpression'
-  operator: 'pre-increment' | 'pre-decrement' | 'size-of' | string
-  prefix: true
-  argument: CExpression
+  operator: CASTUnaryOperator
+  expression: CASTExpression
 }
 
-export interface CBinaryExpression extends BaseExpression {
+export enum CASTBinaryOperator {
+  Plus,
+  Minus,
+  Multiply,
+  Divide,
+  Modulo,
+  LogicalOr,
+  LogicalAnd,
+  InclusiveOr,
+  ExclusiveOr,
+  BitwiseAnd,
+  EqualityEqual,
+  EqualityNotEqual,
+  RelationalGreaterThan,
+  RelationalLessThan,
+  RelationalGreaterThanOrEqual,
+  RelationalLessThanOrEqual,
+  ShiftLeft,
+  ShiftRight,
+}
+
+export interface CASTBinaryExpression extends BaseExpression {
   type: 'BinaryExpression'
-  operator: '+' | '-' | '*' | '/' | '%'
-  left: CExpression
-  right: CExpression
+  operator: CASTBinaryOperator
+  left: CASTExpression
+  right: CASTExpression
 }
 
-export interface CCastExpression extends BaseExpression {
+export interface CASTCastExpression extends BaseExpression {
   type: 'CastExpression'
-  castTypedIdentifier: CTypedIdentifier
-  baseType: CBaseType
-  expression: CExpression
+  castType: CASTType
+  expression: CASTExpression
 }
 
-export type CLiteral = CIntLiteralExpression | CFloatLiteralExpression
-
-export type CExpression = CExpressionMap[keyof CExpressionMap]
-
-export interface CIntLiteralExpression extends BaseNode, BaseExpression {
-  type: 'LiteralInt'
-  value: number
-  raw?: string
+export interface CASTSizeOfExpression extends BaseExpression {
+  type: 'SizeOfExpression'
+  typeArg: CASTType
 }
 
-export interface CFloatLiteralExpression extends BaseNode, BaseExpression {
-  type: 'LiteralFloat'
-  value: number
-  raw?: string
+export interface CASTArrayAccessExpression extends BaseExpression {
+  type: 'ArrayAccessExpression'
+  expression: CASTExpression
+  indexExpression: CASTExpression
 }
 
-export interface CIdentifier extends BaseExpression {
+export interface CASTFunctionCallExpression extends BaseExpression {
+  type: 'FunctionCallExpression'
+  expression: CASTExpression
+  argumentExpression: Array<CASTExpression>
+}
+
+export type CASTLiteral =
+  | CASTIntLiteralExpression
+  | CASTFloatLiteralExpression
+  | CASTCharLiteralExpression
+
+export interface CASTIntLiteralExpression extends BaseNode, BaseExpression {
+  type: 'Literal'
+  subtype: 'Int'
+  value: string
+}
+
+export interface CASTFloatLiteralExpression extends BaseNode, BaseExpression {
+  type: 'Literal'
+  subtype: 'Float'
+  value: string
+}
+
+export interface CASTCharLiteralExpression extends BaseNode, BaseExpression {
+  type: 'Literal'
+  subtype: 'Char'
+  value: string
+}
+
+export interface CASTArrayExpression extends BaseNode, BaseExpression {
+  type: 'ArrayExpression'
+  elements: Array<CASTExpression>
+}
+
+export type CASTExpression = CASTExpressionMap[keyof CASTExpressionMap]
+
+export interface CASTIdentifier extends BaseExpression {
   type: 'Identifier'
   name: string
 }
 
-export type CType = 'int'
-
-export interface CTypedIdentifier extends BaseNode {
-  type: 'TypedIdentifier'
-  typedIdentifier?: CTypedIdentifier | CIdentifier
-  pointerDepth?: number
-  arrayDimensions?: Array<CExpression | null>
-  functionParams?: Array<CFunctionParameterDeclarator>
+interface CASTTypeModifierBase {
+  type: 'TypeModifier'
 }
 
-export interface CCastTypeName extends BaseNode {
-  type: 'CastTypeName'
+export type CASTBaseType = 'int' | 'float' | 'char' | 'void'
+
+interface CASTTypeModifierBaseType extends CASTTypeModifierBase {
+  subtype: 'BaseType'
+  baseType: CASTBaseType
 }
 
-export interface CBaseType extends BaseNode {
-  type: 'BaseType'
-  specifiedType: CType
+interface CASTTypeModifierArray extends CASTTypeModifierBase {
+  subtype: 'Array'
+  size?: any
+}
+
+interface CASTTypeModifierPointer extends CASTTypeModifierBase {
+  subtype: 'Pointer'
+  pointerDepth: number
+}
+
+interface CASTTypeModifierParameters extends CASTTypeModifierBase {
+  subtype: 'Parameters'
+  parameterTypeList: Array<CASTFunctionParameter>
+}
+
+export type CASTTypeModifier =
+  | CASTTypeModifierBaseType
+  | CASTTypeModifierArray
+  | CASTTypeModifierPointer
+  | CASTTypeModifierParameters
+
+export interface CASTType {
+  type: 'Type'
+  typeModifiers: Array<CASTTypeModifier>
 }

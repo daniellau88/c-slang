@@ -49,6 +49,7 @@ RELATIONAL_GREATER_THAN_OR_EQUAL: '>=';
 SHIFT_LEFT: '<<';
 SHIFT_RIGHT: '>>';
 WHITESPACE: [ \r\n\t]+ -> skip;
+VAR_ARG: '...';
 
 SIZE_OF: 'sizeof';
 CASE: 'case';
@@ -166,7 +167,7 @@ function_definition
 
 parameter_type_list
    : parameter_list
-   | parameter_list COMMA '...'
+   | parameter_list COMMA VAR_ARG
    ;
 
 parameter_list
@@ -263,7 +264,7 @@ direct_declarator
    : identifier                                                                           # DirectDeclaratorTypeIdentifier
    | OPEN_PARENTHESES declarator CLOSE_PARENTHESES                                        # DirectDeclaratorTypeNestedDeclarator // int (*pointer)[10];
    | direct_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET    # DirectDeclaratorTypeRecursiveArray  // int a[12];
-   | direct_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES          # DirectDeclaratorTypeRecursiveFunction // int a(1, 2, 3); 
+   | direct_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES          # DirectDeclaratorTypeRecursiveParameters // int a(1, 2, 3); 
    | direct_declarator OPEN_PARENTHESES (identifier)* CLOSE_PARENTHESES                   # DirectDeclaratorTypeRecursiveIdentifiers
    ;
 
@@ -378,8 +379,8 @@ direct_abstract_declarator
    : OPEN_PARENTHESES abstract_declarator CLOSE_PARENTHESES                                     # DirectAbstractDeclaratorTypeNestedAbstractDeclarator
    | OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET                            # DirectAbstractDeclaratorTypeArray
    | OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES                                  # DirectAbstractDeclaratorTypeParameters
-   | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET # DirectAbstractDeclaratorTypeNestedArray
-   | direct_abstract_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES       # DirectAbstractDeclaratorTypeNestedParameters
+   | direct_abstract_declarator OPEN_SQUARE_BRACKET (constant_expression)? CLOSE_SQUARE_BRACKET # DirectAbstractDeclaratorTypeRecursiveArray
+   | direct_abstract_declarator OPEN_PARENTHESES (parameter_type_list)? CLOSE_PARENTHESES       # DirectAbstractDeclaratorTypeRecursiveParameters
    ;
 
 unary_expression

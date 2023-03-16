@@ -10,7 +10,7 @@ import { ConstantTypeCharacterContext } from './CalcParser'
 import { DirectDeclaratorTypeIdentifierContext } from './CalcParser'
 import { DirectDeclaratorTypeNestedDeclaratorContext } from './CalcParser'
 import { DirectDeclaratorTypeRecursiveArrayContext } from './CalcParser'
-import { DirectDeclaratorTypeRecursiveFunctionContext } from './CalcParser'
+import { DirectDeclaratorTypeRecursiveParametersContext } from './CalcParser'
 import { DirectDeclaratorTypeRecursiveIdentifiersContext } from './CalcParser'
 import { PostfixExpressionTypePrimaryContext } from './CalcParser'
 import { PostfixExpressionTypeArrayContext } from './CalcParser'
@@ -36,8 +36,8 @@ import { AbstractDeclaratorTypeDirectAbstractDeclaratorContext } from './CalcPar
 import { DirectAbstractDeclaratorTypeNestedAbstractDeclaratorContext } from './CalcParser'
 import { DirectAbstractDeclaratorTypeArrayContext } from './CalcParser'
 import { DirectAbstractDeclaratorTypeParametersContext } from './CalcParser'
-import { DirectAbstractDeclaratorTypeNestedArrayContext } from './CalcParser'
-import { DirectAbstractDeclaratorTypeNestedParametersContext } from './CalcParser'
+import { DirectAbstractDeclaratorTypeRecursiveArrayContext } from './CalcParser'
+import { DirectAbstractDeclaratorTypeRecursiveParametersContext } from './CalcParser'
 import { MultiplicativeExpressionTypeCastContext } from './CalcParser'
 import { MultiplicativeExpressionTypeMultiplicativeAsterickContext } from './CalcParser'
 import { MultiplicativeExpressionTypeMultiplicativeBackslashContext } from './CalcParser'
@@ -272,20 +272,20 @@ export interface CalcListener extends ParseTreeListener {
   exitDirectDeclaratorTypeRecursiveArray?: (ctx: DirectDeclaratorTypeRecursiveArrayContext) => void
 
   /**
-   * Enter a parse tree produced by the `DirectDeclaratorTypeRecursiveFunction`
+   * Enter a parse tree produced by the `DirectDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_declarator`.
    * @param ctx the parse tree
    */
-  enterDirectDeclaratorTypeRecursiveFunction?: (
-    ctx: DirectDeclaratorTypeRecursiveFunctionContext,
+  enterDirectDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectDeclaratorTypeRecursiveParametersContext,
   ) => void
   /**
-   * Exit a parse tree produced by the `DirectDeclaratorTypeRecursiveFunction`
+   * Exit a parse tree produced by the `DirectDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_declarator`.
    * @param ctx the parse tree
    */
-  exitDirectDeclaratorTypeRecursiveFunction?: (
-    ctx: DirectDeclaratorTypeRecursiveFunctionContext,
+  exitDirectDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectDeclaratorTypeRecursiveParametersContext,
   ) => void
 
   /**
@@ -638,37 +638,37 @@ export interface CalcListener extends ParseTreeListener {
   ) => void
 
   /**
-   * Enter a parse tree produced by the `DirectAbstractDeclaratorTypeNestedArray`
+   * Enter a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveArray`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    */
-  enterDirectAbstractDeclaratorTypeNestedArray?: (
-    ctx: DirectAbstractDeclaratorTypeNestedArrayContext,
+  enterDirectAbstractDeclaratorTypeRecursiveArray?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveArrayContext,
   ) => void
   /**
-   * Exit a parse tree produced by the `DirectAbstractDeclaratorTypeNestedArray`
+   * Exit a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveArray`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    */
-  exitDirectAbstractDeclaratorTypeNestedArray?: (
-    ctx: DirectAbstractDeclaratorTypeNestedArrayContext,
+  exitDirectAbstractDeclaratorTypeRecursiveArray?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveArrayContext,
   ) => void
 
   /**
-   * Enter a parse tree produced by the `DirectAbstractDeclaratorTypeNestedParameters`
+   * Enter a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    */
-  enterDirectAbstractDeclaratorTypeNestedParameters?: (
-    ctx: DirectAbstractDeclaratorTypeNestedParametersContext,
+  enterDirectAbstractDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveParametersContext,
   ) => void
   /**
-   * Exit a parse tree produced by the `DirectAbstractDeclaratorTypeNestedParameters`
+   * Exit a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    */
-  exitDirectAbstractDeclaratorTypeNestedParameters?: (
-    ctx: DirectAbstractDeclaratorTypeNestedParametersContext,
+  exitDirectAbstractDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveParametersContext,
   ) => void
 
   /**

@@ -10,7 +10,7 @@ import { ConstantTypeCharacterContext } from './CalcParser'
 import { DirectDeclaratorTypeIdentifierContext } from './CalcParser'
 import { DirectDeclaratorTypeNestedDeclaratorContext } from './CalcParser'
 import { DirectDeclaratorTypeRecursiveArrayContext } from './CalcParser'
-import { DirectDeclaratorTypeRecursiveFunctionContext } from './CalcParser'
+import { DirectDeclaratorTypeRecursiveParametersContext } from './CalcParser'
 import { DirectDeclaratorTypeRecursiveIdentifiersContext } from './CalcParser'
 import { PostfixExpressionTypePrimaryContext } from './CalcParser'
 import { PostfixExpressionTypeArrayContext } from './CalcParser'
@@ -36,8 +36,8 @@ import { AbstractDeclaratorTypeDirectAbstractDeclaratorContext } from './CalcPar
 import { DirectAbstractDeclaratorTypeNestedAbstractDeclaratorContext } from './CalcParser'
 import { DirectAbstractDeclaratorTypeArrayContext } from './CalcParser'
 import { DirectAbstractDeclaratorTypeParametersContext } from './CalcParser'
-import { DirectAbstractDeclaratorTypeNestedArrayContext } from './CalcParser'
-import { DirectAbstractDeclaratorTypeNestedParametersContext } from './CalcParser'
+import { DirectAbstractDeclaratorTypeRecursiveArrayContext } from './CalcParser'
+import { DirectAbstractDeclaratorTypeRecursiveParametersContext } from './CalcParser'
 import { MultiplicativeExpressionTypeCastContext } from './CalcParser'
 import { MultiplicativeExpressionTypeMultiplicativeAsterickContext } from './CalcParser'
 import { MultiplicativeExpressionTypeMultiplicativeBackslashContext } from './CalcParser'
@@ -235,13 +235,13 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
   ) => Result
 
   /**
-   * Visit a parse tree produced by the `DirectDeclaratorTypeRecursiveFunction`
+   * Visit a parse tree produced by the `DirectDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_declarator`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitDirectDeclaratorTypeRecursiveFunction?: (
-    ctx: DirectDeclaratorTypeRecursiveFunctionContext,
+  visitDirectDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectDeclaratorTypeRecursiveParametersContext,
   ) => Result
 
   /**
@@ -457,23 +457,23 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
   ) => Result
 
   /**
-   * Visit a parse tree produced by the `DirectAbstractDeclaratorTypeNestedArray`
+   * Visit a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveArray`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitDirectAbstractDeclaratorTypeNestedArray?: (
-    ctx: DirectAbstractDeclaratorTypeNestedArrayContext,
+  visitDirectAbstractDeclaratorTypeRecursiveArray?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveArrayContext,
   ) => Result
 
   /**
-   * Visit a parse tree produced by the `DirectAbstractDeclaratorTypeNestedParameters`
+   * Visit a parse tree produced by the `DirectAbstractDeclaratorTypeRecursiveParameters`
    * labeled alternative in `CalcParser.direct_abstract_declarator`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitDirectAbstractDeclaratorTypeNestedParameters?: (
-    ctx: DirectAbstractDeclaratorTypeNestedParametersContext,
+  visitDirectAbstractDeclaratorTypeRecursiveParameters?: (
+    ctx: DirectAbstractDeclaratorTypeRecursiveParametersContext,
   ) => Result
 
   /**

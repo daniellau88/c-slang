@@ -107,8 +107,8 @@ interface CCSTDirectDeclaratorTypeRecursiveArray extends CCSTDirectDeclaratorBas
   constantExpression?: CCSTConstantExpression
 }
 
-interface CCSTDirectDeclaratorTypeRecursiveFunction extends CCSTDirectDeclaratorBase {
-  subtype: 'RecursiveFunction'
+interface CCSTDirectDeclaratorTypeRecursiveParameters extends CCSTDirectDeclaratorBase {
+  subtype: 'RecursiveParameters'
   directDeclarator: CCSTDirectDeclarator
   parameterTypeList?: CCSTParameterTypeList
 }
@@ -123,7 +123,7 @@ export type CCSTDirectDeclarator =
   | CCSTDirectDeclaratorTypeIdentifier
   | CCSTDirectDeclaratorTypeNestedDeclarator
   | CCSTDirectDeclaratorTypeRecursiveArray
-  | CCSTDirectDeclaratorTypeRecursiveFunction
+  | CCSTDirectDeclaratorTypeRecursiveParameters
   | CCSTDirectDeclaratorTypeRecursiveIdentifier
 
 interface CCSTInitializerBase extends CCSTNodeBase {
@@ -448,7 +448,7 @@ export interface CCSTTypeName {
 export interface CCSTAbstractDeclarator {
   type: 'AbstractDeclarator'
   pointer?: CCSTPointer
-  abstractDeclarator?: CCSTDirectAbstractDeclarator
+  directAbstractDeclarator?: CCSTDirectAbstractDeclarator
 }
 
 interface CCSTDirectAbstractDeclaratorBase {
@@ -471,15 +471,15 @@ interface CCSTDirectAbstractDeclaratorTypeParameters extends CCSTDirectAbstractD
   parameterTypeList?: CCSTParameterTypeList
 }
 
-interface CCSTDirectAbstractDeclaratorTypeNestedArray extends CCSTDirectAbstractDeclaratorBase {
-  subtype: 'NestedArray'
+interface CCSTDirectAbstractDeclaratorTypeRecursiveArray extends CCSTDirectAbstractDeclaratorBase {
+  subtype: 'RecursiveArray'
   constantExpression?: CCSTConstantExpression
   directAbstractDeclarator: CCSTDirectAbstractDeclarator
 }
 
-interface CCSTDirectAbstractDeclaratorTypeNestedParameters
+interface CCSTDirectAbstractDeclaratorTypeRecursiveParameters
   extends CCSTDirectAbstractDeclaratorBase {
-  subtype: 'NestedParameters'
+  subtype: 'RecursiveParameters'
   parameterTypeList?: CCSTParameterTypeList
   directAbstractDeclarator: CCSTDirectAbstractDeclarator
 }
@@ -488,8 +488,8 @@ export type CCSTDirectAbstractDeclarator =
   | CCSTDirectAbstractDeclaratorTypeNestedAbstractDeclarator
   | CCSTDirectAbstractDeclaratorTypeArray
   | CCSTDirectAbstractDeclaratorTypeParameters
-  | CCSTDirectAbstractDeclaratorTypeNestedArray
-  | CCSTDirectAbstractDeclaratorTypeNestedParameters
+  | CCSTDirectAbstractDeclaratorTypeRecursiveArray
+  | CCSTDirectAbstractDeclaratorTypeRecursiveParameters
 
 interface CCSTUnaryExpressionBase extends CCSTNodeBase {
   type: 'UnaryExpression'

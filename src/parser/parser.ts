@@ -34,14 +34,14 @@ import {
   DeclaratorContext,
   DirectAbstractDeclaratorTypeArrayContext,
   DirectAbstractDeclaratorTypeNestedAbstractDeclaratorContext,
-  DirectAbstractDeclaratorTypeNestedArrayContext,
-  DirectAbstractDeclaratorTypeNestedParametersContext,
   DirectAbstractDeclaratorTypeParametersContext,
+  DirectAbstractDeclaratorTypeRecursiveArrayContext,
+  DirectAbstractDeclaratorTypeRecursiveParametersContext,
   DirectDeclaratorTypeIdentifierContext,
   DirectDeclaratorTypeNestedDeclaratorContext,
   DirectDeclaratorTypeRecursiveArrayContext,
-  DirectDeclaratorTypeRecursiveFunctionContext,
   DirectDeclaratorTypeRecursiveIdentifiersContext,
+  DirectDeclaratorTypeRecursiveParametersContext,
   EqualityExpressionTypeEqualityEqualContext,
   EqualityExpressionTypeEqualityNotEqualContext,
   EqualityExpressionTypeRelationalContext,
@@ -298,15 +298,21 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'ParameterTypeList',
       parameterList: this.visitParameter_list(ctx.parameter_list()),
-      hasVarArg: Boolean(ctx.COMMA),
+      hasVarArg: Boolean(ctx.VAR_ARG()),
     }
   }
 
   visitParameter_list(ctx: Parameter_listContext): CCSTParameterList {
+    const parameterListContext = ctx.parameter_list()
+    let parameterList: CCSTParameterList | undefined = undefined
+    if (parameterListContext) {
+      parameterList = this.visitParameter_list(parameterListContext)
+    }
+
     return {
       type: 'ParameterList',
       parameterDeclaration: this.visit(ctx.parameter_declaration()) as CCSTParameterDeclaration,
-      parameterList: undefined, // Undefined parameter list first
+      parameterList: parameterList,
     }
   }
 
@@ -431,8 +437,8 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
-  visitDirectDeclaratorTypeRecursiveFunction(
-    ctx: DirectDeclaratorTypeRecursiveFunctionContext,
+  visitDirectDeclaratorTypeRecursiveParameters(
+    ctx: DirectDeclaratorTypeRecursiveParametersContext,
   ): CCSTDirectDeclarator {
     const parameterTypeListContext = ctx.parameter_type_list()
     let parameterTypeList: CCSTParameterTypeList | undefined = undefined
@@ -442,7 +448,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
 
     return {
       type: 'DirectDeclarator',
-      subtype: 'RecursiveFunction',
+      subtype: 'RecursiveParameters',
       directDeclarator: this.visit(ctx.direct_declarator()) as CCSTDirectDeclarator,
       parameterTypeList: parameterTypeList,
     }
@@ -931,7 +937,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'AbstractDeclarator',
       pointer: pointer,
-      abstractDeclarator: this.visit(
+      directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
       ) as CCSTDirectAbstractDeclarator,
     }
@@ -972,8 +978,8 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
-  visitDirectAbstractDeclaratorTypeNestedArray(
-    ctx: DirectAbstractDeclaratorTypeNestedArrayContext,
+  visitDirectAbstractDeclaratorTypeRecursiveArray(
+    ctx: DirectAbstractDeclaratorTypeRecursiveArrayContext,
   ): CCSTDirectAbstractDeclarator {
     const constantExpressionCtx = ctx.constant_expression()
     let constantExpression: CCSTConstantExpression | undefined = undefined
@@ -983,7 +989,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
 
     return {
       type: 'DirectAbstractDeclarator',
-      subtype: 'NestedArray',
+      subtype: 'RecursiveArray',
       constantExpression: constantExpression,
       directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
@@ -991,8 +997,8 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
-  visitDirectAbstractDeclaratorTypeNestedParameters(
-    ctx: DirectAbstractDeclaratorTypeNestedParametersContext,
+  visitDirectAbstractDeclaratorTypeRecursiveParameters(
+    ctx: DirectAbstractDeclaratorTypeRecursiveParametersContext,
   ): CCSTDirectAbstractDeclarator {
     const parameterTypeListCtx = ctx.parameter_type_list()
     let parameterTypeList: CCSTParameterTypeList | undefined = undefined
@@ -1002,7 +1008,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
 
     return {
       type: 'DirectAbstractDeclarator',
-      subtype: 'NestedParameters',
+      subtype: 'RecursiveParameters',
       parameterTypeList: parameterTypeList,
       directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
@@ -1337,29 +1343,12 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   }
 
   visit(tree: ParseTree): CCSTNode {
-    console.log('tree', Object.keys(tree))
     return tree.accept(this)
   }
 
   visitChildren(node: RuleNode): CCSTNode {
-    const count = node.childCount
-    for (let i = 0; i < count; i++) {
-      const childNode = node.getChild(i)
-      console.log('node', Object.keys(childNode))
-    }
     throw new Error('Visit method not defined for type')
   }
-
-  // visitSequence(ctx: SequenceContext): es.Expression {
-  //   const expressions: es.Expression[] = ctx.expression().map(expr => {
-  //     return this.visit(expr)
-  //   })
-  //   return {
-  //     type: 'SequenceExpression',
-  //     expressions: expressions,
-  //     loc: contextToLocation(ctx),
-  //   }
-  // }
 
   visitTerminal(node: TerminalNode): CCSTNode {
     return node.accept(this)
@@ -1399,7 +1388,6 @@ export function parse(source: string, context: Context) {
     const lexer = new CalcLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
     const parser = new CalcParser(tokenStream)
-    // console.log(parser.toStr)
     parser.buildParseTree = true
     try {
       const tree = parser.program()
