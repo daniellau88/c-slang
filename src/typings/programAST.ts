@@ -2,11 +2,10 @@ import * as es from 'estree'
 
 export type CASTNode =
   | CASTProgram
+  | CASTFunctionDefinition
   | CASTExpression
   | CASTStatement
-  | CASTFunctionDefinition
   | CASTDeclaration
-  | CASTBaseType
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseNode {
@@ -87,10 +86,17 @@ export interface CASTExpressionMap {
   ArrayExpression: CASTArrayExpression
 }
 
+export type CASTAssignableExpressions =
+  | CASTUnaryExpression
+  | CASTArrayAccessExpression
+  | CASTFunctionCallExpression
+  | CASTSizeOfExpression
+  | CASTIdentifier
+
 export interface CASTAssignmentExprssion extends BaseExpression {
   type: 'AssignmentExpression'
   operator: CASTAssignmentOperator
-  left: CASTExpression
+  left: CASTAssignableExpressions
   right: CASTExpression
 }
 
@@ -226,7 +232,7 @@ interface CASTTypeModifierBase {
 
 export type CASTBaseType = 'int' | 'float' | 'char' | 'void'
 
-interface CASTTypeModifierBaseType extends CASTTypeModifierBase {
+export interface CASTTypeModifierBaseType extends CASTTypeModifierBase {
   subtype: 'BaseType'
   baseType: CASTBaseType
 }
@@ -236,7 +242,7 @@ interface CASTTypeModifierArray extends CASTTypeModifierBase {
   size?: any
 }
 
-interface CASTTypeModifierPointer extends CASTTypeModifierBase {
+export interface CASTTypeModifierPointer extends CASTTypeModifierBase {
   subtype: 'Pointer'
   pointerDepth: number
 }

@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import {
+  CASTArrayAccessExpression,
   CASTAssignmentOperator,
   CASTBaseType,
   CASTBinaryOperator,
@@ -9,15 +10,18 @@ import {
   CASTDeclarationStatement,
   CASTExpression,
   CASTExpressionStatement,
+  CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
   CASTLiteral,
   CASTProgram,
   CASTReturnStatement,
+  CASTSizeOfExpression,
   CASTStatement,
   CASTType,
   CASTTypeModifier,
+  CASTUnaryExpression,
   CASTUnaryOperator,
 } from '../typings/programAST'
 import {
@@ -534,7 +538,14 @@ function visitCCSTCastExpression(node: CCSTCastExpression): CASTExpression {
     : visitCCSTUnaryExpression(node.unaryExpression)
 }
 
-function visitCCSTUnaryExpression(node: CCSTUnaryExpression): CASTExpression {
+function visitCCSTUnaryExpression(
+  node: CCSTUnaryExpression,
+):
+  | CASTUnaryExpression
+  | CASTArrayAccessExpression
+  | CASTFunctionCallExpression
+  | CASTSizeOfExpression
+  | CASTIdentifier {
   return node.subtype === 'Increment'
     ? {
         type: 'UnaryExpression',
@@ -555,7 +566,7 @@ function visitCCSTUnaryExpression(node: CCSTUnaryExpression): CASTExpression {
         type: 'SizeOfExpression',
         typeArg: visitCCSTTypeName(node.typeName),
       }
-    : visitCCSTPostfixExpression(node.postfixExpression)
+    : (visitCCSTPostfixExpression(node.postfixExpression) as CASTUnaryExpression | CASTIdentifier)
 }
 
 function visitCCSTUnaryOperator(node: CCSTUnaryOperator): CASTUnaryOperator {
