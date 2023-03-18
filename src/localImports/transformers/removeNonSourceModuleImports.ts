@@ -43,7 +43,7 @@ export const removeNonSourceModuleImports = (program: es.Program): void => {
     ImportDefaultSpecifier(
       node: es.ImportDefaultSpecifier,
       _state: es.Node[],
-      ancestors: es.Node[]
+      ancestors: es.Node[],
     ): void {
       // The ancestors array contains the current node, meaning that the
       // parent node is the second last node of the array.
@@ -60,7 +60,7 @@ export const removeNonSourceModuleImports = (program: es.Program): void => {
     ImportNamespaceSpecifier(
       node: es.ImportNamespaceSpecifier,
       _state: es.Node[],
-      ancestors: es.Node[]
+      ancestors: es.Node[],
     ): void {
       // The ancestors array contains the current node, meaning that the
       // parent node is the second last node of the array.
@@ -73,7 +73,7 @@ export const removeNonSourceModuleImports = (program: es.Program): void => {
       // Remove the ImportNamespaceSpecifier node in its parent node's array of specifiers.
       // This is because Source modules do not support namespace imports.
       parent.specifiers.splice(nodeIndex, 1)
-    }
+    },
   })
 
   // Operate on a copy of the Program node's body to prevent the walk from missing ImportDeclaration nodes.
@@ -107,7 +107,7 @@ export const removeNonSourceModuleImports = (program: es.Program): void => {
       if (!isSourceModule(node.source.value)) {
         removeImportDeclaration(node, ancestors)
       }
-    }
+    },
   })
   program.body = programBody
 }

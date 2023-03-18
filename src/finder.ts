@@ -7,7 +7,7 @@ import {
   ImportSpecifier,
   Node,
   SourceLocation,
-  VariableDeclarator
+  VariableDeclarator,
 } from 'estree'
 
 import { Context } from './types'
@@ -17,14 +17,14 @@ import {
   findNodeAt,
   FullWalkerCallback,
   recursive,
-  WalkerCallback
+  WalkerCallback,
 } from './utils/walkers'
 
 // Finds the innermost node that matches the given location
 export function findIdentifierNode(
   root: Node,
   context: Context,
-  loc: { line: number; column: number }
+  loc: { line: number; column: number },
 ): Identifier | undefined {
   function findByLocationPredicate(type: string, node: Node) {
     const location = node.loc
@@ -94,7 +94,7 @@ export function findDeclarationNode(program: Node, identifier: Identifier): Node
         if ((node.imported as Identifier).name === identifier.name) {
           declarations.push(node.imported)
         }
-      }
+      },
     })
     if (declarations.length > 0) {
       return declarations.shift()
@@ -159,9 +159,9 @@ export function findAncestors(root: Node, identifier: Identifier): Node[] | unde
         if (identifier.name === node.name && identifier.loc === node.loc) {
           foundAncestors = Object.assign([], ancestors).reverse()
         }
-      }
+      },
     },
-    customWalker
+    customWalker,
   )
   return foundAncestors
 }
@@ -170,5 +170,5 @@ const customWalker = {
   ...base,
   ImportSpecifier(node: ImportSpecifier, st: never, c: FullWalkerCallback<never>) {
     c(node.imported, st, 'Expression')
-  }
+  },
 }

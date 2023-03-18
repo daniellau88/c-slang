@@ -14,3 +14,6 @@ coverage/
 .vscode/
 tsconfig.tsbuildinfo
 test-report.html
+
+.antlr
+.antlr4

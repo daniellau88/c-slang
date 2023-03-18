@@ -22,7 +22,7 @@ export const hoistAndMergeImports = (program: es.Program): void => {
   const importDeclarations = program.body.filter(isImportDeclaration)
   const nonImportDeclarations = program.body.filter(
     (node: es.Directive | es.Statement | es.ModuleDeclaration): boolean =>
-      !isImportDeclaration(node)
+      !isImportDeclaration(node),
   )
 
   // Merge import sources & specifiers.
@@ -48,10 +48,10 @@ export const hoistAndMergeImports = (program: es.Program): void => {
       const isSpecifierDuplicate =
         specifiers.filter(
           (
-            specifier: es.ImportSpecifier | es.ImportDefaultSpecifier | es.ImportNamespaceSpecifier
+            specifier: es.ImportSpecifier | es.ImportDefaultSpecifier | es.ImportNamespaceSpecifier,
           ): boolean => {
             return _.isEqual(strippedSpecifier, specifier)
-          }
+          },
         ).length !== 0
       if (isSpecifierDuplicate) {
         continue
@@ -68,12 +68,12 @@ export const hoistAndMergeImports = (program: es.Program): void => {
       specifiers: Array<
         es.ImportSpecifier | es.ImportDefaultSpecifier | es.ImportNamespaceSpecifier
       >,
-      importSource: string
+      importSource: string,
     ): void => {
       mergedImportDeclarations.push(
-        createImportDeclaration(specifiers, createLiteral(importSource))
+        createImportDeclaration(specifiers, createLiteral(importSource)),
       )
-    }
+    },
   )
 
   // Hoist the merged import declarations to the top of the program body.

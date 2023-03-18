@@ -20,7 +20,7 @@ export function stream_tail(xs: any) {
       'stream_tail(xs) expects a function as ' +
         'the tail of the argument pair xs, ' +
         'but encountered ' +
-        theTail
+        theTail,
     )
   }
 }

@@ -77,20 +77,20 @@ const createEmptyRuntime = () => ({
   environmentTree: new EnvTree(),
   environments: [],
   value: undefined,
-  nodes: []
+  nodes: [],
 })
 
 export const createGlobalEnvironment = (): Environment => ({
   tail: null,
   name: 'global',
   head: {},
-  id: '-1'
+  id: '-1',
 })
 
 export const createEmptyContext = <T>(
   variant: Variant,
   externalSymbols: string[],
-  externalContext?: T
+  externalContext?: T,
 ): Context<T> => {
   return {
     externalSymbols,
@@ -103,7 +103,7 @@ export const createEmptyContext = <T>(
     variant,
     moduleContexts: {},
     unTypecheckedCode: [],
-    previousCode: []
+    previousCode: [],
   }
 }
 
@@ -127,7 +127,7 @@ export const ensureGlobalEnvironmentExist = (context: Context) => {
 const createContext = <T>(
   variant: Variant = Variant.DEFAULT,
   externalSymbols: string[] = [],
-  externalContext?: T
+  externalContext?: T,
 ): Context => {
   const context = createEmptyContext(variant, externalSymbols, externalContext)
 

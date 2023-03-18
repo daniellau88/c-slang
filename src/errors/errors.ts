@@ -47,7 +47,7 @@ export class MaximumStackLimitExceeded extends RuntimeSourceError {
       const argsRepr = node.arguments.map((arg: any) => stringify(arg.value))
       state.write(argsRepr.join(', '))
       state.write(')')
-    }
+    },
   }
 
   constructor(node: es.Node, private calls: es.CallExpression[]) {
@@ -130,7 +130,7 @@ export class InvalidNumberOfArguments extends RuntimeSourceError {
     node: es.Node,
     private expected: number,
     private got: number,
-    private hasVarArgs = false
+    private hasVarArgs = false,
   ) {
     super(node)
     this.calleeStr = generate((node as es.CallExpression).callee)

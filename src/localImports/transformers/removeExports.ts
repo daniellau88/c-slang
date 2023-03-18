@@ -19,7 +19,7 @@ export const removeExports = (program: es.Program): void => {
     ExportNamedDeclaration(
       node: es.ExportNamedDeclaration,
       _state: es.Node[],
-      ancestors: es.Node[]
+      ancestors: es.Node[],
     ) {
       // The ancestors array contains the current node, meaning that the
       // parent node is the second last node of the array.
@@ -41,7 +41,7 @@ export const removeExports = (program: es.Program): void => {
     ExportDefaultDeclaration(
       node: es.ExportDefaultDeclaration,
       _state: es.Node[],
-      ancestors: es.Node[]
+      ancestors: es.Node[],
     ) {
       // The ancestors array contains the current node, meaning that the
       // parent node is the second last node of the array.
@@ -61,6 +61,6 @@ export const removeExports = (program: es.Program): void => {
         // Remove the ExportDefaultDeclaration node in its parent node's body.
         parent.body.splice(nodeIndex, 1)
       }
-    }
+    },
   })
 }

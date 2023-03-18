@@ -13,7 +13,7 @@ class Declaration {
 
 export function validateAndAnnotate(
   program: es.Program,
-  context: Context
+  context: Context,
 ): NodeWithInferredType<es.Program> {
   const accessedBeforeDeclarationMap = new Map<es.Node, Map<string, Declaration>>()
   const scopeHasCallExpressionMap = new Map<es.Node, boolean>()
@@ -23,12 +23,12 @@ export function validateAndAnnotate(
       if (statement.type === 'VariableDeclaration') {
         initialisedIdentifiers.set(
           getVariableDecarationName(statement),
-          new Declaration(statement.kind === 'const')
+          new Declaration(statement.kind === 'const'),
         )
       } else if (statement.type === 'FunctionDeclaration') {
         if (statement.id === null) {
           throw new Error(
-            'Encountered a FunctionDeclaration node without an identifier. This should have been caught when parsing.'
+            'Encountered a FunctionDeclaration node without an identifier. This should have been caught when parsing.',
           )
         }
         initialisedIdentifiers.set(statement.id.name, new Declaration(true))
@@ -40,7 +40,7 @@ export function validateAndAnnotate(
   function processFunction(node: es.FunctionDeclaration | es.ArrowFunctionExpression) {
     accessedBeforeDeclarationMap.set(
       node,
-      new Map((node.params as es.Identifier[]).map(id => [id.name, new Declaration(false)]))
+      new Map((node.params as es.Identifier[]).map(id => [id.name, new Declaration(false)])),
     )
     scopeHasCallExpressionMap.set(node, false)
   }
@@ -56,11 +56,11 @@ export function validateAndAnnotate(
       if (init.type === 'VariableDeclaration') {
         accessedBeforeDeclarationMap.set(
           forStatement,
-          new Map([[getVariableDecarationName(init), new Declaration(init.kind === 'const')]])
+          new Map([[getVariableDecarationName(init), new Declaration(init.kind === 'const')]]),
         )
         scopeHasCallExpressionMap.set(forStatement, false)
       }
-    }
+    },
   })
 
   function validateIdentifier(id: es.Identifier, ancestors: es.Node[]) {
@@ -90,14 +90,14 @@ export function validateAndAnnotate(
       if (node.init) {
         c(node.init, st, 'Expression')
       }
-    }
+    },
   }
   ancestor(
     program,
     {
       VariableDeclaration(
         node: NodeWithInferredType<es.VariableDeclaration>,
-        ancestors: es.Node[]
+        ancestors: es.Node[],
       ) {
         const lastAncestor = ancestors[ancestors.length - 2]
         const name = getVariableDecarationName(node)
@@ -109,7 +109,7 @@ export function validateAndAnnotate(
       Identifier: validateIdentifier,
       FunctionDeclaration(
         node: NodeWithInferredType<es.FunctionDeclaration>,
-        ancestors: es.Node[]
+        ancestors: es.Node[],
       ) {
         // a function declaration can be typed if there are no function calls in the same scope before it
         const lastAncestor = ancestors[ancestors.length - 2]
@@ -132,9 +132,9 @@ export function validateAndAnnotate(
             break
           }
         }
-      }
+      },
     },
-    customWalker
+    customWalker,
   )
 
   /*

@@ -37,7 +37,7 @@ export function* actualValue(exp: es.Node, context: Context): Value {
 const handleRuntimeError = (context: Context, error: RuntimeSourceError): never => {
   context.errors.push(error)
   context.runtime.environments = context.runtime.environments.slice(
-    -context.numberOfOuterEnvironments
+    -context.numberOfOuterEnvironments,
   )
   throw error
 }

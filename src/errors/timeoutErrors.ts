@@ -47,7 +47,7 @@ export class PotentialInfiniteRecursionError extends TimeoutError {
   public explain() {
     const formattedCalls = this.calls.map(
       ([executedName, executedArguments]) =>
-        `${executedName}(${executedArguments.map(arg => stringify(arg)).join(', ')})`
+        `${executedName}(${executedArguments.map(arg => stringify(arg)).join(', ')})`,
     )
     return stripIndent`${'Potential infinite recursion detected'}: ${formattedCalls.join(' ... ')}.
       ${getWarningMessage(this.maxExecTime)}`

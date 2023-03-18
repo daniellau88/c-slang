@@ -13,7 +13,7 @@ import {
   ModuleContext,
   Result,
   SourceError,
-  Variant
+  Variant,
 } from './types'
 export { SourceDocumentation } from './editors/ace/docTooltip'
 
@@ -37,7 +37,7 @@ export interface IOptions {
 if (typeof window !== 'undefined') {
   // @ts-ignore
   SourceMapConsumer.initialize({
-    'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.3/lib/mappings.wasm'
+    'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.3/lib/mappings.wasm',
   })
 }
 
@@ -53,7 +53,7 @@ export function parseError(errors: SourceError[]): string {
 export function findDeclaration(
   code: string,
   context: Context,
-  loc: { line: number; column: number }
+  loc: { line: number; column: number },
 ): SourceLocation | null | undefined {
   const program = parse(code, context)
   if (!program) {
@@ -73,7 +73,7 @@ export function findDeclaration(
 export function hasDeclaration(
   code: string,
   context: Context,
-  loc: { line: number; column: number }
+  loc: { line: number; column: number },
 ): boolean {
   const program = parse(code, context)
   if (!program) {
@@ -94,7 +94,7 @@ export function hasDeclaration(
 export async function runInContext(
   code: string,
   context: Context,
-  options: Partial<IOptions> = {}
+  options: Partial<IOptions> = {},
 ): Promise<Result> {
   const defaultFilePath = '/default.js'
   const files: Partial<Record<string, string>> = {}
@@ -106,7 +106,7 @@ export async function runFilesInContext(
   files: Partial<Record<string, string>>,
   entrypointFilePath: string,
   context: Context,
-  options: Partial<IOptions> = {}
+  options: Partial<IOptions> = {},
 ): Promise<Result> {
   for (const filePath in files) {
     const filePathError = validateFilePath(filePath)

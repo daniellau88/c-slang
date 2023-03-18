@@ -20,7 +20,7 @@ export type TopologicalOrderResult =
 export class DirectedGraph {
   private readonly adjacencyList: Map<string, Set<string>>
   private readonly differentKeysError = new Error(
-    'The keys of the adjacency list & the in-degree maps are not the same. This should never occur.'
+    'The keys of the adjacency list & the in-degree maps are not the same. This should never occur.',
   )
 
   constructor() {
@@ -148,7 +148,7 @@ export class DirectedGraph {
       // is because a cycle contains at least 2 nodes.
       if (nextNodeInCycle === null) {
         throw new Error(
-          `None of the neighbours of node '${currentNode}' are part of the same cycle. This should never happen.`
+          `None of the neighbours of node '${currentNode}' are part of the same cycle. This should never happen.`,
         )
       }
 
@@ -217,14 +217,14 @@ export class DirectedGraph {
       return {
         isValidTopologicalOrderFound: false,
         topologicalOrder: null,
-        firstCycleFound
+        firstCycleFound,
       }
     }
 
     return {
       isValidTopologicalOrderFound: true,
       topologicalOrder,
-      firstCycleFound: null
+      firstCycleFound: null,
     }
   }
 }
