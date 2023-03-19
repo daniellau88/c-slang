@@ -6,15 +6,8 @@ import {
   CASTTypeModifier,
   CASTTypeModifierBaseType,
 } from '../typings/programAST'
-import {
-  BinaryWithType,
-  Env,
-  ERecord,
-  EScope,
-  MicroCode,
-  MicroCodeBinaryOperator,
-  MicroCodeFunctionDefiniton,
-} from './typings'
+import { ProgramState } from './programState'
+import { BinaryWithType, ERecord, EScope, MicroCode, MicroCodeBinaryOperator } from './typings'
 import {
   binaryToInt,
   intToBinary,
@@ -22,86 +15,29 @@ import {
   LogicError,
   NotImplementedError,
   parseStringToAST,
-  peek,
-  pop,
-  popStackAndType,
-  printBinariesWithTypes,
-  push,
-  pushStackAndType,
   RuntimeError,
 } from './utils'
 
-let A: Array<CASTNode | MicroCode>
-
-let OS: Array<number>
-let OSType: Array<Array<CASTTypeModifier>>
-
-let RTS: Array<number>
-let RTSType: Array<Array<CASTTypeModifier>> // TODO: Allow different size of RTS
-let RTSStart: number
-
-let FD: Array<MicroCodeFunctionDefiniton>
-
-let E: Array<EScope>
-
-let LogOutput: Array<BinaryWithType>
-
-const pushOS = (binary: number, type: Array<CASTTypeModifier>) => {
-  pushStackAndType(OS, OSType, binary, type)
-}
-
-const popOS = (): BinaryWithType => {
-  return popStackAndType(OS, OSType)
-}
-
-const pushRTS = (binary: number, type: Array<CASTTypeModifier>) => {
-  pushStackAndType(RTS, RTSType, binary, type)
-}
-
-const popRTS = (): BinaryWithType => {
-  return popStackAndType(RTS, RTSType)
-}
-
-const getGlobalEnvironmentScope = (e: Env) => {
-  return e[0]
-}
-
-const lookup = (e: Env, key: string): ERecord | undefined => {
-  const currentEnv = peek(e)
-  if (!currentEnv) {
-    return undefined
-  }
-
-  let currentEntry: EScope | undefined = currentEnv
-  while (currentEntry) {
-    if (key in currentEntry.record) {
-      return currentEntry.record[key]
-    }
-    currentEntry = currentEntry.parent
-  }
-  return undefined
-}
-
 const builtinFunctions = {
-  printfLog: function (...arg: Array<BinaryWithType>) {
-    LogOutput.push(...arg)
+  printfLog: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
+    state.pushLogOutput(...arg)
   },
 }
 
 // AST to Microcode should not touch OS, RTS, E or FD
 // It should only insert microcodes that will subsequently change the above structures
-const astToMicrocode = (node: CASTNode) => {
+const astToMicrocode = (state: ProgramState, node: CASTNode) => {
   switch (node.type) {
     case 'Program':
-      ;[...node.children].reverse().forEach(x => push(A, x))
+      ;[...node.children].reverse().forEach(x => state.pushA(x))
       return
     case 'FunctionDefinition':
       const fdNode = node as CASTFunctionDefinition
       if (fdNode.identifier.name === 'main') {
-        push(A, { tag: 'func_apply', arity: 0 })
-        push(A, fdNode.identifier)
+        state.pushA({ tag: 'func_apply', arity: 0 })
+        state.pushA(fdNode.identifier)
       }
-      push(A, { tag: 'load_func', function: fdNode })
+      state.pushA({ tag: 'load_func', function: fdNode })
       return
     case 'CompoundStatement': {
       const declarations: CASTDeclaration[] = []
@@ -111,42 +47,42 @@ const astToMicrocode = (node: CASTNode) => {
         }
       })
 
-      push(A, { tag: 'exit_scope', declarations: declarations })
+      state.pushA({ tag: 'exit_scope', declarations: declarations })
 
       const reversedStatements = [...node.statements]
       reversedStatements.reverse()
       reversedStatements.forEach((x, i) => {
-        if (i > 0) push(A, { tag: 'pop_os' })
-        push(A, x)
+        if (i > 0) state.pushA({ tag: 'pop_os' })
+        state.pushA(x)
       })
-      push(A, { tag: 'enter_scope', declarations: declarations })
+      state.pushA({ tag: 'enter_scope', declarations: declarations })
       return
     }
     case 'ExpressionStatement': {
       ;[...node.expressions].reverse().forEach((x, i) => {
-        if (i > 0) push(A, { tag: 'pop_os' })
-        push(A, x)
+        if (i > 0) state.pushA({ tag: 'pop_os' })
+        state.pushA(x)
       })
       return
     }
     case 'DeclarationStatement': {
       ;[...node.declarations].reverse().forEach((x, i) => {
-        if (i > 0) push(A, { tag: 'pop_os' })
-        push(A, x)
+        if (i > 0) state.pushA({ tag: 'pop_os' })
+        state.pushA(x)
       })
       return
     }
     case 'Declaration': {
-      push(A, { tag: 'decl', declaration: node })
+      state.pushA({ tag: 'decl', declaration: node })
       return
     }
     case 'Literal': {
       switch (node.subtype) {
         case 'Int':
-          push(A, { tag: 'load_int', value: parseInt(node.value) })
+          state.pushA({ tag: 'load_int', value: parseInt(node.value) })
           return
         case 'Float':
-          push(A, { tag: 'load_float', value: parseFloat(node.value) })
+          state.pushA({ tag: 'load_float', value: parseFloat(node.value) })
           return
         default:
           throw new NotImplementedError()
@@ -154,65 +90,67 @@ const astToMicrocode = (node: CASTNode) => {
       return
     }
     case 'BinaryExpression': {
-      push(A, { tag: 'bin_op_auto_promotion', operator: node.operator })
-      if (node.right.type === 'Identifier') push(A, { tag: 'deref' })
-      push(A, node.right)
-      if (node.left.type === 'Identifier') push(A, { tag: 'deref' })
-      push(A, node.left) // Do the left first
+      state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator })
+      if (node.right.type === 'Identifier') state.pushA({ tag: 'deref' })
+      state.pushA(node.right)
+      if (node.left.type === 'Identifier') state.pushA({ tag: 'deref' })
+      state.pushA(node.left) // Do the left first
       return
     }
     case 'Identifier': {
-      push(A, { tag: 'load_var', name: node.name })
+      state.pushA({ tag: 'load_var', name: node.name })
       return
     }
     case 'FunctionCallExpression': {
-      push(A, { tag: 'func_apply', arity: node.argumentExpression.length })
+      state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length })
       const reversedArgumentExpression = [...node.argumentExpression]
       reversedArgumentExpression.reverse()
       reversedArgumentExpression.forEach(x => {
-        if (x.type === 'Identifier') push(A, { tag: 'deref' })
-        push(A, x)
+        if (x.type === 'Identifier') state.pushA({ tag: 'deref' })
+        state.pushA(x)
       })
-      push(A, node.expression)
+      state.pushA(node.expression)
     }
   }
 }
 
 // Microcode are allowed to touch any of the given structures
-const microcode = (node: MicroCode) => {
+const microcode = (state: ProgramState, node: MicroCode) => {
   switch (node.tag) {
     case 'load_func': {
-      const newIndex = FD.length
+      const newIndex = state.getFDLength()
       const funcName = node.function.identifier.name
-      if (E[0].record[funcName] !== undefined) {
+      if (state.hasKeyGlobalE(funcName)) {
         throw new RuntimeError('Function ' + funcName + ' has already been defined')
       }
-      push(FD, { subtype: 'func', funcDef: node.function })
-      E[0].record[funcName] = {
+      state.pushFD({ subtype: 'func', funcDef: node.function })
+      state.addRecordToGlobalE(funcName, {
         subtype: 'func',
         funcIndex: newIndex,
-      }
+      })
       return
     }
     case 'load_int': {
-      pushOS(intToBinary(node.value), [
+      state.pushOS(intToBinary(node.value), [
         { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
       ])
       return
     }
     case 'load_float': {
-      pushOS(node.value, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
+      state.pushOS(node.value, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
       return
     }
     case 'load_var': {
-      const record = lookup(E, node.name)
+      const record = state.lookupE(node.name)
       if (!record) {
         throw new RuntimeError('Variable ' + node.name + ' not declared')
       }
 
       switch (record.subtype) {
         case 'func': {
-          pushOS(record.funcIndex, [{ type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 }])
+          state.pushOS(record.funcIndex, [
+            { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
+          ])
           return
         }
         case 'variable': {
@@ -220,7 +158,7 @@ const microcode = (node: MicroCode) => {
             throw new RuntimeError('Variable ' + node.name + ' not declared yet')
           }
           const address = record.address
-          pushOS(address, [
+          state.pushOS(address, [
             { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
             ...record.variableType.typeModifiers,
           ])
@@ -230,20 +168,20 @@ const microcode = (node: MicroCode) => {
       return
     }
     case 'deref': {
-      const { binary, type } = popOS()
+      const { binary, type } = state.popOS()
       if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
-      pushOS(RTS[binary], type.splice(1))
+      state.pushOS(state.getRTSAtIndex(binary).binary, type.splice(1))
       return
     }
     case 'func_apply': {
       const args: Array<BinaryWithType> = []
       for (let i = 0; i < node.arity; i++) {
-        args.push(popOS())
+        args.push(state.popOS())
       }
       args.reverse()
 
-      const { binary: funcId } = popOS()
-      const functionToCall = FD[funcId]
+      const { binary: funcId } = state.popOS()
+      const functionToCall = state.getFDAtIndex(funcId)
 
       if (
         functionToCall.subtype === 'func' &&
@@ -253,22 +191,23 @@ const microcode = (node: MicroCode) => {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        console.log(functionToCall)
-        const retVal = functionToCall.func(...args)
+        const retVal = functionToCall.func(state, ...args)
 
-        pushOS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
-        pushRTS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
+        state.pushOS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
+        state.pushRTS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
         return
       }
 
-      const previousRTSStart = RTSStart
-      RTSStart = RTS.length
-      pushRTS(previousRTSStart, [{ type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 }])
+      const previousRTSStart = state.getRTSStart()
+      state.setRTSStart(state.getRTSLength())
+      state.pushRTS(previousRTSStart, [
+        { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
+      ])
 
       const funcParameters = functionToCall.funcDef.parameters
       const newRecord: Record<string, ERecord> = {}
       for (let i = 0; i < args.length; i++) {
-        const rtsIndex = RTS.length
+        const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
         const identifierName = parameter.identifier?.name
         if (identifierName)
@@ -278,31 +217,31 @@ const microcode = (node: MicroCode) => {
             variableType: parameter.paramType,
             assigned: true,
           }
-        pushRTS(args[i].binary, args[i].type)
+        state.pushRTS(args[i].binary, args[i].type)
       }
-      push(E, { parent: getGlobalEnvironmentScope(E), record: {} })
-      push(A, { tag: 'exit_func' })
-      push(A, functionToCall.funcDef.body)
+      state.pushE({ parent: state.getGlobalE(), record: {} })
+      state.pushA({ tag: 'exit_func' })
+      state.pushA(functionToCall.funcDef.body)
       return
     }
     case 'exit_func':
-      RTS.slice(0, RTSStart + 1)
-      RTSType.slice(0, RTSStart + 1)
+      state.shrinkRTSToIndex(state.getRTSStart())
+      state.shrinkRTSToIndex(state.getRTSStart())
 
-      const { binary: previousRTSStart } = popRTS()
-      RTSStart = previousRTSStart
-      pop(E)
+      const { binary: previousRTSStart } = state.popRTS()
+      state.setRTSStart(previousRTSStart)
+      state.popE()
     case 'pop_os':
-      popOS()
+      state.popOS()
       return
     case 'pop_rts':
-      popRTS()
+      state.popRTS()
       return
     case 'pop_e':
-      pop(E)
+      state.popE()
       return
     case 'enter_scope': {
-      const curEnv = pop(E)
+      const curEnv = state.popE()
       const newEnv: EScope = {
         parent: curEnv,
         record: {},
@@ -311,27 +250,27 @@ const microcode = (node: MicroCode) => {
         newEnv.record[x.identifier.name] = {
           subtype: 'variable',
           variableType: x.declarationType,
-          address: RTS.length,
+          address: state.getRTSLength(),
           assigned: false,
         }
-        pushRTS(0, x.declarationType.typeModifiers)
+        state.pushRTS(0, x.declarationType.typeModifiers)
       })
-      push(E, newEnv)
+      state.pushE(newEnv)
       return
     }
     case 'exit_scope': {
-      const curEnv = pop(E)
+      const curEnv = state.popE()
       if (!curEnv || !curEnv.parent) {
         throw new LogicError('No more scope to pop')
       }
-      for (let i = 0; i < node.declarations.length; i++) popRTS()
-      push(E, curEnv.parent)
+      for (let i = 0; i < node.declarations.length; i++) state.popRTS()
+      state.pushE(curEnv.parent)
       return
     }
     case 'decl': {
       const name = node.declaration.identifier.name
       const init = node.declaration.init
-      const record = lookup(E, name)
+      const record = state.lookupE(name)
       if (!record) {
         throw new LogicError('Memory not allocated for declaration on RTS')
       }
@@ -346,24 +285,24 @@ const microcode = (node: MicroCode) => {
       record.assigned = true
 
       if (init) {
-        pushOS(record.address, node.declaration.declarationType.typeModifiers)
-        push(A, { tag: 'assgn' })
-        if (init.type === 'Identifier') push(A, { tag: 'deref' })
-        push(A, init)
+        state.pushOS(record.address, node.declaration.declarationType.typeModifiers)
+        state.pushA({ tag: 'assgn' })
+        if (init.type === 'Identifier') state.pushA({ tag: 'deref' })
+        state.pushA(init)
       }
       return
     }
     case 'assgn': {
-      const { binary: val, type: valType } = popOS()
-      const { binary: addr } = popOS()
+      const { binary: val, type: valType } = state.popOS()
+      const { binary: addr } = state.popOS() // TODO: type checking
 
-      RTS[addr] = val
-      pushOS(val, valType)
+      state.setRTSAtIndex(addr, val, valType)
+      state.pushOS(val, valType)
       return
     }
     case 'bin_op_auto_promotion': {
-      const { binary: rightOp, type: rightOpType } = popOS()
-      const { binary: leftOp, type: leftOpType } = popOS()
+      const { binary: rightOp, type: rightOpType } = state.popOS()
+      const { binary: leftOp, type: leftOpType } = state.popOS()
 
       const leftBaseType = leftOpType[0]
       const rightBaseType = rightOpType[0]
@@ -412,23 +351,23 @@ const microcode = (node: MicroCode) => {
           newRightOp = binaryToInt(newRightOp)
         }
 
-        pushOS(newLeftOp, newType)
-        pushOS(newRightOp, newType)
-        push(A, { tag: 'bin_op', operator: newOperator })
+        state.pushOS(newLeftOp, newType)
+        state.pushOS(newRightOp, newType)
+        state.pushA({ tag: 'bin_op', operator: newOperator })
         return
       }
 
       throw new NotImplementedError()
     }
     case 'bin_op': {
-      const { binary: rightOp } = popOS()
-      const { binary: leftOp } = popOS()
+      const { binary: rightOp } = state.popOS()
+      const { binary: leftOp } = state.popOS()
 
       if (node.operator === MicroCodeBinaryOperator.IntAddition) {
         const leftOpInt = binaryToInt(leftOp)
         const rightOpInt = binaryToInt(rightOp)
         const result = leftOpInt + rightOpInt
-        pushOS(intToBinary(result), [
+        state.pushOS(intToBinary(result), [
           { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
         ])
         return
@@ -437,7 +376,7 @@ const microcode = (node: MicroCode) => {
         const leftOpInt = leftOp
         const rightOpInt = rightOp
         const result = leftOpInt + rightOpInt
-        pushOS(result, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
+        state.pushOS(result, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
         return
       }
       throw new NotImplementedError()
@@ -474,75 +413,29 @@ const getBaseTypePromotionPriority = (typeModifier: CASTTypeModifierBaseType): A
  * ****************/
 
 const step_limit = 1000000
-const printOS = () => {
-  printBinariesWithTypes(OS, OSType, 'OS:')
-}
-const printRTS = () => {
-  printBinariesWithTypes(RTS, RTSType, 'RTS:')
-}
-const printE = () => {
-  console.log('E: ', E)
-}
-
-const printState = () => {
-  printOS()
-  console.log('RTSStart: ' + RTSStart)
-  printRTS()
-  printE()
-  console.log('')
-}
-
-const initializeState = (ast: CASTNode) => {
-  A = [ast]
-  OS = []
-  OSType = []
-  RTS = []
-  RTSType = []
-  RTSStart = -1
-  FD = []
-  E = [{ record: {} }]
-  LogOutput = []
-
-  const builtinFunctionKeys = Object.keys(builtinFunctions)
-  builtinFunctionKeys.forEach(key => {
-    const newIndex = FD.length
-    if (E[0].record[key] !== undefined) {
-      throw new LogicError('Buitlin function ' + key + ' has already been defined')
-    }
-    push(FD, { subtype: 'builtin_func', func: builtinFunctions[key] })
-    E[0].record[key] = {
-      subtype: 'func',
-      funcIndex: newIndex,
-    }
-  })
-}
 
 const execute = (program: string) => {
   const ast = parseStringToAST(program)
   console.log(JSON.stringify(ast))
-  initializeState(ast)
+  const state = new ProgramState(ast, builtinFunctions)
 
   let i = 0
-  printState()
+  state.printState()
   while (i < step_limit) {
-    if (A.length === 0) break
-    const cmd = A.pop() as CASTNode | MicroCode
+    if (state.isAEmpty()) break
+    const cmd = state.popA() as CASTNode | MicroCode
     console.log('cmd:', cmd)
     if (isMicrocode(cmd)) {
-      microcode(cmd)
+      microcode(state, cmd)
     } else {
-      astToMicrocode(cmd)
+      astToMicrocode(state, cmd)
     }
-    printState()
+    state.printState()
     i++
   }
-  console.log('LogOutput: ' + JSON.stringify(LogOutput))
 
   if (i === step_limit) {
     throw new Error('step limit ' + step_limit + ' exceeded')
-  }
-  if (OS.length > 1 || OS.length < 1) {
-    throw new Error('internal error: stash must be singleton but is: ' + OS)
   }
 }
 
