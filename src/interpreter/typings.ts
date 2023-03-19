@@ -114,6 +114,11 @@ interface DereferenceMicroCode extends MicroCodeBase {
   tag: 'deref'
 }
 
+interface ReturnMicroCode extends MicroCodeBase {
+  tag: 'return'
+  withExpression: boolean
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -132,6 +137,7 @@ export type MicroCode =
   | BinaryOperationAutoPromotionMicroCode
   | ExitFuncMicroCode
   | DereferenceMicroCode
+  | ReturnMicroCode
 
 interface ERecordBase {
   subtype: string

@@ -51,23 +51,23 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
 
       const reversedStatements = [...node.statements]
       reversedStatements.reverse()
-      reversedStatements.forEach((x, i) => {
-        if (i > 0) state.pushA({ tag: 'pop_os' })
+      reversedStatements.forEach(x => {
         state.pushA(x)
+        // Statements will pop OS upon ending
       })
       state.pushA({ tag: 'enter_scope', declarations: declarations })
       return
     }
     case 'ExpressionStatement': {
       ;[...node.expressions].reverse().forEach((x, i) => {
-        if (i > 0) state.pushA({ tag: 'pop_os' })
+        state.pushA({ tag: 'pop_os' })
         state.pushA(x)
       })
       return
     }
     case 'DeclarationStatement': {
       ;[...node.declarations].reverse().forEach((x, i) => {
-        if (i > 0) state.pushA({ tag: 'pop_os' })
+        state.pushA({ tag: 'pop_os' })
         state.pushA(x)
       })
       return
@@ -110,6 +110,16 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
         state.pushA(x)
       })
       state.pushA(node.expression)
+      return
+    }
+    case 'ReturnStatement': {
+      const hasExpression = Boolean(node.expression)
+      state.pushA({ tag: 'return', withExpression: hasExpression })
+
+      if (node.expression) {
+        state.pushA(node.expression)
+        if (node.expression.type === 'Identifier') state.pushA({ tag: 'deref' })
+      }
     }
   }
 }
@@ -194,7 +204,6 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         const retVal = functionToCall.func(state, ...args)
 
         state.pushOS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
-        state.pushRTS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
         return
       }
 
@@ -225,12 +234,23 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       return
     }
     case 'exit_func':
+      if (!state.getReturnRegister().assigned) {
+        throw new RuntimeError('Return function not called')
+      }
+
       state.shrinkRTSToIndex(state.getRTSStart())
       state.shrinkRTSToIndex(state.getRTSStart())
 
       const { binary: previousRTSStart } = state.popRTS()
       state.setRTSStart(previousRTSStart)
       state.popE()
+
+      state.setReturnRegisterAssigned(false)
+      const binaryWithType = state.getReturnRegister().binary
+      if (binaryWithType !== undefined) {
+        state.pushOS(binaryWithType.binary, binaryWithType.type)
+      }
+      return
     case 'pop_os':
       state.popOS()
       return
@@ -381,6 +401,14 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
       throw new NotImplementedError()
     }
+    case 'return': {
+      state.setReturnRegisterAssigned(true)
+      if (node.withExpression) {
+        const returnValueAndType = state.popOS()
+        state.setReturnRegisterBinary(returnValueAndType)
+      }
+      return
+    }
     default:
       throw new NotImplementedError()
   }
@@ -414,7 +442,7 @@ const getBaseTypePromotionPriority = (typeModifier: CASTTypeModifierBaseType): A
 
 const step_limit = 1000000
 
-const execute = (program: string) => {
+const execute = (program: string): ProgramState => {
   const ast = parseStringToAST(program)
   console.log(JSON.stringify(ast))
   const state = new ProgramState(ast, builtinFunctions)
@@ -437,6 +465,8 @@ const execute = (program: string) => {
   if (i === step_limit) {
     throw new Error('step limit ' + step_limit + ' exceeded')
   }
+
+  return state
 }
 
 /* *******
@@ -456,6 +486,10 @@ Test case: ` +
   execute(program)
 }
 
+export const testProgram = (program: string): ProgramState => {
+  return execute(program)
+}
+
 test(
   `
 int main() {
@@ -463,6 +497,7 @@ int main() {
   int y = 2 + 3;
   float d = 3.0 + 2;
   printfLog(x, y, d);
+  return 0;
 }
 `,
 )

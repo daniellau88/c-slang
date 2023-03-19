@@ -10,6 +10,10 @@ import {
   pushStackAndType,
 } from './utils'
 
+type ReturnRegisterType =
+  | { binary: BinaryWithType | undefined; assigned: true }
+  | { binary: undefined; assigned: false }
+
 export class ProgramState {
   private A: Array<CASTNode | MicroCode>
   private OS: Array<number>
@@ -25,6 +29,8 @@ export class ProgramState {
 
   private LogOutput: Array<BinaryWithType>
 
+  private ReturnRegister: ReturnRegisterType
+
   constructor(ast: CASTNode, builtinFunctions: Record<string, Function>) {
     this.A = [ast]
     this.OS = []
@@ -35,6 +41,7 @@ export class ProgramState {
     this.FD = []
     this.E = [{ record: {} }]
     this.LogOutput = []
+    this.ReturnRegister = { binary: undefined, assigned: false }
 
     const builtinFunctionKeys = Object.keys(builtinFunctions)
     builtinFunctionKeys.forEach(key => {
@@ -62,6 +69,10 @@ export class ProgramState {
     return this.A.length === 0
   }
 
+  getALength(): number {
+    return this.A.length
+  }
+
   pushOS(binary: number, type: Array<CASTTypeModifier>) {
     pushStackAndType(this.OS, this.OSType, binary, type)
   }
@@ -72,6 +83,17 @@ export class ProgramState {
 
   printOS() {
     printBinariesWithTypes(this.OS, this.OSType, 'OS:')
+  }
+
+  getOSLength(): number {
+    return this.OS.length
+  }
+
+  peekOS(): BinaryWithType | undefined {
+    if (this.OS.length == 0) {
+      return undefined
+    }
+    return { binary: peek(this.OS) as number, type: peek(this.OSType) as Array<CASTTypeModifier> }
   }
 
   pushRTS(binary: number, type: Array<CASTTypeModifier>) {
@@ -156,12 +178,8 @@ export class ProgramState {
     this.E[0].record[key] = record
   }
 
-  printLogOutput() {
-    console.log('LogOutput: ' + JSON.stringify(this.LogOutput))
-  }
-
-  pushLogOutput(...logs: Array<BinaryWithType>) {
-    push(this.LogOutput, ...logs)
+  getELength(): number {
+    return this.E.length
   }
 
   printState() {
@@ -172,11 +190,31 @@ export class ProgramState {
     console.log('')
   }
 
+  printLogOutput() {
+    console.log('LogOutput: ' + JSON.stringify(this.LogOutput))
+  }
+
+  pushLogOutput(...logs: Array<BinaryWithType>) {
+    push(this.LogOutput, ...logs)
+  }
+
   getRTSStart(): number {
     return this.RTSStart
   }
 
   setRTSStart(rtsStart: number) {
     return (this.RTSStart = rtsStart)
+  }
+
+  getReturnRegister(): ReturnRegisterType {
+    return this.ReturnRegister
+  }
+
+  setReturnRegisterAssigned(assigned: boolean) {
+    this.ReturnRegister.assigned = assigned
+  }
+
+  setReturnRegisterBinary(returnRegister: BinaryWithType) {
+    this.ReturnRegister.binary = returnRegister
   }
 }
