@@ -6,10 +6,17 @@ import {
   CASTTypeModifier,
   CASTTypeModifierBaseType,
 } from '../typings/programAST'
-import { Env, ERecord, EScope, MicroCode, MicroCodeBinaryOperator } from './typings'
+import {
+  BinaryWithType,
+  Env,
+  ERecord,
+  EScope,
+  MicroCode,
+  MicroCodeBinaryOperator,
+  MicroCodeFunctionDefiniton,
+} from './typings'
 import {
   binaryToInt,
-  binaryToRawString,
   intToBinary,
   isMicrocode,
   LogicError,
@@ -30,20 +37,20 @@ let OS: Array<number>
 let OSType: Array<Array<CASTTypeModifier>>
 
 let RTS: Array<number>
-let RTSType: Array<Array<CASTTypeModifier>>
+let RTSType: Array<Array<CASTTypeModifier>> // TODO: Allow different size of RTS
+let RTSStart: number
 
-let FD: Array<CASTFunctionDefinition>
-let FDNameLookup: Record<string, number>
+let FD: Array<MicroCodeFunctionDefiniton>
 
 let E: Array<EScope>
 
-let LogOutput: Array<string>
+let LogOutput: Array<BinaryWithType>
 
 const pushOS = (binary: number, type: Array<CASTTypeModifier>) => {
   pushStackAndType(OS, OSType, binary, type)
 }
 
-const popOS = (): { binary: number; type: Array<CASTTypeModifier> } => {
+const popOS = (): BinaryWithType => {
   return popStackAndType(OS, OSType)
 }
 
@@ -51,7 +58,7 @@ const pushRTS = (binary: number, type: Array<CASTTypeModifier>) => {
   pushStackAndType(RTS, RTSType, binary, type)
 }
 
-const popRTS = (): { binary: number; type: Array<CASTTypeModifier> } => {
+const popRTS = (): BinaryWithType => {
   return popStackAndType(RTS, RTSType)
 }
 
@@ -75,9 +82,9 @@ const lookup = (e: Env, key: string): ERecord | undefined => {
   return undefined
 }
 
-const builtInFunctions = {
-  printfLog: function (arg: number) {
-    LogOutput.push(binaryToRawString(arg))
+const builtinFunctions = {
+  printfLog: function (...arg: Array<BinaryWithType>) {
+    LogOutput.push(...arg)
   },
 }
 
@@ -90,8 +97,10 @@ const astToMicrocode = (node: CASTNode) => {
       return
     case 'FunctionDefinition':
       const fdNode = node as CASTFunctionDefinition
-      if (fdNode.identifier.name === 'main')
-        push(A, { tag: 'func_call', funcIndex: FD.length, arity: 0, isBuiltin: false })
+      if (fdNode.identifier.name === 'main') {
+        push(A, { tag: 'func_apply', arity: 0 })
+        push(A, fdNode.identifier)
+      }
       push(A, { tag: 'load_func', function: fdNode })
       return
     case 'CompoundStatement': {
@@ -146,29 +155,25 @@ const astToMicrocode = (node: CASTNode) => {
     }
     case 'BinaryExpression': {
       push(A, { tag: 'bin_op_auto_promotion', operator: node.operator })
+      if (node.right.type === 'Identifier') push(A, { tag: 'deref' })
       push(A, node.right)
+      if (node.left.type === 'Identifier') push(A, { tag: 'deref' })
       push(A, node.left) // Do the left first
       return
     }
+    case 'Identifier': {
+      push(A, { tag: 'load_var', name: node.name })
+      return
+    }
     case 'FunctionCallExpression': {
-      if (node.expression.type === 'Identifier') {
-        const funcName = node.expression.name
-        if (funcName in builtInFunctions) {
-          push(A, {
-            tag: 'builtin_func_call',
-            builtinId: funcName,
-          })
-          return
-        } else {
-          push(A, { tag: 'func_call', funcIndex: FD.length, arity: 0, isBuiltin: false })
-        }
-      } else {
-        throw new NotImplementedError()
-      }
-
-      ;[...node.argumentExpression].reverse().forEach(x => {
+      push(A, { tag: 'func_apply', arity: node.argumentExpression.length })
+      const reversedArgumentExpression = [...node.argumentExpression]
+      reversedArgumentExpression.reverse()
+      reversedArgumentExpression.forEach(x => {
+        if (x.type === 'Identifier') push(A, { tag: 'deref' })
         push(A, x)
       })
+      push(A, node.expression)
     }
   }
 }
@@ -177,8 +182,16 @@ const astToMicrocode = (node: CASTNode) => {
 const microcode = (node: MicroCode) => {
   switch (node.tag) {
     case 'load_func': {
-      FD[FD.length] = node.function
-      FDNameLookup[node.function.identifier.name] = FD.length
+      const newIndex = FD.length
+      const funcName = node.function.identifier.name
+      if (E[0].record[funcName] !== undefined) {
+        throw new RuntimeError('Function ' + funcName + ' has already been defined')
+      }
+      push(FD, { subtype: 'func', funcDef: node.function })
+      E[0].record[funcName] = {
+        subtype: 'func',
+        funcIndex: newIndex,
+      }
       return
     }
     case 'load_int': {
@@ -191,17 +204,94 @@ const microcode = (node: MicroCode) => {
       pushOS(node.value, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
       return
     }
-    case 'func_call': {
-      const functionToCall = FD[node.funcIndex]
-      const args = []
-      for (let i = 0; i < node.arity; i++) {
-        args.push(popRTS())
+    case 'load_var': {
+      const record = lookup(E, node.name)
+      if (!record) {
+        throw new RuntimeError('Variable ' + node.name + ' not declared')
       }
-      push(A, { tag: 'pop_e' })
-      push(E, { parent: getGlobalEnvironmentScope(E), record: {} })
-      push(A, functionToCall.body)
+
+      switch (record.subtype) {
+        case 'func': {
+          pushOS(record.funcIndex, [{ type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 }])
+          return
+        }
+        case 'variable': {
+          if (!record.assigned) {
+            throw new RuntimeError('Variable ' + node.name + ' not declared yet')
+          }
+          const address = record.address
+          pushOS(address, [
+            { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
+            ...record.variableType.typeModifiers,
+          ])
+          return
+        }
+      }
       return
     }
+    case 'deref': {
+      const { binary, type } = popOS()
+      if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
+      pushOS(RTS[binary], type.splice(1))
+      return
+    }
+    case 'func_apply': {
+      const args: Array<BinaryWithType> = []
+      for (let i = 0; i < node.arity; i++) {
+        args.push(popOS())
+      }
+      args.reverse()
+
+      const { binary: funcId } = popOS()
+      const functionToCall = FD[funcId]
+
+      if (
+        functionToCall.subtype === 'func' &&
+        functionToCall.funcDef.parameters.length !== args.length
+      ) {
+        throw new RuntimeError('Wrong number of arguments given for function')
+      }
+
+      if (functionToCall.subtype === 'builtin_func') {
+        console.log(functionToCall)
+        const retVal = functionToCall.func(...args)
+
+        pushOS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
+        pushRTS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
+        return
+      }
+
+      const previousRTSStart = RTSStart
+      RTSStart = RTS.length
+      pushRTS(previousRTSStart, [{ type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 }])
+
+      const funcParameters = functionToCall.funcDef.parameters
+      const newRecord: Record<string, ERecord> = {}
+      for (let i = 0; i < args.length; i++) {
+        const rtsIndex = RTS.length
+        const parameter = funcParameters[i]
+        const identifierName = parameter.identifier?.name
+        if (identifierName)
+          newRecord[identifierName] = {
+            subtype: 'variable',
+            address: rtsIndex,
+            variableType: parameter.paramType,
+            assigned: true,
+          }
+        pushRTS(args[i].binary, args[i].type)
+      }
+      push(E, { parent: getGlobalEnvironmentScope(E), record: {} })
+      push(A, { tag: 'exit_func' })
+      push(A, functionToCall.funcDef.body)
+      return
+    }
+    case 'exit_func':
+      RTS.slice(0, RTSStart + 1)
+      RTSType.slice(0, RTSStart + 1)
+
+      const { binary: previousRTSStart } = popRTS()
+      RTSStart = previousRTSStart
+      pop(E)
     case 'pop_os':
       popOS()
       return
@@ -219,7 +309,8 @@ const microcode = (node: MicroCode) => {
       }
       node.declarations.forEach(x => {
         newEnv.record[x.identifier.name] = {
-          type: x.declarationType,
+          subtype: 'variable',
+          variableType: x.declarationType,
           address: RTS.length,
           assigned: false,
         }
@@ -245,6 +336,10 @@ const microcode = (node: MicroCode) => {
         throw new LogicError('Memory not allocated for declaration on RTS')
       }
 
+      if (record.subtype === 'func') {
+        throw new LogicError('Function cannot be redeclared')
+      }
+
       if (record.assigned) {
         throw new RuntimeError('Invalid redeclaration of ' + name)
       }
@@ -253,6 +348,7 @@ const microcode = (node: MicroCode) => {
       if (init) {
         pushOS(record.address, node.declaration.declarationType.typeModifiers)
         push(A, { tag: 'assgn' })
+        if (init.type === 'Identifier') push(A, { tag: 'deref' })
         push(A, init)
       }
       return
@@ -385,11 +481,12 @@ const printRTS = () => {
   printBinariesWithTypes(RTS, RTSType, 'RTS:')
 }
 const printE = () => {
-  console.log('E::', E)
+  console.log('E: ', E)
 }
 
 const printState = () => {
   printOS()
+  console.log('RTSStart: ' + RTSStart)
   printRTS()
   printE()
   console.log('')
@@ -401,10 +498,23 @@ const initializeState = (ast: CASTNode) => {
   OSType = []
   RTS = []
   RTSType = []
+  RTSStart = -1
   FD = []
-  FDNameLookup = {}
   E = [{ record: {} }]
   LogOutput = []
+
+  const builtinFunctionKeys = Object.keys(builtinFunctions)
+  builtinFunctionKeys.forEach(key => {
+    const newIndex = FD.length
+    if (E[0].record[key] !== undefined) {
+      throw new LogicError('Buitlin function ' + key + ' has already been defined')
+    }
+    push(FD, { subtype: 'builtin_func', func: builtinFunctions[key] })
+    E[0].record[key] = {
+      subtype: 'func',
+      funcIndex: newIndex,
+    }
+  })
 }
 
 const execute = (program: string) => {
@@ -426,6 +536,8 @@ const execute = (program: string) => {
     printState()
     i++
   }
+  console.log('LogOutput: ' + JSON.stringify(LogOutput))
+
   if (i === step_limit) {
     throw new Error('step limit ' + step_limit + ' exceeded')
   }
@@ -457,6 +569,7 @@ int main() {
   int x = 1 + 2;
   int y = 2 + 3;
   float d = 3.0 + 2;
+  printfLog(x, y, d);
 }
 `,
 )

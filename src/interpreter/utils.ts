@@ -2,7 +2,7 @@ import createContext from '../createContext'
 import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
 import { CASTNode, CASTTypeModifier } from '../typings/programAST'
-import { MicroCode } from './typings'
+import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
   constructor(msg?: string) {
@@ -33,7 +33,12 @@ export const push = <T>(array: Array<T>, ...items: Array<T>): Array<T> => {
 
 export const peek = <T>(array: Array<T>): T | undefined => array.slice(-1)[0]
 
-export const pop = <T>(array: Array<T>): T | undefined => array.pop()
+export const pop = <T>(array: Array<T>): T => {
+  if (array.length === 0) {
+    throw new LogicError('Cannot pop from empty stack')
+  }
+  return array.pop() as T
+}
 
 export const pushStackAndType = (
   stack: Array<number>,
@@ -48,12 +53,9 @@ export const pushStackAndType = (
 export const popStackAndType = (
   stack: Array<number>,
   typeStack: Array<Array<CASTTypeModifier>>,
-): { binary: number; type: Array<CASTTypeModifier> } => {
+): BinaryWithType => {
   const binary = pop(stack)
   const type = pop(typeStack)
-  if (binary === undefined || type === undefined) {
-    throw new LogicError('Cannot pop from OS')
-  }
   return { binary, type }
 }
 
@@ -96,6 +98,8 @@ export const binaryToFormattedString = (binary: number, type: Array<CASTTypeModi
         case 'void':
           return 'void'
       }
+    case 'Pointer':
+      return 'pointer ' + binary
     default:
       throw new NotImplementedError()
   }
@@ -120,5 +124,5 @@ export const printBinariesWithTypes = (
   const strings = zip(binaries, types).map(x => {
     return binaryToFormattedString(x[0] as number, x[1] as Array<CASTTypeModifier>)
   })
-  console.log(prefix + (prefix ? ' ' : '') + '[' + strings.join(',') + ']')
+  console.log(prefix + (prefix ? ' ' : '') + '[' + strings.join(', ') + ']')
 }

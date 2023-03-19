@@ -3,6 +3,7 @@ import {
   CASTDeclaration,
   CASTFunctionDefinition,
   CASTType,
+  CASTTypeModifier,
 } from '../typings/programAST'
 
 interface MicroCodeBase {
@@ -24,11 +25,14 @@ interface LoadFloatMicroCode extends MicroCodeBase {
   value: number
 }
 
-interface FuncCallMicroCode extends MicroCodeBase {
-  tag: 'func_call'
-  funcIndex: number
+interface LoadVarMicroCode extends MicroCodeBase {
+  tag: 'load_var'
+  name: string
+}
+
+interface FuncApplyMicroCode extends MicroCodeBase {
+  tag: 'func_apply'
   arity: number
-  isBuiltin: boolean
 }
 
 interface PopOSMicroCode extends MicroCodeBase {
@@ -102,11 +106,20 @@ interface BuiltinFunctionCallMicroCode extends MicroCodeBase {
   builtinId: string
 }
 
+interface ExitFuncMicroCode extends MicroCodeBase {
+  tag: 'exit_func'
+}
+
+interface DereferenceMicroCode extends MicroCodeBase {
+  tag: 'deref'
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
   | LoadFloatMicroCode
-  | FuncCallMicroCode
+  | LoadVarMicroCode
+  | FuncApplyMicroCode
   | PopOSMicroCode
   | PopRTSMicroCode
   | PopEMicroCode
@@ -117,12 +130,26 @@ export type MicroCode =
   | BinaryOperationMicroCode
   | BuiltinFunctionCallMicroCode
   | BinaryOperationAutoPromotionMicroCode
+  | ExitFuncMicroCode
+  | DereferenceMicroCode
 
-export interface ERecord {
+interface ERecordBase {
+  subtype: string
+}
+
+interface ERecordFunction extends ERecordBase {
+  subtype: 'func'
+  funcIndex: number
+}
+
+interface ERecordVariable extends ERecordBase {
+  subtype: 'variable'
   address: number
-  type: CASTType
+  variableType: CASTType
   assigned: boolean
 }
+
+export type ERecord = ERecordFunction | ERecordVariable
 
 export interface EScope {
   parent?: EScope
@@ -130,3 +157,24 @@ export interface EScope {
 }
 
 export type Env = Array<EScope>
+
+interface MicroCodeFunctionBase {
+  subtype: string
+}
+
+interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
+  subtype: 'builtin_func'
+  func: Function
+}
+
+interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
+  subtype: 'func'
+  funcDef: CASTFunctionDefinition
+}
+
+export type MicroCodeFunctionDefiniton = MicroCodeBuiltinFunction | MicroCodeCASTFunctionDefinition
+
+export type BinaryWithType = {
+  binary: number
+  type: Array<CASTTypeModifier>
+}
