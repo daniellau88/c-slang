@@ -1,5 +1,12 @@
-import { CASTNode, CASTTypeModifier } from '../typings/programAST'
-import { BinaryWithType, ERecord, EScope, MicroCode, MicroCodeFunctionDefiniton } from './typings'
+import { CASTNode, ProgramType } from '../typings/programAST'
+import {
+  BinaryWithType,
+  BuiltinFunctionDefinition,
+  ERecord,
+  EScope,
+  MicroCode,
+  MicroCodeFunctionDefiniton,
+} from './typings'
 import {
   LogicError,
   peek,
@@ -17,10 +24,10 @@ type ReturnRegisterType =
 export class ProgramState {
   private A: Array<CASTNode | MicroCode>
   private OS: Array<number>
-  private OSType: Array<Array<CASTTypeModifier>>
+  private OSType: Array<ProgramType>
 
   private RTS: Array<number>
-  private RTSType: Array<Array<CASTTypeModifier>> // TODO: Allow different size of RTS
+  private RTSType: Array<ProgramType> // TODO: Allow different size of RTS
   private RTSStart: number
 
   private FD: Array<MicroCodeFunctionDefiniton>
@@ -31,7 +38,7 @@ export class ProgramState {
 
   private ReturnRegister: ReturnRegisterType
 
-  constructor(ast: CASTNode, builtinFunctions: Record<string, Function>) {
+  constructor(ast: CASTNode, builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     this.A = [ast]
     this.OS = []
     this.OSType = []
@@ -49,11 +56,17 @@ export class ProgramState {
       if (this.E[0].record[key] !== undefined) {
         throw new LogicError('Buitlin function ' + key + ' has already been defined')
       }
-      push(this.FD, { subtype: 'builtin_func', func: builtinFunctions[key] })
-      this.E[0].record[key] = {
+      const builtinFunctionDefintion = builtinFunctions[key]
+      push(this.FD, {
+        subtype: 'builtin_func',
+        func: builtinFunctionDefintion.func,
+        returnProgType: builtinFunctionDefintion.returnProgType,
+        arity: builtinFunctionDefintion.arity,
+      })
+      this.addRecordToGlobalE(key, {
         subtype: 'func',
         funcIndex: newIndex,
-      }
+      })
     })
   }
 
@@ -73,7 +86,7 @@ export class ProgramState {
     return this.A.length
   }
 
-  pushOS(binary: number, type: Array<CASTTypeModifier>) {
+  pushOS(binary: number, type: ProgramType) {
     pushStackAndType(this.OS, this.OSType, binary, type)
   }
 
@@ -93,10 +106,10 @@ export class ProgramState {
     if (this.OS.length == 0) {
       return undefined
     }
-    return { binary: peek(this.OS) as number, type: peek(this.OSType) as Array<CASTTypeModifier> }
+    return { binary: peek(this.OS) as number, type: peek(this.OSType) as ProgramType }
   }
 
-  pushRTS(binary: number, type: Array<CASTTypeModifier>) {
+  pushRTS(binary: number, type: ProgramType) {
     pushStackAndType(this.RTS, this.RTSType, binary, type)
   }
 
@@ -112,7 +125,7 @@ export class ProgramState {
     return { binary: this.RTS[index], type: this.RTSType[index] }
   }
 
-  setRTSAtIndex(index: number, binary: number, type: Array<CASTTypeModifier>) {
+  setRTSAtIndex(index: number, binary: number, type: ProgramType) {
     this.RTS[index] = binary
     this.RTSType[index] = type
   }

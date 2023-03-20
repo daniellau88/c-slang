@@ -1,7 +1,7 @@
 import createContext from '../createContext'
 import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
-import { CASTNode, CASTTypeModifier } from '../typings/programAST'
+import { CASTNode, ProgramType } from '../typings/programAST'
 import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
@@ -42,9 +42,9 @@ export const pop = <T>(array: Array<T>): T => {
 
 export const pushStackAndType = (
   stack: Array<number>,
-  typeStack: Array<Array<CASTTypeModifier>>,
+  typeStack: Array<ProgramType>,
   binary: number,
-  type: Array<CASTTypeModifier>,
+  type: ProgramType,
 ) => {
   push(stack, binary)
   push(typeStack, type)
@@ -52,7 +52,7 @@ export const pushStackAndType = (
 
 export const popStackAndType = (
   stack: Array<number>,
-  typeStack: Array<Array<CASTTypeModifier>>,
+  typeStack: Array<ProgramType>,
 ): BinaryWithType => {
   const binary = pop(stack)
   const type = pop(typeStack)
@@ -84,7 +84,7 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
   return (test as MicroCode).tag !== undefined
 }
 
-export const binaryToFormattedString = (binary: number, type: Array<CASTTypeModifier>): string => {
+export const binaryToFormattedString = (binary: number, type: ProgramType): string => {
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':
@@ -118,11 +118,11 @@ export const parseStringToAST = (program: string): CASTNode => {
 const zip = <T, U>(a: Array<T>, b: Array<U>) => a.map((k, i) => [k, b[i]])
 export const printBinariesWithTypes = (
   binaries: Array<number>,
-  types: Array<Array<CASTTypeModifier>>,
+  types: Array<ProgramType>,
   prefix?: string,
 ) => {
   const strings = zip(binaries, types).map(x => {
-    return binaryToFormattedString(x[0] as number, x[1] as Array<CASTTypeModifier>)
+    return binaryToFormattedString(x[0] as number, x[1] as ProgramType)
   })
   console.log(prefix + (prefix ? ' ' : '') + '[' + strings.join(', ') + ']')
 }

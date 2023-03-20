@@ -1,9 +1,12 @@
 import {
   CASTBinaryOperator,
+  CASTCompoundStatement,
   CASTDeclaration,
   CASTFunctionDefinition,
+  CASTFunctionParameter,
+  CASTIdentifier,
   CASTType,
-  CASTTypeModifier,
+  ProgramType,
 } from '../typings/programAST'
 
 interface MicroCodeBase {
@@ -101,11 +104,6 @@ interface BinaryOperationAutoPromotionMicroCode extends MicroCodeBase {
   operator: CASTBinaryOperator
 }
 
-interface BuiltinFunctionCallMicroCode extends MicroCodeBase {
-  tag: 'builtin_func_call'
-  builtinId: string
-}
-
 interface ExitFuncMicroCode extends MicroCodeBase {
   tag: 'exit_func'
 }
@@ -133,7 +131,6 @@ export type MicroCode =
   | DeclarationMicroCode
   | AssignmentMicroCode
   | BinaryOperationMicroCode
-  | BuiltinFunctionCallMicroCode
   | BinaryOperationAutoPromotionMicroCode
   | ExitFuncMicroCode
   | DereferenceMicroCode
@@ -171,16 +168,29 @@ interface MicroCodeFunctionBase {
 interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
   subtype: 'builtin_func'
   func: Function
+  returnProgType: ProgramType
+  arity: number
 }
 
 interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
   subtype: 'func'
-  funcDef: CASTFunctionDefinition
+  arity: number
+  returnProgType: ProgramType
+
+  identifier: CASTIdentifier
+  parameters: Array<CASTFunctionParameter>
+  body: CASTCompoundStatement
 }
 
 export type MicroCodeFunctionDefiniton = MicroCodeBuiltinFunction | MicroCodeCASTFunctionDefinition
 
 export type BinaryWithType = {
   binary: number
-  type: Array<CASTTypeModifier>
+  type: ProgramType
+}
+
+export interface BuiltinFunctionDefinition {
+  func: Function
+  returnProgType: ProgramType
+  arity: number
 }

@@ -258,7 +258,9 @@ export type CASTTypeModifier =
   | CASTTypeModifierPointer
   | CASTTypeModifierParameters
 
+export type ProgramType = Array<CASTTypeModifier>
+
 export interface CASTType {
   type: 'Type'
-  typeModifiers: Array<CASTTypeModifier>
+  typeModifiers: ProgramType
 }

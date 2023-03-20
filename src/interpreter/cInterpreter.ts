@@ -3,11 +3,28 @@ import {
   CASTDeclaration,
   CASTFunctionDefinition,
   CASTNode,
-  CASTTypeModifier,
-  CASTTypeModifierBaseType,
+  ProgramType,
 } from '../typings/programAST'
 import { ProgramState } from './programState'
-import { BinaryWithType, ERecord, EScope, MicroCode, MicroCodeBinaryOperator } from './typings'
+import {
+  ArithmeticType,
+  decrementPointerDepth,
+  FLOAT_BASE_TYPE,
+  getBaseTypePromotionPriority,
+  incrementPointerDepth,
+  INT_BASE_TYPE,
+  isBaseType,
+  POINTER_BASE_TYPE,
+  VOID_BASE_TYPE,
+} from './typeUtils'
+import {
+  BinaryWithType,
+  BuiltinFunctionDefinition,
+  ERecord,
+  EScope,
+  MicroCode,
+  MicroCodeBinaryOperator,
+} from './typings'
 import {
   binaryToInt,
   intToBinary,
@@ -18,9 +35,13 @@ import {
   RuntimeError,
 } from './utils'
 
-const builtinFunctions = {
-  printfLog: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-    state.pushLogOutput(...arg)
+const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
+  printfLog: {
+    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
+      state.pushLogOutput(...arg)
+    },
+    returnProgType: VOID_BASE_TYPE,
+    arity: -1,
   },
 }
 
@@ -133,7 +154,14 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       if (state.hasKeyGlobalE(funcName)) {
         throw new RuntimeError('Function ' + funcName + ' has already been defined')
       }
-      state.pushFD({ subtype: 'func', funcDef: node.function })
+      state.pushFD({
+        subtype: 'func',
+        arity: node.function.parameters.length,
+        identifier: node.function.identifier,
+        parameters: node.function.parameters,
+        body: node.function.body,
+        returnProgType: node.function.returnType.typeModifiers,
+      })
       state.addRecordToGlobalE(funcName, {
         subtype: 'func',
         funcIndex: newIndex,
@@ -141,13 +169,11 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       return
     }
     case 'load_int': {
-      state.pushOS(intToBinary(node.value), [
-        { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
-      ])
+      state.pushOS(intToBinary(node.value), INT_BASE_TYPE)
       return
     }
     case 'load_float': {
-      state.pushOS(node.value, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
+      state.pushOS(node.value, FLOAT_BASE_TYPE)
       return
     }
     case 'load_var': {
@@ -158,9 +184,9 @@ const microcode = (state: ProgramState, node: MicroCode) => {
 
       switch (record.subtype) {
         case 'func': {
-          state.pushOS(record.funcIndex, [
-            { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
-          ])
+          const fd = state.getFDAtIndex(record.funcIndex)
+          console.log(fd)
+          state.pushOS(record.funcIndex, incrementPointerDepth(fd.returnProgType))
           return
         }
         case 'variable': {
@@ -168,10 +194,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
             throw new RuntimeError('Variable ' + node.name + ' not declared yet')
           }
           const address = record.address
-          state.pushOS(address, [
-            { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
-            ...record.variableType.typeModifiers,
-          ])
+          state.pushOS(address, incrementPointerDepth(record.variableType.typeModifiers))
           return
         }
       }
@@ -180,7 +203,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
     case 'deref': {
       const { binary, type } = state.popOS()
       if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
-      state.pushOS(state.getRTSAtIndex(binary).binary, type.splice(1))
+      state.pushOS(state.getRTSAtIndex(binary).binary, decrementPointerDepth(type))
       return
     }
     case 'func_apply': {
@@ -193,27 +216,22 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       const { binary: funcId } = state.popOS()
       const functionToCall = state.getFDAtIndex(funcId)
 
-      if (
-        functionToCall.subtype === 'func' &&
-        functionToCall.funcDef.parameters.length !== args.length
-      ) {
+      if (functionToCall.arity !== -1 && functionToCall.arity !== args.length) {
         throw new RuntimeError('Wrong number of arguments given for function')
       }
 
       if (functionToCall.subtype === 'builtin_func') {
         const retVal = functionToCall.func(state, ...args)
 
-        state.pushOS(retVal, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' }])
+        state.pushOS(retVal, incrementPointerDepth(functionToCall.returnProgType))
         return
       }
 
       const previousRTSStart = state.getRTSStart()
       state.setRTSStart(state.getRTSLength())
-      state.pushRTS(previousRTSStart, [
-        { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
-      ])
+      state.pushRTS(previousRTSStart, POINTER_BASE_TYPE)
 
-      const funcParameters = functionToCall.funcDef.parameters
+      const funcParameters = functionToCall.parameters
       const newRecord: Record<string, ERecord> = {}
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
@@ -230,7 +248,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
       state.pushE({ parent: state.getGlobalE(), record: {} })
       state.pushA({ tag: 'exit_func' })
-      state.pushA(functionToCall.funcDef.body)
+      state.pushA(functionToCall.body)
       return
     }
     case 'exit_func':
@@ -324,22 +342,15 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       const { binary: rightOp, type: rightOpType } = state.popOS()
       const { binary: leftOp, type: leftOpType } = state.popOS()
 
-      const leftBaseType = leftOpType[0]
-      const rightBaseType = rightOpType[0]
-      if (isBaseTypeModifier(leftBaseType) && isBaseTypeModifier(rightBaseType)) {
+      if (isBaseType(leftOpType) && isBaseType(rightOpType)) {
         let newLeftOp = leftOp
         let newRightOp = rightOp
 
-        const leftBaseTypePriority = getBaseTypePromotionPriority(leftBaseType)
-        const rightBaseTypePriority = getBaseTypePromotionPriority(rightBaseType)
+        const leftBaseTypePriority = getBaseTypePromotionPriority(leftOpType)
+        const rightBaseTypePriority = getBaseTypePromotionPriority(rightOpType)
         const maxPriority = Math.max(leftBaseTypePriority, rightBaseTypePriority)
-        const newType: Array<CASTTypeModifier> = [
-          {
-            type: 'TypeModifier',
-            subtype: 'BaseType',
-            baseType: maxPriority === ArithmeticType.Float ? 'float' : 'int',
-          },
-        ]
+        const newType: ProgramType =
+          maxPriority === ArithmeticType.Float ? FLOAT_BASE_TYPE : INT_BASE_TYPE
 
         const newOperator = (() => {
           switch (node.operator) {
@@ -387,16 +398,14 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         const leftOpInt = binaryToInt(leftOp)
         const rightOpInt = binaryToInt(rightOp)
         const result = leftOpInt + rightOpInt
-        state.pushOS(intToBinary(result), [
-          { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
-        ])
+        state.pushOS(intToBinary(result), INT_BASE_TYPE)
         return
       }
       if (node.operator === MicroCodeBinaryOperator.FloatAddition) {
         const leftOpInt = leftOp
         const rightOpInt = rightOp
         const result = leftOpInt + rightOpInt
-        state.pushOS(result, [{ type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' }])
+        state.pushOS(result, FLOAT_BASE_TYPE)
         return
       }
       throw new NotImplementedError()
@@ -411,28 +420,6 @@ const microcode = (state: ProgramState, node: MicroCode) => {
     }
     default:
       throw new NotImplementedError()
-  }
-}
-
-const isBaseTypeModifier = (
-  typeModifier: CASTTypeModifier,
-): typeModifier is CASTTypeModifierBaseType => {
-  return typeModifier.subtype === 'BaseType'
-}
-
-enum ArithmeticType {
-  Integer = 0,
-  Float = 1,
-}
-
-const getBaseTypePromotionPriority = (typeModifier: CASTTypeModifierBaseType): ArithmeticType => {
-  switch (typeModifier.baseType) {
-    case 'int':
-    case 'char':
-    case 'void':
-      return ArithmeticType.Integer
-    case 'float':
-      return ArithmeticType.Float
   }
 }
 
