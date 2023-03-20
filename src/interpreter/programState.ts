@@ -28,7 +28,7 @@ export class ProgramState {
 
   private RTS: Array<number>
   private RTSType: Array<ProgramType> // TODO: Allow different size of RTS
-  private RTSStart: number
+  private RTSStart: number // RTSStart is where the old start pointer is located at
 
   private FD: Array<MicroCodeFunctionDefiniton>
 
@@ -135,8 +135,8 @@ export class ProgramState {
   }
 
   shrinkRTSToIndex(index: number) {
-    this.RTS.slice(0, index + 1)
-    this.RTSType.slice(0, index + 1)
+    this.RTS = this.RTS.slice(0, index + 1)
+    this.RTSType = this.RTSType.slice(0, index + 1)
   }
 
   pushFD(fd: MicroCodeFunctionDefiniton) {
@@ -160,7 +160,7 @@ export class ProgramState {
   }
 
   printE() {
-    console.log('E: ', this.E)
+    console.log('E: ', JSON.stringify(this.E))
   }
 
   lookupE(key: string): ERecord | undefined {
@@ -200,6 +200,8 @@ export class ProgramState {
     console.log('RTSStart: ' + this.RTSStart)
     this.printRTS()
     this.printE()
+    // console.log("FD: ")
+    // this.FD.forEach(x => console.log(JSON.stringify(x)))
     console.log('')
   }
 

@@ -26,6 +26,7 @@ import {
   MicroCodeBinaryOperator,
 } from './typings'
 import {
+  binaryToFormattedString,
   binaryToInt,
   intToBinary,
   isMicrocode,
@@ -137,8 +138,8 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA({ tag: 'return', withExpression: hasExpression })
 
       if (node.expression) {
-        state.pushA(node.expression)
         if (node.expression.type === 'Identifier') state.pushA({ tag: 'deref' })
+        state.pushA(node.expression)
       }
     }
   }
@@ -184,7 +185,6 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       switch (record.subtype) {
         case 'func': {
           const fd = state.getFDAtIndex(record.funcIndex)
-          console.log(fd)
           state.pushOS(record.funcIndex, incrementPointerDepth(fd.returnProgType))
           return
         }
@@ -245,7 +245,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
           }
         state.pushRTS(args[i].binary, args[i].type)
       }
-      state.pushE({ parent: state.getGlobalE(), record: {} })
+      state.pushE({ parent: state.getGlobalE(), record: newRecord })
       state.pushA({ tag: 'exit_func' })
       state.pushA(functionToCall.body)
       return
@@ -255,7 +255,6 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         throw new RuntimeError('Return function not called')
       }
 
-      state.shrinkRTSToIndex(state.getRTSStart())
       state.shrinkRTSToIndex(state.getRTSStart())
 
       const { binary: previousRTSStart } = state.popRTS()
@@ -322,7 +321,10 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       record.assigned = true
 
       if (init) {
-        state.pushOS(record.address, node.declaration.declarationType.typeModifiers)
+        state.pushOS(
+          record.address,
+          incrementPointerDepth(node.declaration.declarationType.typeModifiers),
+        )
         state.pushA({ tag: 'assgn' })
         if (init.type === 'Identifier') state.pushA({ tag: 'deref' })
         state.pushA(init)
@@ -428,31 +430,29 @@ const microcode = (state: ProgramState, node: MicroCode) => {
 
 const step_limit = 1000000
 
-const execute = (program: string): ProgramState => {
+const execute = (program: string, withLog: boolean = false): ProgramState => {
   const ast = parseStringToAST(program)
-  console.log(JSON.stringify(ast))
+  if (withLog) console.log(JSON.stringify(ast))
   const state = new ProgramState(ast, builtinFunctions)
 
   let i = 0
-  state.printState()
+  if (withLog) state.printState()
   while (i < step_limit) {
     if (state.isAEmpty()) break
     const cmd = state.popA() as CASTNode | MicroCode
-    console.log('cmd:', cmd)
+    if (withLog) console.log('cmd:', cmd)
     if (isMicrocode(cmd)) {
       microcode(state, cmd)
     } else {
       astToMicrocode(state, cmd)
     }
-    state.printState()
+    if (withLog) state.printState()
     i++
   }
 
   if (i === step_limit) {
     throw new Error('step limit ' + step_limit + ' exceeded')
   }
-
-  console.log(JSON.stringify(state.getLogOutput()))
 
   return state
 }
@@ -471,21 +471,31 @@ Test case: ` +
       program +
       '\n',
   )
-  execute(program)
+  const programState = execute(program, true)
+
+  console.log('Log outputs:')
+  programState.getLogOutput().forEach(x => {
+    console.log(binaryToFormattedString(x.binary, x.type))
+  })
 }
 
 export const testProgram = (program: string): ProgramState => {
   return execute(program)
 }
 
-test(
-  `
-int main() {
-  int x = 1 + 2;
-  int y = 2 + 3;
-  float d = 3.0 + 2;
-  printfLog(x, y, d);
-  return 0;
-}
-`,
-)
+// Uncomment where necessary to see the logs of running a program
+//
+// test(
+// `
+// int a(int d) {
+//   printfLog(d);
+//   return d + 2;
+// }
+
+// int main() {
+//   int c = a(2);
+//   printfLog(c);
+//   return 0;
+// }
+// `,
+// )

@@ -6,21 +6,21 @@ import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
   constructor(msg?: string) {
-    super('Not implemented: ' + msg)
+    super(msg)
   }
 }
 
 // Error that happens as a result of wrong implementation
 export class LogicError extends Error {
   constructor(msg?: string) {
-    super('Logic error: ' + msg)
+    super(msg)
   }
 }
 
 // Error that happens as a result of runtime issues
 export class RuntimeError extends Error {
   constructor(msg?: string) {
-    super('Runtime error: ' + msg)
+    super(msg)
   }
 }
 

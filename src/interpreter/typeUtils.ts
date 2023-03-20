@@ -89,3 +89,14 @@ export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType 
       return ArithmeticType.Float
   }
 }
+
+// export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolean => {
+//   if (type1.length !== type2.length) return false
+//   return type1.every((x, i) => {
+//     const y = type2[i]
+//     if (x.subtype !== y.subtype) return false
+//     return Object.keys(x).every(key => {
+//       return x[key] === y[key]
+//     })
+//   })
+// }
