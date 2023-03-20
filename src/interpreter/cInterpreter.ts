@@ -270,12 +270,6 @@ const microcode = (state: ProgramState, node: MicroCode) => {
     case 'pop_os':
       state.popOS()
       return
-    case 'pop_rts':
-      state.popRTS()
-      return
-    case 'pop_e':
-      state.popE()
-      return
     case 'enter_scope': {
       const curEnv = state.popE()
       const newEnv: EScope = {

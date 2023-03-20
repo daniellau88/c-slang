@@ -42,14 +42,6 @@ interface PopOSMicroCode extends MicroCodeBase {
   tag: 'pop_os'
 }
 
-interface PopRTSMicroCode extends MicroCodeBase {
-  tag: 'pop_rts'
-}
-
-interface PopEMicroCode extends MicroCodeBase {
-  tag: 'pop_e'
-}
-
 interface EnterScopeMicroCode extends MicroCodeBase {
   tag: 'enter_scope'
   declarations: Array<CASTDeclaration>
@@ -124,8 +116,6 @@ export type MicroCode =
   | LoadVarMicroCode
   | FuncApplyMicroCode
   | PopOSMicroCode
-  | PopRTSMicroCode
-  | PopEMicroCode
   | EnterScopeMicroCode
   | ExitScopeMicroCode
   | DeclarationMicroCode
