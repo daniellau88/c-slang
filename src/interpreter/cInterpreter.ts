@@ -202,7 +202,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
     case 'deref': {
       const { binary, type } = state.popOS()
       if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
-      state.pushOS(state.getRTSAtIndex(binary).binary, decrementPointerDepth(type))
+      state.pushOS(state.getRTSAtIndex(binary), decrementPointerDepth(type))
       return
     }
     case 'func_apply': {
@@ -257,7 +257,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
 
       state.shrinkRTSToIndex(state.getRTSStart())
 
-      const { binary: previousRTSStart } = state.popRTS()
+      const previousRTSStart = state.popRTS()
       state.setRTSStart(previousRTSStart)
       state.popE()
 
@@ -478,9 +478,9 @@ export const testProgram = (program: string): ProgramState => {
 }
 
 // Uncomment where necessary to see the logs of running a program
-//
+
 // test(
-// `
+//   `
 // int a(int d) {
 //   printfLog(d);
 //   return d + 2;

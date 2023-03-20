@@ -24,10 +24,10 @@ type ReturnRegisterType =
 export class ProgramState {
   private A: Array<CASTNode | MicroCode>
   private OS: Array<number>
-  private OSType: Array<ProgramType>
+  private OSType: Record<number, ProgramType>
 
   private RTS: Array<number>
-  private RTSType: Array<ProgramType> // TODO: Allow different size of RTS
+  private RTSTypeAdditionalInfo: Record<number, ProgramType> // TODO: Allow different size of RTS // RTS should not have type associated with it, this is for display purposes
   private RTSStart: number // RTSStart is where the old start pointer is located at
 
   private FD: Array<MicroCodeFunctionDefiniton>
@@ -41,9 +41,9 @@ export class ProgramState {
   constructor(ast: CASTNode, builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     this.A = [ast]
     this.OS = []
-    this.OSType = []
+    this.OSType = {}
     this.RTS = []
-    this.RTSType = []
+    this.RTSTypeAdditionalInfo = {}
     this.RTSStart = -1
     this.FD = []
     this.E = [{ record: {} }]
@@ -95,7 +95,7 @@ export class ProgramState {
   }
 
   printOS() {
-    printBinariesWithTypes(this.OS, this.OSType, 'OS:')
+    printBinariesWithTypes(this.OS, this.OSType, 'OS: ')
   }
 
   getOSLength(): number {
@@ -106,28 +106,34 @@ export class ProgramState {
     if (this.OS.length == 0) {
       return undefined
     }
-    return { binary: peek(this.OS) as number, type: peek(this.OSType) as ProgramType }
+    const topIndex = this.OS.length - 1
+    return { binary: peek(this.OS) as number, type: this.OSType[topIndex] as ProgramType }
   }
 
-  pushRTS(binary: number, type: ProgramType) {
-    pushStackAndType(this.RTS, this.RTSType, binary, type)
+  pushRTS(binary: number, type?: ProgramType) {
+    const newIndex = this.RTS.length
+    push(this.RTS, binary)
+    if (type) this.RTSTypeAdditionalInfo[newIndex] = type
   }
 
-  popRTS(): BinaryWithType {
-    return popStackAndType(this.RTS, this.RTSType)
+  popRTS(): number {
+    const result = pop(this.RTS)
+    const newIndex = this.RTS.length
+    delete this.RTSTypeAdditionalInfo[newIndex]
+    return result
   }
 
   printRTS() {
-    printBinariesWithTypes(this.RTS, this.RTSType, 'RTS:')
+    printBinariesWithTypes(this.RTS, this.RTSTypeAdditionalInfo, 'RTS: ')
   }
 
-  getRTSAtIndex(index: number): BinaryWithType {
-    return { binary: this.RTS[index], type: this.RTSType[index] }
+  getRTSAtIndex(index: number): number {
+    return this.RTS[index]
   }
 
-  setRTSAtIndex(index: number, binary: number, type: ProgramType) {
+  setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
     this.RTS[index] = binary
-    this.RTSType[index] = type
+    if (type) this.RTSTypeAdditionalInfo[index] = type
   }
 
   getRTSLength(): number {
@@ -135,8 +141,20 @@ export class ProgramState {
   }
 
   shrinkRTSToIndex(index: number) {
+    const initialSize = this.RTS.length
     this.RTS = this.RTS.slice(0, index + 1)
-    this.RTSType = this.RTSType.slice(0, index + 1)
+    // Might take some time if shrinking is huge
+    for (let i = index; i < initialSize; i++) {
+      if (i in this.RTSTypeAdditionalInfo) delete this.RTSTypeAdditionalInfo[i]
+    }
+  }
+
+  allocateSizeOnRTS(newSize: number, type?: ProgramType) {
+    const initialSize = this.RTS.length
+    const changeInSize = newSize - initialSize
+    for (let i = 0; i < changeInSize; i++) {
+      this.pushRTS(0, type)
+    }
   }
 
   pushFD(fd: MicroCodeFunctionDefiniton) {
@@ -200,8 +218,6 @@ export class ProgramState {
     console.log('RTSStart: ' + this.RTSStart)
     this.printRTS()
     this.printE()
-    // console.log("FD: ")
-    // this.FD.forEach(x => console.log(JSON.stringify(x)))
     console.log('')
   }
 

@@ -179,6 +179,9 @@ export type BinaryWithType = {
   type: ProgramType
 }
 
+type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+export type BinaryWithLoseType = WithOptional<BinaryWithType, 'type'>
+
 export interface BuiltinFunctionDefinition {
   func: Function
   returnProgType: ProgramType

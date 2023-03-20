@@ -42,20 +42,25 @@ export const pop = <T>(array: Array<T>): T => {
 
 export const pushStackAndType = (
   stack: Array<number>,
-  typeStack: Array<ProgramType>,
+  typeStack: Record<number, ProgramType>,
   binary: number,
-  type: ProgramType,
+  type?: ProgramType,
 ) => {
+  const newIndex = stack.length
   push(stack, binary)
-  push(typeStack, type)
+  if (type) typeStack[newIndex] = type
 }
 
 export const popStackAndType = (
   stack: Array<number>,
-  typeStack: Array<ProgramType>,
+  typeStack: Record<number, ProgramType>,
 ): BinaryWithType => {
   const binary = pop(stack)
-  const type = pop(typeStack)
+  const poppedIndex = stack.length
+
+  const type = typeStack[poppedIndex]
+  delete typeStack[poppedIndex]
+
   return { binary, type }
 }
 
@@ -84,7 +89,8 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
   return (test as MicroCode).tag !== undefined
 }
 
-export const binaryToFormattedString = (binary: number, type: ProgramType): string => {
+export const binaryToFormattedString = (binary: number, type?: ProgramType): string => {
+  if (!type) return 'unknown ' + binary
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':
@@ -118,11 +124,11 @@ export const parseStringToAST = (program: string): CASTNode => {
 const zip = <T, U>(a: Array<T>, b: Array<U>) => a.map((k, i) => [k, b[i]])
 export const printBinariesWithTypes = (
   binaries: Array<number>,
-  types: Array<ProgramType>,
+  types: Record<number, ProgramType>,
   prefix?: string,
 ) => {
-  const strings = zip(binaries, types).map(x => {
-    return binaryToFormattedString(x[0] as number, x[1] as ProgramType)
+  const strings = binaries.map((x, i) => {
+    return binaryToFormattedString(x, types[i])
   })
-  console.log(prefix + (prefix ? ' ' : '') + '[' + strings.join(', ') + ']')
+  console.log(prefix + '[' + strings.join(', ') + ']')
 }
