@@ -121,7 +121,6 @@ export const parseStringToAST = (program: string): CASTNode => {
   return convertCSTProgramToAST(parsedProgram)
 }
 
-const zip = <T, U>(a: Array<T>, b: Array<U>) => a.map((k, i) => [k, b[i]])
 export const printBinariesWithTypes = (
   binaries: Array<number>,
   types: Record<number, ProgramType>,

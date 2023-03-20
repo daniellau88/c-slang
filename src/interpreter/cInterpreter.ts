@@ -1,5 +1,4 @@
 import {
-  CASTBinaryOperator,
   CASTDeclaration,
   CASTFunctionDefinition,
   CASTNode,
@@ -8,7 +7,9 @@ import {
 import { ProgramState } from './programState'
 import {
   ArithmeticType,
+  convertBinaryOperatorToMicroCodeBinaryOperator,
   decrementPointerDepth,
+  doBinaryOperation,
   FLOAT_BASE_TYPE,
   getBaseTypePromotionPriority,
   incrementPointerDepth,
@@ -17,14 +18,7 @@ import {
   POINTER_BASE_TYPE,
   VOID_BASE_TYPE,
 } from './typeUtils'
-import {
-  BinaryWithType,
-  BuiltinFunctionDefinition,
-  ERecord,
-  EScope,
-  MicroCode,
-  MicroCodeBinaryOperator,
-} from './typings'
+import { BinaryWithType, BuiltinFunctionDefinition, ERecord, EScope, MicroCode } from './typings'
 import {
   binaryToFormattedString,
   binaryToInt,
@@ -347,28 +341,10 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         const newType: ProgramType =
           maxPriority === ArithmeticType.Float ? FLOAT_BASE_TYPE : INT_BASE_TYPE
 
-        const newOperator = (() => {
-          switch (node.operator) {
-            case CASTBinaryOperator.Plus:
-              return maxPriority === ArithmeticType.Float
-                ? MicroCodeBinaryOperator.FloatAddition
-                : MicroCodeBinaryOperator.IntAddition
-            case CASTBinaryOperator.Minus:
-              return maxPriority === ArithmeticType.Float
-                ? MicroCodeBinaryOperator.FloatSubtraction
-                : MicroCodeBinaryOperator.IntSubtraction
-            case CASTBinaryOperator.Multiply:
-              return maxPriority === ArithmeticType.Float
-                ? MicroCodeBinaryOperator.FloatMultiply
-                : MicroCodeBinaryOperator.IntMultiply
-            case CASTBinaryOperator.Divide:
-              return maxPriority === ArithmeticType.Float
-                ? MicroCodeBinaryOperator.FloatDivision
-                : MicroCodeBinaryOperator.IntDivision
-            default:
-              throw new NotImplementedError()
-          }
-        })()
+        const newOperator = convertBinaryOperatorToMicroCodeBinaryOperator(
+          maxPriority,
+          node.operator,
+        )
 
         if (leftBaseTypePriority < maxPriority) {
           newLeftOp = binaryToInt(newLeftOp)
@@ -386,24 +362,12 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       throw new NotImplementedError()
     }
     case 'bin_op': {
-      const { binary: rightOp } = state.popOS()
-      const { binary: leftOp } = state.popOS()
+      const rightOpWithType = state.popOS()
+      const leftOpWithType = state.popOS()
 
-      if (node.operator === MicroCodeBinaryOperator.IntAddition) {
-        const leftOpInt = binaryToInt(leftOp)
-        const rightOpInt = binaryToInt(rightOp)
-        const result = leftOpInt + rightOpInt
-        state.pushOS(intToBinary(result), INT_BASE_TYPE)
-        return
-      }
-      if (node.operator === MicroCodeBinaryOperator.FloatAddition) {
-        const leftOpInt = leftOp
-        const rightOpInt = rightOp
-        const result = leftOpInt + rightOpInt
-        state.pushOS(result, FLOAT_BASE_TYPE)
-        return
-      }
-      throw new NotImplementedError()
+      const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
+      state.pushOS(result.binary, result.type)
+      return
     }
     case 'return': {
       state.setReturnRegisterAssigned(true)
