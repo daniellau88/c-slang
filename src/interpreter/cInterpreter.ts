@@ -124,9 +124,8 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
     }
     case 'FunctionCallExpression': {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length })
-      const reversedArgumentExpression = [...node.argumentExpression]
-      reversedArgumentExpression.reverse()
-      reversedArgumentExpression.forEach(x => {
+      // Insert from left to right into OS (i.e. evaluate left first)
+      node.argumentExpression.forEach(x => {
         if (x.type === 'Identifier') state.pushA({ tag: 'deref' })
         state.pushA(x)
       })
@@ -452,6 +451,8 @@ const execute = (program: string): ProgramState => {
   if (i === step_limit) {
     throw new Error('step limit ' + step_limit + ' exceeded')
   }
+
+  console.log(JSON.stringify(state.getLogOutput()))
 
   return state
 }

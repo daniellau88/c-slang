@@ -230,4 +230,8 @@ export class ProgramState {
   setReturnRegisterBinary(returnRegister: BinaryWithType) {
     this.ReturnRegister.binary = returnRegister
   }
+
+  getLogOutput(): Array<BinaryWithType> {
+    return this.LogOutput
+  }
 }
