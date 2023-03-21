@@ -327,11 +327,12 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
       record.assigned = true
 
+      state.pushOS(
+        record.address,
+        incrementPointerDepth(node.declaration.declarationType.typeModifiers),
+      )
+
       if (init) {
-        state.pushOS(
-          record.address,
-          incrementPointerDepth(node.declaration.declarationType.typeModifiers),
-        )
         state.pushA({ tag: 'assgn' })
         if (shouldDerefExpression(init)) state.pushA({ tag: 'deref' })
         state.pushA(init)
