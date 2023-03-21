@@ -111,6 +111,12 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       }
       return
     }
+    case 'AssignmentExpression': {
+      state.pushA({ tag: 'assgn' })
+      state.pushA(node.right)
+      state.pushA(node.left)
+      return
+    }
     case 'BinaryExpression': {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator })
       if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
