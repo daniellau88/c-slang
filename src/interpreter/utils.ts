@@ -1,7 +1,7 @@
 import createContext from '../createContext'
 import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
-import { CASTNode, ProgramType } from '../typings/programAST'
+import { CASTExpression, CASTNode, ProgramType } from '../typings/programAST'
 import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
@@ -74,7 +74,7 @@ export const intToBinary = (int: number): number => {
 export const binaryToInt = (binary: number): number => {
   const data = new ArrayBuffer(8)
   const view = new DataView(data)
-  view.setFloat64(0, binary) // Use 32 first
+  view.setFloat64(0, binary)
   return view.getInt32(0)
 }
 
@@ -130,4 +130,13 @@ export const printBinariesWithTypes = (
     return binaryToFormattedString(x, types[i])
   })
   console.log(prefix + '[' + strings.join(', ') + ']')
+}
+
+export const shouldDerefExpression = (expression: CASTExpression): boolean => {
+  switch (expression.type) {
+    case 'Identifier':
+      return true
+    default:
+      return false
+  }
 }

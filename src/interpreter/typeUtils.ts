@@ -1,4 +1,10 @@
-import { CASTBinaryOperator, CASTTypeModifier, ProgramType } from '../typings/programAST'
+import {
+  CASTBinaryOperator,
+  CASTTypeModifier,
+  CASTUnaryOperator,
+  ProgramType,
+} from '../typings/programAST'
+import { ProgramState } from './programState'
 import { BinaryWithType, MicroCodeBinaryOperator } from './typings'
 import { binaryToInt, intToBinary, LogicError, NotImplementedError, RuntimeError } from './utils'
 
@@ -172,8 +178,12 @@ const getOperandsByType = (
   operand2: BinaryWithType,
 ): { operand1Value: number; operand2Value: number } => {
   return {
-    operand1Value: operand1.type == INT_BASE_TYPE ? binaryToInt(operand1.binary) : operand1.binary,
-    operand2Value: operand2.type == INT_BASE_TYPE ? binaryToInt(operand2.binary) : operand2.binary,
+    operand1Value: isTypeEquivalent(operand1.type, INT_BASE_TYPE)
+      ? binaryToInt(operand1.binary)
+      : operand1.binary,
+    operand2Value: isTypeEquivalent(operand2.type, INT_BASE_TYPE)
+      ? binaryToInt(operand2.binary)
+      : operand2.binary,
   }
 }
 
@@ -293,13 +303,130 @@ export const doBinaryOperation = (
   }
 }
 
-// export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolean => {
-//   if (type1.length !== type2.length) return false
-//   return type1.every((x, i) => {
-//     const y = type2[i]
-//     if (x.subtype !== y.subtype) return false
-//     return Object.keys(x).every(key => {
-//       return x[key] === y[key]
-//     })
-//   })
-// }
+export const CASTUnaryOperatorWithoutDerefence = [
+  CASTUnaryOperator.PreIncrement,
+  CASTUnaryOperator.PreDecrement,
+  CASTUnaryOperator.Address,
+  CASTUnaryOperator.PostIncrement,
+  CASTUnaryOperator.PostDecrement,
+]
+
+const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType): number => {
+  const arithmeticType = getBaseTypePromotionPriority(binaryWithType.type)
+  switch (arithmeticType) {
+    case ArithmeticType.Integer:
+      return binaryToInt(binaryWithType.binary)
+    case ArithmeticType.Float:
+      return binaryWithType.binary
+    default:
+      throw new RuntimeError('Type not supported')
+  }
+}
+
+const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType): BinaryWithType => {
+  const arithmeticType = getBaseTypePromotionPriority(type)
+  switch (arithmeticType) {
+    case ArithmeticType.Integer:
+      return { binary: intToBinary(jsValue), type }
+    case ArithmeticType.Float:
+      return { binary: jsValue, type }
+    default:
+      throw new RuntimeError('Type not supported')
+  }
+}
+
+const getUnaryOperationIncrementResult = (
+  operandAddress: BinaryWithType,
+  type: 'increment' | 'decrement',
+  state: ProgramState,
+): { preResult: BinaryWithType; postResult: BinaryWithType } => {
+  const operandDereferencedValue = state.getRTSAtIndex(operandAddress.binary)
+  const dereferencedType = decrementPointerDepth(operandAddress.type)
+
+  const operandValue = getJSValueFromBinaryWithType({
+    binary: operandDereferencedValue,
+    type: dereferencedType,
+  })
+
+  const result = type === 'increment' ? operandValue + 1 : operandValue - 1
+  const resultBinary = getBinaryValueFromJSValueWithType(result, dereferencedType)
+
+  state.setRTSAtIndex(operandAddress.binary, resultBinary.binary, resultBinary.type)
+
+  return {
+    preResult: { binary: operandDereferencedValue, type: dereferencedType },
+    postResult: resultBinary,
+  }
+}
+
+export const doUnaryOperationWithoutDereference = (
+  operand: BinaryWithType,
+  operator: CASTUnaryOperator,
+  state: ProgramState,
+): BinaryWithType => {
+  switch (operator) {
+    case CASTUnaryOperator.PreIncrement: {
+      return getUnaryOperationIncrementResult(operand, 'increment', state).postResult
+    }
+    case CASTUnaryOperator.PreDecrement: {
+      return getUnaryOperationIncrementResult(operand, 'decrement', state).postResult
+    }
+    case CASTUnaryOperator.PostIncrement: {
+      return getUnaryOperationIncrementResult(operand, 'increment', state).preResult
+    }
+    case CASTUnaryOperator.PostDecrement: {
+      return getUnaryOperationIncrementResult(operand, 'decrement', state).preResult
+    }
+    case CASTUnaryOperator.Address: {
+      return operand
+    }
+    default:
+      throw new LogicError('Unary operation not supported')
+  }
+}
+
+export const doUnaryOperationWithDereference = (
+  operand: BinaryWithType,
+  operator: CASTUnaryOperator,
+): BinaryWithType => {
+  switch (operator) {
+    case CASTUnaryOperator.Dereference: {
+      return operand
+    }
+    case CASTUnaryOperator.Positive: {
+      const operandValue = getJSValueFromBinaryWithType(operand)
+      const resultValue = Math.abs(operandValue)
+      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type)
+      return resultBinary
+    }
+    case CASTUnaryOperator.Negate: {
+      const operandValue = getJSValueFromBinaryWithType(operand)
+      const resultValue = -operandValue
+      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type)
+      return resultBinary
+    }
+    case CASTUnaryOperator.BitwiseNot: {
+      const arithmeticType = getBaseTypePromotionPriority(operand.type)
+      if (arithmeticType !== ArithmeticType.Integer) {
+        throw new RuntimeError('Operation not supported for non integer')
+      }
+      return { binary: intToBinary(~binaryToInt(operand.binary)), type: operand.type }
+    }
+    case CASTUnaryOperator.LogicalNot: {
+      return operand.binary === 0 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
+    }
+    default:
+      throw new LogicError('Unary operation not supported')
+  }
+}
+
+export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolean => {
+  if (type1.length !== type2.length) return false
+  return type1.every((x, i) => {
+    const y = type2[i]
+    if (x.subtype !== y.subtype) return false
+    return Object.keys(x).every(key => {
+      return x[key] === y[key]
+    })
+  })
+}

@@ -1,12 +1,12 @@
 import { describe, test } from '@jest/globals'
 
 import { testProgram } from '../interpreter/cInterpreter'
-import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/typeUtils'
+import { FLOAT_BASE_TYPE, incrementPointerDepth, INT_BASE_TYPE } from '../interpreter/typeUtils'
 import { intToBinary, RuntimeError } from '../interpreter/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
 describe('arithmetic', () => {
-  test('integer arithmetic', () => {
+  test('integer binary arithmetic', () => {
     const output = testProgram(
       `
       int main() {
@@ -37,7 +37,7 @@ describe('arithmetic', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('integer arithmetic bitwise', () => {
+  test('integer binary arithmetic bitwise', () => {
     const output = testProgram(
       `
       int main() {
@@ -97,6 +97,112 @@ describe('arithmetic', () => {
       { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(1), type: INT_BASE_TYPE },
       { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('integer unary skip dereference', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = 10;
+        int a = x++;
+        int b = ++x;
+        int c = x--;
+        int d = --x;
+        printfLog(x, a, b, c, d);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: intToBinary(12), type: INT_BASE_TYPE },
+      { binary: intToBinary(12), type: INT_BASE_TYPE },
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('integer unary with dereference', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = -10;
+        int y = 8;
+        int a = +x;
+        int b = +y;
+        int c = -x;
+        int d = -y;
+        int e = ~y;
+        int f = !y;
+        printfLog(x, y, a, b, c, d, e, f);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(-10), type: INT_BASE_TYPE },
+      { binary: intToBinary(8), type: INT_BASE_TYPE },
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: intToBinary(8), type: INT_BASE_TYPE },
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: intToBinary(-8), type: INT_BASE_TYPE },
+      { binary: intToBinary(-9), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('unary address', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = -10;
+        int* a = &x;
+        int b = *x;
+        float c = *x;
+        printfLog(x, a, b, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(-10), type: INT_BASE_TYPE },
+      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(-10), type: INT_BASE_TYPE },
+      { binary: intToBinary(-10), type: FLOAT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('unary address dereference constant', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int* a = 5;
+        float c = *a;
+        printfLog(a, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: 5, type: incrementPointerDepth(INT_BASE_TYPE) },
+      { binary: 2, type: FLOAT_BASE_TYPE }, // Might need to change address if structure changes
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

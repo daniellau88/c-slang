@@ -125,7 +125,7 @@ export enum CASTUnaryOperator {
   PreIncrement,
   PreDecrement,
   Address,
-  Derefence,
+  Dereference,
   Positive,
   Negate,
   BitwiseNot,

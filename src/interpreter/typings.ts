@@ -6,6 +6,7 @@ import {
   CASTFunctionParameter,
   CASTIdentifier,
   CASTType,
+  CASTUnaryOperator,
   ProgramType,
 } from '../typings/programAST'
 
@@ -109,6 +110,11 @@ interface ReturnMicroCode extends MicroCodeBase {
   withExpression: boolean
 }
 
+interface UnaryOperationMicroCode extends MicroCodeBase {
+  tag: 'unary_op'
+  operator: CASTUnaryOperator
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -125,6 +131,7 @@ export type MicroCode =
   | ExitFuncMicroCode
   | DereferenceMicroCode
   | ReturnMicroCode
+  | UnaryOperationMicroCode
 
 interface ERecordBase {
   subtype: string

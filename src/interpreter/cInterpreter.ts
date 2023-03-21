@@ -7,9 +7,12 @@ import {
 import { ProgramState } from './programState'
 import {
   ArithmeticType,
+  CASTUnaryOperatorWithoutDerefence,
   convertBinaryOperatorToMicroCodeBinaryOperator,
   decrementPointerDepth,
   doBinaryOperation,
+  doUnaryOperationWithDereference,
+  doUnaryOperationWithoutDereference,
   FLOAT_BASE_TYPE,
   getBaseTypePromotionPriority,
   incrementPointerDepth,
@@ -28,6 +31,7 @@ import {
   NotImplementedError,
   parseStringToAST,
   RuntimeError,
+  shouldDerefExpression,
 } from './utils'
 
 const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
@@ -75,14 +79,14 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       return
     }
     case 'ExpressionStatement': {
-      ;[...node.expressions].reverse().forEach((x, i) => {
+      ;[...node.expressions].reverse().forEach(x => {
         state.pushA({ tag: 'pop_os' })
         state.pushA(x)
       })
       return
     }
     case 'DeclarationStatement': {
-      ;[...node.declarations].reverse().forEach((x, i) => {
+      ;[...node.declarations].reverse().forEach(x => {
         state.pushA({ tag: 'pop_os' })
         state.pushA(x)
       })
@@ -107,10 +111,23 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
     }
     case 'BinaryExpression': {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator })
-      if (node.right.type === 'Identifier') state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
       state.pushA(node.right)
-      if (node.left.type === 'Identifier') state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref' })
       state.pushA(node.left) // Do the left first
+      return
+    }
+    case 'UnaryExpression': {
+      state.pushA({ tag: 'unary_op', operator: node.operator })
+      const shouldDeref = shouldDerefExpression(node.expression)
+      const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
+      if (!shouldDeref && isSkipDerefenceOperator) {
+        throw new RuntimeError('Cannot dereference non-address')
+      }
+      if (shouldDeref && !isSkipDerefenceOperator) {
+        state.pushA({ tag: 'deref' })
+      }
+      state.pushA(node.expression)
       return
     }
     case 'Identifier': {
@@ -121,7 +138,7 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length })
       // Insert from left to right into OS (i.e. evaluate left first)
       node.argumentExpression.forEach(x => {
-        if (x.type === 'Identifier') state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(x)) state.pushA({ tag: 'deref' })
         state.pushA(x)
       })
       state.pushA(node.expression)
@@ -132,7 +149,7 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA({ tag: 'return', withExpression: hasExpression })
 
       if (node.expression) {
-        if (node.expression.type === 'Identifier') state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
         state.pushA(node.expression)
       }
     }
@@ -314,17 +331,18 @@ const microcode = (state: ProgramState, node: MicroCode) => {
           incrementPointerDepth(node.declaration.declarationType.typeModifiers),
         )
         state.pushA({ tag: 'assgn' })
-        if (init.type === 'Identifier') state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref' })
         state.pushA(init)
       }
       return
     }
     case 'assgn': {
-      const { binary: val, type: valType } = state.popOS()
-      const { binary: addr } = state.popOS() // TODO: type checking
+      const { binary: val } = state.popOS()
+      const { binary: addr, type: addrType } = state.popOS() // TODO: type checking
+      const newType = decrementPointerDepth(addrType)
 
-      state.setRTSAtIndex(addr, val, valType)
-      state.pushOS(val, valType)
+      state.setRTSAtIndex(addr, val, newType)
+      state.pushOS(val, newType)
       return
     }
     case 'bin_op_auto_promotion': {
@@ -366,6 +384,18 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       const leftOpWithType = state.popOS()
 
       const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
+      state.pushOS(result.binary, result.type)
+      return
+    }
+    case 'unary_op': {
+      const operand = state.popOS()
+      let result: BinaryWithType
+      const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
+      if (isSkipDerefenceOperator) {
+        result = doUnaryOperationWithoutDereference(operand, node.operator, state)
+      } else {
+        result = doUnaryOperationWithDereference(operand, node.operator)
+      }
       state.pushOS(result.binary, result.type)
       return
     }
@@ -443,17 +473,13 @@ export const testProgram = (program: string): ProgramState => {
 
 // Uncomment where necessary to see the logs of running a program
 
-// test(
-//   `
-// int a(int d) {
-//   printfLog(d);
-//   return d + 2;
-// }
-
-// int main() {
-//   int c = a(2);
-//   printfLog(c);
-//   return 0;
-// }
-// `,
-// )
+test(
+  `
+  int main() {
+    int* a = 5;
+    float c = *a;
+    printfLog(a, c);
+    return 0;
+  }
+`,
+)
