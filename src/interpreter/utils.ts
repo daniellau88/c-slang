@@ -90,7 +90,7 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
 }
 
 export const binaryToFormattedString = (binary: number, type?: ProgramType): string => {
-  if (!type) return 'unknown ' + binary
+  if (!type || type.length === 0) return 'unknown ' + binary
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':

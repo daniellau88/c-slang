@@ -15,6 +15,7 @@ import {
   printBinariesWithTypes,
   push,
   pushStackAndType,
+  RuntimeError,
 } from './utils'
 
 type ReturnRegisterType =
@@ -128,6 +129,7 @@ export class ProgramState {
   }
 
   getRTSAtIndex(index: number): number {
+    if (index >= this.RTS.length) throw new RuntimeError('Invalid memory access')
     return this.RTS[index]
   }
 

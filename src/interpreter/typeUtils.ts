@@ -388,11 +388,9 @@ export const doUnaryOperationWithoutDereference = (
 export const doUnaryOperationWithDereference = (
   operand: BinaryWithType,
   operator: CASTUnaryOperator,
+  state: ProgramState,
 ): BinaryWithType => {
   switch (operator) {
-    case CASTUnaryOperator.Dereference: {
-      return operand
-    }
     case CASTUnaryOperator.Positive: {
       const operandValue = getJSValueFromBinaryWithType(operand)
       const resultValue = Math.abs(operandValue)
@@ -414,6 +412,17 @@ export const doUnaryOperationWithDereference = (
     }
     case CASTUnaryOperator.LogicalNot: {
       return operand.binary === 0 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
+    }
+    case CASTUnaryOperator.Dereference: {
+      // Allows arbitrary dereferencing (without any type)
+      const { binary, type } = operand
+      const newType = (() => {
+        if (type.length === 0 || type[0].subtype !== 'Pointer') {
+          return []
+        }
+        return decrementPointerDepth(type)
+      })()
+      return { binary: state.getRTSAtIndex(binary), type: newType }
     }
     default:
       throw new LogicError('Unary operation not supported')

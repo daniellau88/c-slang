@@ -161,52 +161,6 @@ describe('arithmetic', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('unary address', () => {
-    const output = testProgram(
-      `
-      int main() {
-        int x = -10;
-        int* a = &x;
-        int b = *x;
-        float c = *x;
-        printfLog(x, a, b, c);
-        return 0;
-      }
-    `,
-    )
-
-    verifyProgramCompleted(output)
-    const logOutput = output.getLogOutput()
-    const expectedLogOutput = [
-      { binary: intToBinary(-10), type: INT_BASE_TYPE },
-      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
-      { binary: intToBinary(-10), type: INT_BASE_TYPE },
-      { binary: intToBinary(-10), type: FLOAT_BASE_TYPE },
-    ]
-    expectLogOutputToBe(logOutput, expectedLogOutput)
-  })
-
-  test('unary address dereference constant', () => {
-    const output = testProgram(
-      `
-      int main() {
-        int* a = 5;
-        float c = *a;
-        printfLog(a, c);
-        return 0;
-      }
-    `,
-    )
-
-    verifyProgramCompleted(output)
-    const logOutput = output.getLogOutput()
-    const expectedLogOutput = [
-      { binary: 5, type: incrementPointerDepth(INT_BASE_TYPE) },
-      { binary: 2, type: FLOAT_BASE_TYPE }, // Might need to change address if structure changes
-    ]
-    expectLogOutputToBe(logOutput, expectedLogOutput)
-  })
-
   test('integer division by 0', () => {
     const program = () =>
       testProgram(
@@ -305,5 +259,66 @@ describe('arithmetic', () => {
     `,
       )
     expectThrowError(program, RuntimeError, 'Cannot divide by 0')
+  })
+
+  test('unary address', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = -10;
+        int* a = &x;
+        int b = *a;
+        float c = *a;
+        printfLog(x, a, b, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(-10), type: INT_BASE_TYPE },
+      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(-10), type: INT_BASE_TYPE },
+      { binary: -10, type: FLOAT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('unary address dereference constant', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int* a = 1;
+        float c = *a;
+        printfLog(a, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) },
+      { binary: 1072693248, type: FLOAT_BASE_TYPE }, // Might need to change address if structure changes
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('unary address dereference invalid address', () => {
+    const program = () =>
+      testProgram(
+        `
+        int main() {
+          int* a = 5;
+          float c = *a;
+          printfLog(a, c);
+          return 0;
+        }
+      `,
+      )
+    expectThrowError(program, RuntimeError, 'Invalid memory access')
   })
 })

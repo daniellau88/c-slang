@@ -18,6 +18,8 @@ import {
   incrementPointerDepth,
   INT_BASE_TYPE,
   isBaseType,
+  isPointer,
+  isTypeEquivalent,
   POINTER_BASE_TYPE,
   VOID_BASE_TYPE,
 } from './typeUtils'
@@ -337,12 +339,40 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       return
     }
     case 'assgn': {
-      const { binary: val } = state.popOS()
-      const { binary: addr, type: addrType } = state.popOS() // TODO: type checking
+      const { binary: val, type: valType } = state.popOS()
+      const { binary: addr, type: addrType } = state.popOS()
       const newType = decrementPointerDepth(addrType)
 
-      state.setRTSAtIndex(addr, val, newType)
-      state.pushOS(val, newType)
+      let newValue = val // TODO: type checking
+      if (!isTypeEquivalent(valType, newType)) {
+        if (valType.length === 0) {
+        } // If value's type is unknown, use address's type
+        else {
+          if (isBaseType(newType) && isBaseType(valType)) {
+            const newArithmeticType = getBaseTypePromotionPriority(newType)
+            const valArithmeticType = getBaseTypePromotionPriority(valType)
+            const maxPriority = Math.max(newArithmeticType, valArithmeticType)
+
+            if (valArithmeticType < maxPriority) {
+              // Promote value if smaller
+              newValue = binaryToInt(val)
+            }
+
+            if (newArithmeticType < maxPriority) {
+              throw new RuntimeError('Cannot perform lossy assignment')
+            }
+          } else if (isPointer(addrType) && isBaseType(valType)) {
+            // Pointers are float in nature
+            const valArithmeticType = getBaseTypePromotionPriority(valType)
+            if (valArithmeticType === ArithmeticType.Integer) {
+              newValue = binaryToInt(val)
+            }
+          }
+        }
+      }
+
+      state.setRTSAtIndex(addr, newValue, newType)
+      state.pushOS(newValue, newType)
       return
     }
     case 'bin_op_auto_promotion': {
@@ -394,7 +424,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       if (isSkipDerefenceOperator) {
         result = doUnaryOperationWithoutDereference(operand, node.operator, state)
       } else {
-        result = doUnaryOperationWithDereference(operand, node.operator)
+        result = doUnaryOperationWithDereference(operand, node.operator, state)
       }
       state.pushOS(result.binary, result.type)
       return
@@ -473,13 +503,15 @@ export const testProgram = (program: string): ProgramState => {
 
 // Uncomment where necessary to see the logs of running a program
 
-test(
-  `
-  int main() {
-    int* a = 5;
-    float c = *a;
-    printfLog(a, c);
-    return 0;
-  }
-`,
-)
+// test(
+//   `
+//   int main() {
+//     int x = -10;
+//     int* a = &x;
+//     int b = *x;
+//     float c = *x;
+//     printfLog(x, a, b, c);
+//     return 0;
+//   }
+// `,
+// )
