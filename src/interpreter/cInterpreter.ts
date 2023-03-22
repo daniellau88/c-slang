@@ -1,5 +1,6 @@
 import {
   CASTDeclaration,
+  CASTExpression,
   CASTFunctionDefinition,
   CASTNode,
   ProgramType,
@@ -123,6 +124,12 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA(node.right)
       if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref' })
       state.pushA(node.left) // Do the left first
+      return
+    }
+    case 'ConditionalExpression': {
+      state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue })
+      if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref' })
+      state.pushA(node.predicate)
       return
     }
     case 'UnaryExpression': {
@@ -422,6 +429,13 @@ const microcode = (state: ProgramState, node: MicroCode) => {
 
       const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
       state.pushOS(result.binary, result.type)
+      return
+    }
+    case 'conditional_op': {
+      const predicate = state.popOS()
+      const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
+      if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref' })
+      state.pushA(expressionToPush)
       return
     }
     case 'unary_op': {

@@ -2,6 +2,7 @@ import {
   CASTBinaryOperator,
   CASTCompoundStatement,
   CASTDeclaration,
+  CASTExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
@@ -115,6 +116,12 @@ interface UnaryOperationMicroCode extends MicroCodeBase {
   operator: CASTUnaryOperator
 }
 
+interface ConditionalOperationMicroCode extends MicroCodeBase {
+  tag: 'conditional_op'
+  ifFalse: CASTExpression
+  ifTrue: CASTExpression
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -132,6 +139,7 @@ export type MicroCode =
   | DereferenceMicroCode
   | ReturnMicroCode
   | UnaryOperationMicroCode
+  | ConditionalOperationMicroCode
 
 interface ERecordBase {
   subtype: string
