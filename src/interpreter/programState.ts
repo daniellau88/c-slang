@@ -79,6 +79,10 @@ export class ProgramState {
     return pop(this.A)
   }
 
+  peekA(): CASTNode | MicroCode | undefined {
+    return peek(this.A)
+  }
+
   isAEmpty(): boolean {
     return this.A.length === 0
   }

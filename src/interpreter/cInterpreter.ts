@@ -442,6 +442,17 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         const returnValueAndType = state.popOS()
         state.setReturnRegisterBinary(returnValueAndType)
       }
+      let nextInstruction = state.peekA()
+      while (nextInstruction !== undefined) {
+        if (isMicrocode(nextInstruction) && nextInstruction.tag === 'exit_func') {
+          break
+        }
+        state.popA()
+        nextInstruction = state.peekA()
+      }
+      if (nextInstruction === undefined) {
+        throw new LogicError('Microcode exit function not found')
+      }
       return
     }
     default:
