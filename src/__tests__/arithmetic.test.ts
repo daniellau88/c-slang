@@ -267,8 +267,8 @@ describe('arithmetic', () => {
       int main() {
         int x = -10;
         int* a = &x;
-        int b = *a;
-        float c = *a;
+        int b = *a + 1;
+        float c = *a + 2;
         printfLog(x, a, b, c);
         return 0;
       }
@@ -280,8 +280,8 @@ describe('arithmetic', () => {
     const expectedLogOutput = [
       { binary: intToBinary(-10), type: INT_BASE_TYPE },
       { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
-      { binary: intToBinary(-10), type: INT_BASE_TYPE },
-      { binary: -10, type: FLOAT_BASE_TYPE },
+      { binary: intToBinary(-9), type: INT_BASE_TYPE },
+      { binary: -8, type: FLOAT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
