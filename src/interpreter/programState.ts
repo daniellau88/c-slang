@@ -1,4 +1,5 @@
 import { CASTNode, ProgramType } from '../typings/programAST'
+import { POINTER_BASE_TYPE } from './typeUtils'
 import {
   BinaryWithType,
   BuiltinFunctionDefinition,
@@ -155,10 +156,8 @@ export class ProgramState {
     }
   }
 
-  allocateSizeOnRTS(newSize: number, type?: ProgramType) {
-    const initialSize = this.RTS.length
-    const changeInSize = newSize - initialSize
-    for (let i = 0; i < changeInSize; i++) {
+  allocateSizeOnRTS(size: number, type?: ProgramType) {
+    for (let i = 0; i < size; i++) {
       this.pushRTS(0, type)
     }
   }
@@ -175,12 +174,29 @@ export class ProgramState {
     return this.FD[index]
   }
 
-  popE(): EScope {
-    return pop(this.E)
+  extendFunctionE() {
+    push(this.E, this.getGlobalE())
   }
 
-  pushE(e: EScope) {
-    push(this.E, e)
+  extendScopeE() {
+    const currentTopE = peek(this.E)
+    this.E[this.E.length - 1] = {
+      parent: currentTopE,
+      record: {},
+    }
+  }
+
+  popScopeE() {
+    const currentTopE = peek(this.E)
+    if (!currentTopE || !currentTopE.parent) {
+      throw new LogicError('No more scope to pop')
+    }
+    this.E[this.E.length - 1] = currentTopE.parent
+  }
+
+  popFunctionE() {
+    if (this.E.length === 1) throw new LogicError('Cannot remove global environment')
+    pop(this.E)
   }
 
   printE() {
@@ -201,6 +217,10 @@ export class ProgramState {
       currentEntry = currentEntry.parent
     }
     return undefined
+  }
+
+  addRecordToE(key: string, record: ERecord) {
+    this.E[this.E.length - 1].record[key] = record
   }
 
   getGlobalE() {
@@ -239,8 +259,15 @@ export class ProgramState {
     return this.RTSStart
   }
 
-  setRTSStart(rtsStart: number) {
-    return (this.RTSStart = rtsStart)
+  saveAndUpdateRTSStartOntoStack() {
+    const rtsStart = this.RTSStart
+    this.RTSStart = this.getRTSLength()
+    this.pushRTS(rtsStart, POINTER_BASE_TYPE)
+  }
+
+  popAndRestoreRTSStartOntoStack() {
+    const prevRTSStart = this.popRTS()
+    this.RTSStart = prevRTSStart
   }
 
   getReturnRegister(): ReturnRegisterType {

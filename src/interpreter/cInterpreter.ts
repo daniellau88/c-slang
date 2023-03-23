@@ -3,6 +3,7 @@ import {
   CASTExpression,
   CASTFunctionDefinition,
   CASTNode,
+  CASTTypeModifier,
   ProgramType,
 } from '../typings/programAST'
 import { ProgramState } from './programState'
@@ -21,14 +22,11 @@ import {
   isBaseType,
   isPointer,
   isTypeEquivalent,
-  POINTER_BASE_TYPE,
   VOID_BASE_TYPE,
 } from './typeUtils'
 import {
   BinaryWithType,
   BuiltinFunctionDefinition,
-  ERecord,
-  EScope,
   MicroCode,
   MicroCodeBinaryOperator,
 } from './typings'
@@ -43,6 +41,8 @@ import {
   RuntimeError,
   shouldDerefExpression,
 } from './utils'
+
+const wordSize = 8
 
 // Builtin functions must always add a value onto the OS (whether directly or indirectly)
 const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
@@ -235,11 +235,8 @@ const microcode = (state: ProgramState, node: MicroCode) => {
           return
         }
         case 'variable': {
-          if (!record.assigned) {
-            throw new RuntimeError('Variable ' + node.name + ' not declared yet')
-          }
           const address = record.address
-          state.pushOS(address, incrementPointerDepth(record.variableType.typeModifiers))
+          state.pushOS(address, incrementPointerDepth(record.variableType))
           return
         }
       }
@@ -270,28 +267,27 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         return
       }
 
-      const previousRTSStart = state.getRTSStart()
-      state.setRTSStart(state.getRTSLength())
-      state.pushRTS(previousRTSStart, POINTER_BASE_TYPE)
+      state.saveAndUpdateRTSStartOntoStack()
+
+      state.extendFunctionE()
+      state.extendScopeE()
 
       const funcParameters = functionToCall.parameters
-      const newRecord: Record<string, ERecord> = {}
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
         const identifierName = parameter.identifier?.name
         if (identifierName)
-          newRecord[identifierName] = {
+          state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
-            variableType: parameter.paramType,
-            assigned: true,
-          }
+            variableType: parameter.paramType.typeModifiers,
+          })
         state.pushRTS(args[i].binary, args[i].type)
       }
-      state.pushE({ parent: state.getGlobalE(), record: newRecord })
+
       state.pushA({ tag: 'exit_func' })
-      state.pushA(functionToCall.body)
+      ;[...functionToCall.body.statements].reverse().forEach(x => state.pushA(x))
       return
     }
     case 'exit_func':
@@ -301,9 +297,8 @@ const microcode = (state: ProgramState, node: MicroCode) => {
 
       state.shrinkRTSToIndex(state.getRTSStart())
 
-      const previousRTSStart = state.popRTS()
-      state.setRTSStart(previousRTSStart)
-      state.popE()
+      state.popAndRestoreRTSStartOntoStack()
+      state.popFunctionE()
 
       state.setReturnRegisterAssigned(false)
       const binaryWithType = state.getReturnRegister().binary
@@ -315,59 +310,89 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       state.popOS()
       return
     case 'enter_scope': {
-      const curEnv = state.popE()
-      const newEnv: EScope = {
-        parent: curEnv,
-        record: {},
-      }
-      node.declarations.forEach(x => {
-        newEnv.record[x.identifier.name] = {
-          subtype: 'variable',
-          variableType: x.declarationType,
-          address: state.getRTSLength(),
-          assigned: false,
-        }
-        state.pushRTS(0, x.declarationType.typeModifiers)
-      })
-      state.pushE(newEnv)
+      state.saveAndUpdateRTSStartOntoStack()
+      state.extendScopeE()
       return
     }
     case 'exit_scope': {
-      const curEnv = state.popE()
-      if (!curEnv || !curEnv.parent) {
-        throw new LogicError('No more scope to pop')
-      }
-      for (let i = 0; i < node.declarations.length; i++) state.popRTS()
-      state.pushE(curEnv.parent)
+      state.popScopeE()
+      state.shrinkRTSToIndex(state.getRTSStart())
+      state.popAndRestoreRTSStartOntoStack()
       return
     }
     case 'decl': {
       const name = node.declaration.identifier.name
       const init = node.declaration.init
       const record = state.lookupE(name)
-      if (!record) {
-        throw new LogicError('Memory not allocated for declaration on RTS')
-      }
-
-      if (record.subtype === 'func') {
-        throw new LogicError('Function cannot be redeclared')
-      }
-
-      if (record.assigned) {
+      if (record) {
         throw new RuntimeError('Invalid redeclaration of ' + name)
       }
-      record.assigned = true
-
-      state.pushOS(
-        record.address,
-        incrementPointerDepth(node.declaration.declarationType.typeModifiers),
-      )
 
       if (init) {
         state.pushA({ tag: 'assgn' })
         if (shouldDerefExpression(init)) state.pushA({ tag: 'deref' })
         state.pushA(init)
       }
+
+      state.pushA({
+        tag: 'decl_eval_type_modifier_i',
+        oldTypeModifiers: node.declaration.declarationType.typeModifiers,
+        newTypeModifiers: [],
+        currentIndex: -1,
+        name: name,
+      })
+      return
+    }
+    case 'decl_eval_type_modifier_i': {
+      const curIndex = node.currentIndex
+      const oldTypeModifiers = node.oldTypeModifiers
+      const newTypeModifiers = node.newTypeModifiers
+      if (curIndex !== -1) {
+        const currentModifier = node.oldTypeModifiers[curIndex]
+        if (currentModifier.subtype !== 'Array') {
+          throw new LogicError('Subtype should be array')
+        }
+
+        const { binary, type } = state.popOS() // Assert type should be int
+        if (!isTypeEquivalent(type, INT_BASE_TYPE)) {
+          throw new RuntimeError('Array size is not integer')
+        }
+
+        const currentModifierCopy: CASTTypeModifier = {
+          ...currentModifier,
+          size: { type: 'Literal', subtype: 'Int', value: binaryToInt(binary).toString() },
+        }
+        newTypeModifiers.push(currentModifierCopy)
+      }
+
+      for (let i = curIndex + 1; i < oldTypeModifiers.length; i++) {
+        const currentModifier = oldTypeModifiers[i]
+        if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
+          state.pushA({ ...node, currentIndex: i })
+          if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref' })
+          state.pushA(currentModifier.size)
+          return
+        }
+        newTypeModifiers.push(currentModifier)
+      }
+
+      state.pushA({ tag: 'decl_alloc_mem', typeModifiers: newTypeModifiers, name: node.name })
+      state.pushA({ tag: 'size_of_op', typeModifiers: newTypeModifiers })
+      return
+    }
+    case 'decl_alloc_mem': {
+      const { binary: allocationSizeBinary, type } = state.popOS()
+      const allocationSize = binaryToInt(allocationSizeBinary)
+      const currentRTSAddress = state.getRTSLength()
+      state.allocateSizeOnRTS(allocationSize / wordSize, node.typeModifiers)
+
+      state.addRecordToE(node.name, {
+        subtype: 'variable',
+        address: currentRTSAddress,
+        variableType: node.typeModifiers,
+      })
+
+      state.pushOS(currentRTSAddress, incrementPointerDepth(node.typeModifiers))
       return
     }
     case 'assgn': {
@@ -512,6 +537,10 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
       let nextInstruction = state.peekA()
       while (nextInstruction !== undefined) {
+        if (isMicrocode(nextInstruction) && nextInstruction.tag === 'exit_scope') {
+          state.shrinkRTSToIndex(state.getRTSStart())
+          state.popAndRestoreRTSStartOntoStack()
+        }
         if (isMicrocode(nextInstruction) && nextInstruction.tag === 'exit_func') {
           break
         }
