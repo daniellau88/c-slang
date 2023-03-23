@@ -239,7 +239,7 @@ export interface CASTTypeModifierBaseType extends CASTTypeModifierBase {
 
 interface CASTTypeModifierArray extends CASTTypeModifierBase {
   subtype: 'Array'
-  size?: any
+  size?: CASTExpression
 }
 
 export interface CASTTypeModifierPointer extends CASTTypeModifierBase {

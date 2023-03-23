@@ -122,6 +122,11 @@ interface ConditionalOperationMicroCode extends MicroCodeBase {
   ifTrue: CASTExpression
 }
 
+interface SizeOfOperationMicroCode extends MicroCodeBase {
+  tag: 'size_of_op'
+  typeModifiers: ProgramType
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -140,6 +145,7 @@ export type MicroCode =
   | ReturnMicroCode
   | UnaryOperationMicroCode
   | ConditionalOperationMicroCode
+  | SizeOfOperationMicroCode
 
 interface ERecordBase {
   subtype: string

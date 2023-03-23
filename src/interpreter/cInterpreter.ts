@@ -24,7 +24,14 @@ import {
   POINTER_BASE_TYPE,
   VOID_BASE_TYPE,
 } from './typeUtils'
-import { BinaryWithType, BuiltinFunctionDefinition, ERecord, EScope, MicroCode } from './typings'
+import {
+  BinaryWithType,
+  BuiltinFunctionDefinition,
+  ERecord,
+  EScope,
+  MicroCode,
+  MicroCodeBinaryOperator,
+} from './typings'
 import {
   binaryToFormattedString,
   binaryToInt,
@@ -37,13 +44,22 @@ import {
   shouldDerefExpression,
 } from './utils'
 
+// Builtin functions must always add a value onto the OS (whether directly or indirectly)
 const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   printfLog: {
     func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
       state.pushLogOutput(...arg)
+      state.pushOS(0, VOID_BASE_TYPE)
     },
     returnProgType: VOID_BASE_TYPE,
     arity: -1,
+  },
+  sizeof: {
+    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
+      state.pushA({ tag: 'size_of_op', typeModifiers: arg[0].type })
+    },
+    returnProgType: INT_BASE_TYPE,
+    arity: 1,
   },
 }
 
@@ -130,6 +146,10 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue })
       if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref' })
       state.pushA(node.predicate)
+      return
+    }
+    case 'SizeOfExpression': {
+      state.pushA({ tag: 'size_of_op', typeModifiers: node.typeArg.typeModifiers })
       return
     }
     case 'UnaryExpression': {
@@ -246,9 +266,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        const retVal = functionToCall.func(state, ...args)
-
-        state.pushOS(retVal, incrementPointerDepth(functionToCall.returnProgType))
+        functionToCall.func(state, ...args)
         return
       }
 
@@ -436,6 +454,42 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
       if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref' })
       state.pushA(expressionToPush)
+      return
+    }
+    case 'size_of_op': {
+      const typeModifiers = node.typeModifiers
+      const expressions: Array<CASTExpression | MicroCode> = []
+      for (let i = 0; i < typeModifiers.length; i++) {
+        const typeModifier = typeModifiers[i]
+        let shouldBreak = false
+        switch (typeModifier.subtype) {
+          case 'Array': {
+            if (typeModifier.size === undefined) throw new RuntimeError('Array size is not defined')
+            expressions.push(typeModifier.size)
+            break
+          }
+          case 'BaseType': {
+            expressions.push({ tag: 'load_int', value: 8 })
+            shouldBreak = true
+            break
+          }
+          case 'Pointer': {
+            expressions.push({ tag: 'load_int', value: 8 })
+            shouldBreak = true
+            break
+          }
+          case 'Parameters': {
+            throw new RuntimeError('Cannot get size of function')
+          }
+        }
+        if (shouldBreak) break
+      }
+      expressions.forEach((x, i) => {
+        if (i !== expressions.length - 1)
+          state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntMultiply })
+        if (!isMicrocode(x) && shouldDerefExpression(x)) state.pushA({ tag: 'deref' })
+        state.pushA(x)
+      })
       return
     }
     case 'unary_op': {

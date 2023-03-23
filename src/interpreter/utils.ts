@@ -106,6 +106,10 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
       }
     case 'Pointer':
       return 'pointer ' + binary
+    case 'Array':
+      return 'array ' + binary
+    case 'Parameters':
+      return 'parameters ' + binary
     default:
       throw new NotImplementedError()
   }
