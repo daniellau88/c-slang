@@ -73,6 +73,7 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
     case 'FunctionDefinition':
       const fdNode = node as CASTFunctionDefinition
       if (fdNode.identifier.name === 'main') {
+        state.setGlobalLength(state.getRTSLength())
         state.pushA({ tag: 'func_apply', arity: 0 })
         state.pushA(fdNode.identifier)
       }

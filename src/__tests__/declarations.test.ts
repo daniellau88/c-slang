@@ -69,6 +69,22 @@ describe('declarations', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('global declaration', () => {
+    const output = testProgram(
+      `
+      int x = 2;
+      int main() {
+        printfLog(x);
+        return 0;
+      }
+    `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(2), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('undeclared variable', () => {
     const program = () =>
       testProgram(

@@ -40,6 +40,8 @@ export class ProgramState {
 
   private ReturnRegister: ReturnRegisterType
 
+  private GlobalLength: number
+
   constructor(ast: CASTNode, builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     this.A = [ast]
     this.OS = []
@@ -50,6 +52,7 @@ export class ProgramState {
     this.FD = []
     this.E = [{ record: {} }]
     this.LogOutput = []
+    this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
 
     const builtinFunctionKeys = Object.keys(builtinFunctions)
@@ -90,6 +93,14 @@ export class ProgramState {
 
   getALength(): number {
     return this.A.length
+  }
+
+  getGlobalLength(): number {
+    return this.GlobalLength
+  }
+
+  setGlobalLength(globalEnd: number) {
+    this.GlobalLength = globalEnd
   }
 
   pushOS(binary: number, type: ProgramType) {
