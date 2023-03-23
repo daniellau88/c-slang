@@ -44,6 +44,11 @@ export const isPointer = (type: ProgramType): boolean => {
   return type[0].subtype === 'Pointer'
 }
 
+export const isArray = (type: ProgramType): boolean => {
+  if (type.length === 0) return false
+  return type[0].subtype === 'Array'
+}
+
 const makeDeepCopy = (type: ProgramType) => {
   const deepCopy: ProgramType = []
   type.forEach(typeModifier => {
@@ -77,6 +82,15 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
 
   deepCopy[0].pointerDepth -= 1
   return deepCopy
+}
+
+export const getArrayItemsType = (type: ProgramType): ProgramType => {
+  const deepCopy = makeDeepCopy(type)
+  if (deepCopy[0].subtype !== 'Array') {
+    throw new LogicError('Type is not an array')
+  }
+
+  return deepCopy.splice(1)
 }
 
 export enum ArithmeticType {

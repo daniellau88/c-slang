@@ -6,8 +6,6 @@ import {
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
-  CASTType,
-  CASTTypeModifier,
   CASTUnaryOperator,
   ProgramType,
 } from '../typings/programAST'
@@ -143,6 +141,10 @@ interface DeclarationAllocateMemoryMicroCode extends MicroCodeBase {
   name: string
 }
 
+interface ArrayAddressComputeMicroCode extends MicroCodeBase {
+  tag: 'array_add_comp'
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -164,6 +166,7 @@ export type MicroCode =
   | SizeOfOperationMicroCode
   | DeclarationEvaluateTypeModifierIterativeMicroCode
   | DeclarationAllocateMemoryMicroCode
+  | ArrayAddressComputeMicroCode
 
 interface ERecordBase {
   subtype: string

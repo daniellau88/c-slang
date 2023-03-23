@@ -307,6 +307,29 @@ describe('arithmetic', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('address arithmetic', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[5];
+        int* b = &a + 2;
+        int c = *b;
+        printfLog(a, b, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: 2, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('unary address dereference invalid address', () => {
     const program = () =>
       testProgram(

@@ -115,6 +115,32 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
   }
 }
 
+export const typeToString = (type: ProgramType): string => {
+  if (!type || type.length === 0) return 'unknown'
+  const baseType = type[0]
+  switch (baseType.subtype) {
+    case 'BaseType':
+      switch (baseType.baseType) {
+        case 'float':
+          return 'float'
+        case 'int':
+          return 'int'
+        case 'char':
+          return 'char'
+        case 'void':
+          return 'void'
+      }
+    case 'Pointer':
+      return 'pointer'
+    case 'Array':
+      return 'array'
+    case 'Parameters':
+      return 'function'
+    default:
+      throw new NotImplementedError()
+  }
+}
+
 export const parseStringToAST = (program: string): CASTNode => {
   const context = createContext()
   const parsedProgram = parse(program, context)
@@ -139,6 +165,7 @@ export const printBinariesWithTypes = (
 export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   switch (expression.type) {
     case 'Identifier':
+    case 'ArrayAccessExpression':
       return true
     default:
       return false

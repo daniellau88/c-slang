@@ -1,4 +1,5 @@
 import {
+  CASTBinaryOperator,
   CASTDeclaration,
   CASTExpression,
   CASTFunctionDefinition,
@@ -16,6 +17,7 @@ import {
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
   FLOAT_BASE_TYPE,
+  getArrayItemsType,
   getBaseTypePromotionPriority,
   incrementPointerDepth,
   INT_BASE_TYPE,
@@ -166,6 +168,14 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       state.pushA(node.expression)
       return
     }
+    case 'ArrayAccessExpression': {
+      state.pushA({ tag: 'array_add_comp' })
+      if (shouldDerefExpression(node.indexExpression)) state.pushA({ tag: 'deref' })
+      state.pushA(node.indexExpression)
+      if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
+      state.pushA(node.expression)
+      return
+    }
     case 'Identifier': {
       state.pushA({ tag: 'load_var', name: node.name })
       return
@@ -246,7 +256,12 @@ const microcode = (state: ProgramState, node: MicroCode) => {
     case 'deref': {
       const { binary, type } = state.popOS()
       if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
-      state.pushOS(state.getRTSAtIndex(binary), decrementPointerDepth(type))
+      const newType = decrementPointerDepth(type)
+      if (newType[0].subtype === 'Array') {
+        state.pushOS(binary, newType)
+        return
+      }
+      state.pushOS(state.getRTSAtIndex(binary), newType)
       return
     }
     case 'func_apply': {
@@ -463,9 +478,34 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         state.pushOS(newRightOp, newType)
         state.pushA({ tag: 'bin_op', operator: newOperator })
         return
+      } else if (
+        isPointer(leftOpType) &&
+        isBaseType(rightOpType) &&
+        getBaseTypePromotionPriority(rightOpType) === ArithmeticType.Integer
+      ) {
+        state.pushOS(leftOp, leftOpType)
+        state.pushOS(rightOp, rightOpType)
+        const microcodeOperator = (() => {
+          switch (node.operator) {
+            case CASTBinaryOperator.Plus:
+              return MicroCodeBinaryOperator.IntAddition
+            case CASTBinaryOperator.Minus:
+              return MicroCodeBinaryOperator.IntSubtraction
+            default:
+              throw new RuntimeError('Cannot perform operation between pointer and integer')
+          }
+        })()
+        state.pushA({ tag: 'bin_op', operator: microcodeOperator })
+        state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntDivision })
+        state.pushA({ tag: 'load_int', value: wordSize })
+        state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntMultiply })
+        state.pushA({ tag: 'size_of_op', typeModifiers: decrementPointerDepth(leftOpType) })
+        return
       }
 
-      throw new NotImplementedError()
+      throw new RuntimeError(
+        'Cannot perform operation between type ' + leftOpType[0].type + ' and ',
+      )
     }
     case 'bin_op': {
       const rightOpWithType = state.popOS()
@@ -553,6 +593,17 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       }
       return
     }
+    case 'array_add_comp': {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      const { binary: arrayAddressBinary, type: arrayAddressType } = state.popOS()
+
+      const arrayItemsType = getArrayItemsType(arrayAddressType)
+      state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
+      state.pushOS(indexBinary, indexType)
+
+      state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
+      return
+    }
     default:
       throw new NotImplementedError()
   }
@@ -624,8 +675,8 @@ export const testProgram = (program: string): ProgramState => {
 //   int main() {
 //     int x = -10;
 //     int* a = &x;
-//     int b = *x;
-//     float c = *x;
+//     int b = *a + 1;
+//     float c = *a + 2;
 //     printfLog(x, a, b, c);
 //     return 0;
 //   }
