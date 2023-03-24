@@ -2,10 +2,13 @@ import {
   CASTBinaryOperator,
   CASTCompoundStatement,
   CASTDeclaration,
+  CASTExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
   CASTType,
+  CASTTypeModifier,
+  CASTUnaryOperator,
   ProgramType,
 } from '../typings/programAST'
 
@@ -109,6 +112,37 @@ interface ReturnMicroCode extends MicroCodeBase {
   withExpression: boolean
 }
 
+interface UnaryOperationMicroCode extends MicroCodeBase {
+  tag: 'unary_op'
+  operator: CASTUnaryOperator
+}
+
+interface ConditionalOperationMicroCode extends MicroCodeBase {
+  tag: 'conditional_op'
+  ifFalse: CASTExpression
+  ifTrue: CASTExpression
+}
+
+interface SizeOfOperationMicroCode extends MicroCodeBase {
+  tag: 'size_of_op'
+  typeModifiers: ProgramType
+}
+
+// Evaluates expressions in array
+interface DeclarationEvaluateTypeModifierIterativeMicroCode extends MicroCodeBase {
+  tag: 'decl_eval_type_modifier_i'
+  oldTypeModifiers: ProgramType
+  newTypeModifiers: ProgramType
+  currentIndex: number
+  name: string
+}
+
+interface DeclarationAllocateMemoryMicroCode extends MicroCodeBase {
+  tag: 'decl_alloc_mem'
+  typeModifiers: ProgramType
+  name: string
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -125,6 +159,11 @@ export type MicroCode =
   | ExitFuncMicroCode
   | DereferenceMicroCode
   | ReturnMicroCode
+  | UnaryOperationMicroCode
+  | ConditionalOperationMicroCode
+  | SizeOfOperationMicroCode
+  | DeclarationEvaluateTypeModifierIterativeMicroCode
+  | DeclarationAllocateMemoryMicroCode
 
 interface ERecordBase {
   subtype: string
@@ -138,8 +177,7 @@ interface ERecordFunction extends ERecordBase {
 interface ERecordVariable extends ERecordBase {
   subtype: 'variable'
   address: number
-  variableType: CASTType
-  assigned: boolean
+  variableType: ProgramType
 }
 
 export type ERecord = ERecordFunction | ERecordVariable

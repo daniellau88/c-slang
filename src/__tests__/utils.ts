@@ -4,7 +4,7 @@ import { BinaryWithType } from '../interpreter/typings'
 import { binaryToInt, intToBinary } from '../interpreter/utils'
 
 export const verifyProgramCompleted = (output: ProgramState) => {
-  expect(output.getRTSLength()).toBe(0)
+  expect(output.getRTSLength()).toBe(output.getGlobalLength())
   expect(output.getOSLength()).toBe(1)
   const retVal = output.peekOS()
   expect(retVal?.binary).toBe(intToBinary(0))

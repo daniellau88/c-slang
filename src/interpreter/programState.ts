@@ -1,4 +1,5 @@
 import { CASTNode, ProgramType } from '../typings/programAST'
+import { POINTER_BASE_TYPE } from './typeUtils'
 import {
   BinaryWithType,
   BuiltinFunctionDefinition,
@@ -15,6 +16,7 @@ import {
   printBinariesWithTypes,
   push,
   pushStackAndType,
+  RuntimeError,
 } from './utils'
 
 type ReturnRegisterType =
@@ -38,6 +40,8 @@ export class ProgramState {
 
   private ReturnRegister: ReturnRegisterType
 
+  private GlobalLength: number
+
   constructor(ast: CASTNode, builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     this.A = [ast]
     this.OS = []
@@ -48,6 +52,7 @@ export class ProgramState {
     this.FD = []
     this.E = [{ record: {} }]
     this.LogOutput = []
+    this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
 
     const builtinFunctionKeys = Object.keys(builtinFunctions)
@@ -78,12 +83,24 @@ export class ProgramState {
     return pop(this.A)
   }
 
+  peekA(): CASTNode | MicroCode | undefined {
+    return peek(this.A)
+  }
+
   isAEmpty(): boolean {
     return this.A.length === 0
   }
 
   getALength(): number {
     return this.A.length
+  }
+
+  getGlobalLength(): number {
+    return this.GlobalLength
+  }
+
+  setGlobalLength(globalEnd: number) {
+    this.GlobalLength = globalEnd
   }
 
   pushOS(binary: number, type: ProgramType) {
@@ -128,6 +145,7 @@ export class ProgramState {
   }
 
   getRTSAtIndex(index: number): number {
+    if (index >= this.RTS.length) throw new RuntimeError('Invalid memory access')
     return this.RTS[index]
   }
 
@@ -149,10 +167,8 @@ export class ProgramState {
     }
   }
 
-  allocateSizeOnRTS(newSize: number, type?: ProgramType) {
-    const initialSize = this.RTS.length
-    const changeInSize = newSize - initialSize
-    for (let i = 0; i < changeInSize; i++) {
+  allocateSizeOnRTS(size: number, type?: ProgramType) {
+    for (let i = 0; i < size; i++) {
       this.pushRTS(0, type)
     }
   }
@@ -169,12 +185,29 @@ export class ProgramState {
     return this.FD[index]
   }
 
-  popE(): EScope {
-    return pop(this.E)
+  extendFunctionE() {
+    push(this.E, this.getGlobalE())
   }
 
-  pushE(e: EScope) {
-    push(this.E, e)
+  extendScopeE() {
+    const currentTopE = peek(this.E)
+    this.E[this.E.length - 1] = {
+      parent: currentTopE,
+      record: {},
+    }
+  }
+
+  popScopeE() {
+    const currentTopE = peek(this.E)
+    if (!currentTopE || !currentTopE.parent) {
+      throw new LogicError('No more scope to pop')
+    }
+    this.E[this.E.length - 1] = currentTopE.parent
+  }
+
+  popFunctionE() {
+    if (this.E.length === 1) throw new LogicError('Cannot remove global environment')
+    pop(this.E)
   }
 
   printE() {
@@ -195,6 +228,10 @@ export class ProgramState {
       currentEntry = currentEntry.parent
     }
     return undefined
+  }
+
+  addRecordToE(key: string, record: ERecord) {
+    this.E[this.E.length - 1].record[key] = record
   }
 
   getGlobalE() {
@@ -233,8 +270,15 @@ export class ProgramState {
     return this.RTSStart
   }
 
-  setRTSStart(rtsStart: number) {
-    return (this.RTSStart = rtsStart)
+  saveAndUpdateRTSStartOntoStack() {
+    const rtsStart = this.RTSStart
+    this.RTSStart = this.getRTSLength()
+    this.pushRTS(rtsStart, POINTER_BASE_TYPE)
+  }
+
+  popAndRestoreRTSStartOntoStack() {
+    const prevRTSStart = this.popRTS()
+    this.RTSStart = prevRTSStart
   }
 
   getReturnRegister(): ReturnRegisterType {

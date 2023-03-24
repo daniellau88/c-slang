@@ -575,7 +575,7 @@ function visitCCSTUnaryOperator(node: CCSTUnaryOperator): CASTUnaryOperator {
     case 'Ampersand':
       return CASTUnaryOperator.Address
     case 'Asterick':
-      return CASTUnaryOperator.Derefence
+      return CASTUnaryOperator.Dereference
     case 'Exclamationmark':
       return CASTUnaryOperator.LogicalNot
     case 'Minus':
@@ -709,7 +709,6 @@ function visitCCSTDirectAbstractDeclarator(
         },
       }
     case 'Parameters':
-      console.log('help', node.parameterTypeList)
       return {
         type: {
           type: 'Type',

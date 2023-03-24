@@ -1,7 +1,7 @@
 import createContext from '../createContext'
 import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
-import { CASTNode, ProgramType } from '../typings/programAST'
+import { CASTExpression, CASTNode, ProgramType } from '../typings/programAST'
 import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
@@ -74,7 +74,7 @@ export const intToBinary = (int: number): number => {
 export const binaryToInt = (binary: number): number => {
   const data = new ArrayBuffer(8)
   const view = new DataView(data)
-  view.setFloat64(0, binary) // Use 32 first
+  view.setFloat64(0, binary)
   return view.getInt32(0)
 }
 
@@ -90,7 +90,7 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
 }
 
 export const binaryToFormattedString = (binary: number, type?: ProgramType): string => {
-  if (!type) return 'unknown ' + binary
+  if (!type || type.length === 0) return 'unknown ' + binary
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':
@@ -106,6 +106,10 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
       }
     case 'Pointer':
       return 'pointer ' + binary
+    case 'Array':
+      return 'array ' + binary
+    case 'Parameters':
+      return 'parameters ' + binary
     default:
       throw new NotImplementedError()
   }
@@ -121,7 +125,6 @@ export const parseStringToAST = (program: string): CASTNode => {
   return convertCSTProgramToAST(parsedProgram)
 }
 
-const zip = <T, U>(a: Array<T>, b: Array<U>) => a.map((k, i) => [k, b[i]])
 export const printBinariesWithTypes = (
   binaries: Array<number>,
   types: Record<number, ProgramType>,
@@ -131,4 +134,13 @@ export const printBinariesWithTypes = (
     return binaryToFormattedString(x, types[i])
   })
   console.log(prefix + '[' + strings.join(', ') + ']')
+}
+
+export const shouldDerefExpression = (expression: CASTExpression): boolean => {
+  switch (expression.type) {
+    case 'Identifier':
+      return true
+    default:
+      return false
+  }
 }

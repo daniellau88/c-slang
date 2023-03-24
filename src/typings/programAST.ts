@@ -125,7 +125,7 @@ export enum CASTUnaryOperator {
   PreIncrement,
   PreDecrement,
   Address,
-  Derefence,
+  Dereference,
   Positive,
   Negate,
   BitwiseNot,
@@ -239,7 +239,7 @@ export interface CASTTypeModifierBaseType extends CASTTypeModifierBase {
 
 interface CASTTypeModifierArray extends CASTTypeModifierBase {
   subtype: 'Array'
-  size?: any
+  size?: CASTExpression
 }
 
 export interface CASTTypeModifierPointer extends CASTTypeModifierBase {

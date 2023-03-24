@@ -5,7 +5,7 @@ import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/typeUtils'
 import { intToBinary, RuntimeError } from '../interpreter/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
-describe('declarations', () => {
+describe('function', () => {
   test('simple function', () => {
     const output = testProgram(
       `
@@ -71,6 +71,34 @@ describe('declarations', () => {
       { binary: intToBinary(2), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: INT_BASE_TYPE },
       { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('return in scope', () => {
+    const output = testProgram(
+      `
+      int a(int b) {
+        printfLog(b);
+        {
+          return b + 2;
+        }
+        printfLog(b);
+        return b + 1;
+      }
+
+      int main() {
+        int c = a(1);
+        printfLog(c);
+        return 0;
+      }
+    `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
