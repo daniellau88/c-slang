@@ -133,6 +133,7 @@ const astToMicrocode = (state: ProgramState, node: CASTNode) => {
     }
     case 'AssignmentExpression': {
       state.pushA({ tag: 'assgn' })
+      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
       state.pushA(node.right)
       state.pushA(node.left)
       return
@@ -242,12 +243,12 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       switch (record.subtype) {
         case 'func': {
           const fd = state.getFDAtIndex(record.funcIndex)
-          state.pushOS(record.funcIndex, incrementPointerDepth(fd.returnProgType))
+          state.pushOS(intToBinary(record.funcIndex), incrementPointerDepth(fd.returnProgType))
           return
         }
         case 'variable': {
           const address = record.address
-          state.pushOS(address, incrementPointerDepth(record.variableType))
+          state.pushOS(intToBinary(address), incrementPointerDepth(record.variableType))
           return
         }
       }
@@ -261,7 +262,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         state.pushOS(binary, newType)
         return
       }
-      state.pushOS(state.getRTSAtIndex(binary), newType)
+      state.pushOS(state.getRTSAtIndex(binaryToInt(binary)), newType)
       return
     }
     case 'func_apply': {
@@ -272,7 +273,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
       args.reverse()
 
       const { binary: funcId } = state.popOS()
-      const functionToCall = state.getFDAtIndex(funcId)
+      const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
 
       if (functionToCall.arity !== -1 && functionToCall.arity !== args.length) {
         throw new RuntimeError('Wrong number of arguments given for function')
@@ -408,7 +409,7 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         variableType: node.typeModifiers,
       })
 
-      state.pushOS(currentRTSAddress, incrementPointerDepth(node.typeModifiers))
+      state.pushOS(intToBinary(currentRTSAddress), incrementPointerDepth(node.typeModifiers))
       return
     }
     case 'assgn': {
@@ -434,17 +435,11 @@ const microcode = (state: ProgramState, node: MicroCode) => {
             if (newArithmeticType < maxPriority) {
               throw new RuntimeError('Cannot perform lossy assignment')
             }
-          } else if (isPointer(addrType) && isBaseType(valType)) {
-            // Pointers are float in nature
-            const valArithmeticType = getBaseTypePromotionPriority(valType)
-            if (valArithmeticType === ArithmeticType.Integer) {
-              newValue = binaryToInt(val)
-            }
           }
         }
       }
 
-      state.setRTSAtIndex(addr, newValue, newType)
+      state.setRTSAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
       return
     }
@@ -488,9 +483,9 @@ const microcode = (state: ProgramState, node: MicroCode) => {
         const microcodeOperator = (() => {
           switch (node.operator) {
             case CASTBinaryOperator.Plus:
-              return MicroCodeBinaryOperator.IntAddition
+              return MicroCodeBinaryOperator.PointerAddition
             case CASTBinaryOperator.Minus:
-              return MicroCodeBinaryOperator.IntSubtraction
+              return MicroCodeBinaryOperator.PointerSubtraction
             default:
               throw new RuntimeError('Cannot perform operation between pointer and integer')
           }

@@ -9,6 +9,8 @@ import {
   MicroCodeFunctionDefiniton,
 } from './typings'
 import {
+  binaryToInt,
+  intToBinary,
   LogicError,
   peek,
   pop,
@@ -273,12 +275,12 @@ export class ProgramState {
   saveAndUpdateRTSStartOntoStack() {
     const rtsStart = this.RTSStart
     this.RTSStart = this.getRTSLength()
-    this.pushRTS(rtsStart, POINTER_BASE_TYPE)
+    this.pushRTS(intToBinary(rtsStart), POINTER_BASE_TYPE)
   }
 
   popAndRestoreRTSStartOntoStack() {
     const prevRTSStart = this.popRTS()
-    this.RTSStart = prevRTSStart
+    this.RTSStart = binaryToInt(prevRTSStart)
   }
 
   getReturnRegister(): ReturnRegisterType {

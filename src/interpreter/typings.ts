@@ -85,6 +85,8 @@ export enum MicroCodeBinaryOperator {
   RelationalLessThanOrEqual,
   ShiftLeft,
   ShiftRight,
+  PointerAddition,
+  PointerSubtraction,
 }
 
 interface BinaryOperationMicroCode extends MicroCodeBase {

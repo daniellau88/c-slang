@@ -1,7 +1,7 @@
 import createContext from '../createContext'
 import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
-import { CASTExpression, CASTNode, ProgramType } from '../typings/programAST'
+import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../typings/programAST'
 import { BinaryWithType, MicroCode } from './typings'
 
 export class NotImplementedError extends Error {
@@ -105,7 +105,7 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
           return 'void'
       }
     case 'Pointer':
-      return 'pointer ' + binary
+      return 'pointer ' + binaryToInt(binary)
     case 'Array':
       return 'array ' + binary
     case 'Parameters':
@@ -167,6 +167,8 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
     case 'Identifier':
     case 'ArrayAccessExpression':
       return true
+    case 'UnaryExpression':
+      return expression.operator === CASTUnaryOperator.Dereference
     default:
       return false
   }
