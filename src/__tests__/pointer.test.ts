@@ -38,15 +38,14 @@ describe('pointer', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('array arithmetic', () => {
+  test('nested pointers', () => {
     const output = testProgram(
       `
       int main() {
-        int a[5];
-        int* b = &a[1] + 2;
-        a[1] = 3;
-        *b = 4;
-        printfLog(a[0], a[1], a[2], a[3], a[4]);
+        int a = 2, *b = &a, **c = &b, ***d = &c, ****e = &d;
+        printfLog(a, *b, **c, ***d, ****e);
+        a = 3;
+        printfLog(a, *b, **c, ***d, ****e);
         return 0;
       }
     `,
@@ -55,11 +54,16 @@ describe('pointer', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
-      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: INT_BASE_TYPE },
-      { binary: intToBinary(0), type: INT_BASE_TYPE },
-      { binary: intToBinary(4), type: INT_BASE_TYPE },
-      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -125,5 +129,27 @@ describe('pointer', () => {
       `,
       )
     expectThrowError(program, RuntimeError, 'Invalid memory access')
+  })
+
+  test('function pointer', () => {
+    const output = testProgram(
+      `
+      void fun(int a) {
+        printfLog(a);
+        return;
+      }
+
+      int main() {
+        void (*a)(int) = &fun;
+        (*a)(10);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })

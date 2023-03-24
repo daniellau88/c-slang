@@ -109,7 +109,7 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
     case 'Pointer':
       return 'pointer ' + binaryToInt(binary)
     case 'Array':
-      return 'array ' + binary
+      return 'array ' + binaryToInt(binary)
     case 'Parameters':
       return 'parameters ' + binary
     default:
