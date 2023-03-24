@@ -3,9 +3,9 @@ import {
   CASTTypeModifier,
   CASTUnaryOperator,
   ProgramType,
-} from '../typings/programAST'
-import { ProgramState } from './programState'
-import { BinaryWithType, MicroCodeBinaryOperator } from './typings'
+} from '../../typings/programAST'
+import { ProgramState } from '../programState'
+import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
 import {
   binaryToInt,
   intToBinary,

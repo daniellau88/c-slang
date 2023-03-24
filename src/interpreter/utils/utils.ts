@@ -1,8 +1,8 @@
-import createContext from '../createContext'
-import { convertCSTProgramToAST } from '../parser/ASTConverter'
-import { parse } from '../parser/parser'
-import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../typings/programAST'
-import { BinaryWithType, MicroCode } from './typings'
+import createContext from '../../createContext'
+import { convertCSTProgramToAST } from '../../parser/ASTConverter'
+import { parse } from '../../parser/parser'
+import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
+import { BinaryWithType, MicroCode } from '../typings'
 
 export class NotImplementedError extends Error {
   constructor(msg?: string) {

@@ -1,5 +1,4 @@
 import { CASTNode, ProgramType } from '../typings/programAST'
-import { POINTER_BASE_TYPE } from './typeUtils'
 import {
   BinaryWithType,
   BuiltinFunctionDefinition,
@@ -8,6 +7,7 @@ import {
   MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
+import { POINTER_BASE_TYPE } from './utils/typeUtils'
 import {
   binaryToInt,
   intToBinary,
@@ -19,7 +19,7 @@ import {
   push,
   pushStackAndType,
   RuntimeError,
-} from './utils'
+} from './utils/utils'
 
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }

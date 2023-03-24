@@ -1,7 +1,7 @@
 import { ProgramState } from '../interpreter/programState'
-import { INT_BASE_TYPE } from '../interpreter/typeUtils'
 import { BinaryWithType } from '../interpreter/typings'
-import { binaryToInt, intToBinary } from '../interpreter/utils'
+import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { binaryToInt, intToBinary } from '../interpreter/utils/utils'
 
 export const verifyProgramCompleted = (output: ProgramState) => {
   expect(output.getRTSLength()).toBe(output.getGlobalLength())
