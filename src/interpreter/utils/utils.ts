@@ -1,8 +1,8 @@
-import createContext from '../createContext'
-import { convertCSTProgramToAST } from '../parser/ASTConverter'
-import { parse } from '../parser/parser'
-import { CASTExpression, CASTNode, ProgramType } from '../typings/programAST'
-import { BinaryWithType, MicroCode } from './typings'
+import createContext from '../../createContext'
+import { convertCSTProgramToAST } from '../../parser/ASTConverter'
+import { parse } from '../../parser/parser'
+import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
+import { BinaryWithType, MicroCode } from '../typings'
 
 export class NotImplementedError extends Error {
   constructor(msg?: string) {
@@ -105,11 +105,37 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
           return 'void'
       }
     case 'Pointer':
-      return 'pointer ' + binary
+      return 'pointer ' + binaryToInt(binary)
     case 'Array':
       return 'array ' + binary
     case 'Parameters':
       return 'parameters ' + binary
+    default:
+      throw new NotImplementedError()
+  }
+}
+
+export const typeToString = (type: ProgramType): string => {
+  if (!type || type.length === 0) return 'unknown'
+  const baseType = type[0]
+  switch (baseType.subtype) {
+    case 'BaseType':
+      switch (baseType.baseType) {
+        case 'float':
+          return 'float'
+        case 'int':
+          return 'int'
+        case 'char':
+          return 'char'
+        case 'void':
+          return 'void'
+      }
+    case 'Pointer':
+      return 'pointer'
+    case 'Array':
+      return 'array'
+    case 'Parameters':
+      return 'function'
     default:
       throw new NotImplementedError()
   }
@@ -139,7 +165,10 @@ export const printBinariesWithTypes = (
 export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   switch (expression.type) {
     case 'Identifier':
+    case 'ArrayAccessExpression':
       return true
+    case 'UnaryExpression':
+      return expression.operator === CASTUnaryOperator.Dereference
     default:
       return false
   }

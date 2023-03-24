@@ -3,10 +3,17 @@ import {
   CASTTypeModifier,
   CASTUnaryOperator,
   ProgramType,
-} from '../typings/programAST'
-import { ProgramState } from './programState'
-import { BinaryWithType, MicroCodeBinaryOperator } from './typings'
-import { binaryToInt, intToBinary, LogicError, NotImplementedError, RuntimeError } from './utils'
+} from '../../typings/programAST'
+import { ProgramState } from '../programState'
+import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
+import {
+  binaryToInt,
+  intToBinary,
+  LogicError,
+  NotImplementedError,
+  RuntimeError,
+  typeToString,
+} from './utils'
 
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
@@ -44,6 +51,11 @@ export const isPointer = (type: ProgramType): boolean => {
   return type[0].subtype === 'Pointer'
 }
 
+export const isArray = (type: ProgramType): boolean => {
+  if (type.length === 0) return false
+  return type[0].subtype === 'Array'
+}
+
 const makeDeepCopy = (type: ProgramType) => {
   const deepCopy: ProgramType = []
   type.forEach(typeModifier => {
@@ -68,7 +80,7 @@ export const incrementPointerDepth = (type: ProgramType): ProgramType => {
 export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Pointer') {
-    throw new LogicError('Type is not a pointer')
+    throw new LogicError('Type ' + typeToString(deepCopy) + ' is not a pointer')
   }
 
   if (deepCopy[0].pointerDepth == 1) {
@@ -77,6 +89,15 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
 
   deepCopy[0].pointerDepth -= 1
   return deepCopy
+}
+
+export const getArrayItemsType = (type: ProgramType): ProgramType => {
+  const deepCopy = makeDeepCopy(type)
+  if (deepCopy[0].subtype !== 'Array') {
+    throw new LogicError('Type ' + typeToString(deepCopy) + ' is not an array')
+  }
+
+  return deepCopy.splice(1)
 }
 
 export enum ArithmeticType {
@@ -298,6 +319,14 @@ export const doBinaryOperation = (
       const { operand1Int, operand2Int } = getOperandsInInt(operand1, operand2)
       return { binary: intToBinary(operand1Int >> operand2Int), type: INT_BASE_TYPE }
     }
+    case MicroCodeBinaryOperator.PointerAddition: {
+      const { operand1Int, operand2Int } = getOperandsInInt(operand1, operand2)
+      return { binary: intToBinary(operand1Int + operand2Int), type: operand1.type }
+    }
+    case MicroCodeBinaryOperator.PointerSubtraction: {
+      const { operand1Int, operand2Int } = getOperandsInInt(operand1, operand2)
+      return { binary: intToBinary(operand1Int - operand2Int), type: operand1.type }
+    }
     default:
       throw new NotImplementedError()
   }
@@ -340,7 +369,8 @@ const getUnaryOperationIncrementResult = (
   type: 'increment' | 'decrement',
   state: ProgramState,
 ): { preResult: BinaryWithType; postResult: BinaryWithType } => {
-  const operandDereferencedValue = state.getRTSAtIndex(operandAddress.binary)
+  const operandAddressInt = binaryToInt(operandAddress.binary)
+  const operandDereferencedValue = state.getRTSAtIndex(operandAddressInt)
   const dereferencedType = decrementPointerDepth(operandAddress.type)
 
   const operandValue = getJSValueFromBinaryWithType({
@@ -351,7 +381,7 @@ const getUnaryOperationIncrementResult = (
   const result = type === 'increment' ? operandValue + 1 : operandValue - 1
   const resultBinary = getBinaryValueFromJSValueWithType(result, dereferencedType)
 
-  state.setRTSAtIndex(operandAddress.binary, resultBinary.binary, resultBinary.type)
+  state.setRTSAtIndex(operandAddressInt, resultBinary.binary, resultBinary.type)
 
   return {
     preResult: { binary: operandDereferencedValue, type: dereferencedType },
@@ -415,14 +445,7 @@ export const doUnaryOperationWithDereference = (
     }
     case CASTUnaryOperator.Dereference: {
       // Allows arbitrary dereferencing (without any type)
-      const { binary, type } = operand
-      const newType = (() => {
-        if (type.length === 0 || type[0].subtype !== 'Pointer') {
-          return []
-        }
-        return decrementPointerDepth(type)
-      })()
-      return { binary: state.getRTSAtIndex(binary), type: newType }
+      return operand
     }
     default:
       throw new LogicError('Unary operation not supported')

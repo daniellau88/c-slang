@@ -1,8 +1,8 @@
 import { describe, test } from '@jest/globals'
 
 import { testProgram } from '../interpreter/cInterpreter'
-import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils'
+import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
 describe('function', () => {

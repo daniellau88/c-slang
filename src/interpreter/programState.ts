@@ -1,5 +1,4 @@
 import { CASTNode, ProgramType } from '../typings/programAST'
-import { POINTER_BASE_TYPE } from './typeUtils'
 import {
   BinaryWithType,
   BuiltinFunctionDefinition,
@@ -8,7 +7,10 @@ import {
   MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
+import { POINTER_BASE_TYPE } from './utils/typeUtils'
 import {
+  binaryToInt,
+  intToBinary,
   LogicError,
   peek,
   pop,
@@ -17,7 +19,7 @@ import {
   push,
   pushStackAndType,
   RuntimeError,
-} from './utils'
+} from './utils/utils'
 
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
@@ -273,12 +275,12 @@ export class ProgramState {
   saveAndUpdateRTSStartOntoStack() {
     const rtsStart = this.RTSStart
     this.RTSStart = this.getRTSLength()
-    this.pushRTS(rtsStart, POINTER_BASE_TYPE)
+    this.pushRTS(intToBinary(rtsStart), POINTER_BASE_TYPE)
   }
 
   popAndRestoreRTSStartOntoStack() {
     const prevRTSStart = this.popRTS()
-    this.RTSStart = prevRTSStart
+    this.RTSStart = binaryToInt(prevRTSStart)
   }
 
   getReturnRegister(): ReturnRegisterType {

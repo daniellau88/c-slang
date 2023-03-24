@@ -1,8 +1,12 @@
 import { describe, test } from '@jest/globals'
 
 import { testProgram } from '../interpreter/cInterpreter'
-import { FLOAT_BASE_TYPE, incrementPointerDepth, INT_BASE_TYPE } from '../interpreter/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils'
+import {
+  FLOAT_BASE_TYPE,
+  incrementPointerDepth,
+  INT_BASE_TYPE,
+} from '../interpreter/utils/typeUtils'
+import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
 describe('arithmetic', () => {
@@ -279,7 +283,7 @@ describe('arithmetic', () => {
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
       { binary: intToBinary(-10), type: INT_BASE_TYPE },
-      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(1), type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
       { binary: intToBinary(-9), type: INT_BASE_TYPE },
       { binary: -8, type: FLOAT_BASE_TYPE },
     ]
@@ -290,9 +294,10 @@ describe('arithmetic', () => {
     const output = testProgram(
       `
       int main() {
-        int* a = 1;
-        float c = *a;
-        printfLog(a, c);
+        int a = 2;
+        int* b = 1;
+        float c = *b;
+        printfLog(a, b, c);
         return 0;
       }
     `,
@@ -301,8 +306,61 @@ describe('arithmetic', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
-      { binary: 1, type: incrementPointerDepth(INT_BASE_TYPE) },
-      { binary: 1072693248, type: FLOAT_BASE_TYPE }, // Might need to change address if structure changes
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: incrementPointerDepth(INT_BASE_TYPE) },
+      { binary: 2, type: FLOAT_BASE_TYPE }, // Might need to change address if structure changes
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('address arithmetic 1', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[5];
+        a[2] = 3;
+        int* b = &a[0] + 2;
+        int c = *b;
+        printfLog(a[0], a[1], a[2], b, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('address arithmetic 2', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[5];
+        int* b = &a[0] + 2;
+        *b = 3;
+        int c = *b;
+        printfLog(a[0], a[1], a[2], b, c);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: incrementPointerDepth(INT_BASE_TYPE) }, // Might need to change address if structure changes
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
