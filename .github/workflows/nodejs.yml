@@ -3,11 +3,7 @@
 
 name: Node.js CI
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   build:
@@ -35,6 +31,7 @@ jobs:
     - run: yarn build
     - run: yarn format:ci
     - run: yarn eslint
+    - run: yarn test
     - run: yarn test-coverage
       env:
         CI: true
