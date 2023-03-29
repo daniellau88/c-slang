@@ -9,7 +9,7 @@ import {
 import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
-describe('declarations', () => {
+describe('declaration', () => {
   test('single declaration', () => {
     const output = testProgram(
       `

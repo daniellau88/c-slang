@@ -80,7 +80,7 @@ export const incrementPointerDepth = (type: ProgramType): ProgramType => {
 export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Pointer') {
-    throw new LogicError('Type ' + typeToString(deepCopy) + ' is not a pointer')
+    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not a pointer')
   }
 
   if (deepCopy[0].pointerDepth == 1) {
@@ -94,7 +94,7 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
 export const getArrayItemsType = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Array') {
-    throw new LogicError('Type ' + typeToString(deepCopy) + ' is not an array')
+    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not an array')
   }
 
   return deepCopy.splice(1)

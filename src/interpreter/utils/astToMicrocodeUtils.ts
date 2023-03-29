@@ -29,10 +29,7 @@ export const astToMicrocode = (state: ProgramState, node: CASTNode) => {
       })
 
       state.pushA({ tag: 'exit_scope', declarations: declarations })
-
-      const reversedStatements = [...node.statements]
-      reversedStatements.reverse()
-      reversedStatements.forEach(x => {
+      ;[...node.statements].reverse().forEach(x => {
         state.pushA(x)
         // Statements will pop OS upon ending
       })

@@ -5,7 +5,7 @@ import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
 
-describe('assignments', () => {
+describe('assignment', () => {
   test('single assignment', () => {
     const output = testProgram(
       `

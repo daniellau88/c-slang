@@ -22,6 +22,7 @@ import {
   isBaseType,
   isPointer,
   isTypeEquivalent,
+  VOID_BASE_TYPE,
 } from './typeUtils'
 import {
   binaryToInt,
@@ -207,9 +208,14 @@ export const executeMicrocode = (state: ProgramState, node: MicroCode) => {
           throw new RuntimeError('Array size is not integer')
         }
 
+        const intValue = binaryToInt(binary)
+        if (intValue < 0) {
+          throw new RuntimeError('Array size cannot be negative')
+        }
+
         const currentModifierCopy: CASTTypeModifier = {
           ...currentModifier,
-          size: { type: 'Literal', subtype: 'Int', value: binaryToInt(binary).toString() },
+          size: { type: 'Literal', subtype: 'Int', value: intValue.toString() },
         }
         newTypeModifiers.push(currentModifierCopy)
       }
@@ -402,6 +408,8 @@ export const executeMicrocode = (state: ProgramState, node: MicroCode) => {
       if (node.withExpression) {
         const returnValueAndType = state.popOS()
         state.setReturnRegisterBinary(returnValueAndType)
+      } else {
+        state.setReturnRegisterBinary({ binary: 0, type: VOID_BASE_TYPE }) // TODO: Fix void base type
       }
       let nextInstruction = state.peekA()
       while (nextInstruction !== undefined) {

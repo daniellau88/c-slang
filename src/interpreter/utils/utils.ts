@@ -81,8 +81,10 @@ export const binaryToInt = (binary: number): number => {
 export const binaryToRawString = (binary: number): string => {
   const data = new ArrayBuffer(8)
   const view = new DataView(data)
-  view.setFloat64(0, binary) // Use 32 first
-  return view.toString()
+  view.setFloat64(0, binary)
+  const value = view.getBigUint64(0)
+  const binString = value.toString(2)
+  return '0'.repeat(64 - binString.length) + binString
 }
 
 export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
@@ -107,7 +109,7 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
     case 'Pointer':
       return 'pointer ' + binaryToInt(binary)
     case 'Array':
-      return 'array ' + binary
+      return 'array ' + binaryToInt(binary)
     case 'Parameters':
       return 'parameters ' + binary
     default:
