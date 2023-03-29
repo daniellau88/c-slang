@@ -1278,7 +1278,8 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'IfStatement',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       ifTrue: this.visit(ctx._if_true) as CCSTStatement,
-      ifFalse: this.visit(ctx._if_false) as CCSTStatement,
+      ifFalse:
+        ctx._if_false !== undefined ? (this.visit(ctx._if_false) as CCSTStatement) : undefined,
     }
   }
 
@@ -1306,14 +1307,14 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'SwitchCaseBody',
       expression: this.visit(ctx.expression()) as CCSTExpression,
-      statement: this.visit(ctx.statement()) as CCSTStatement,
+      statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
     }
   }
 
   visitSwitch_default_body(ctx: Switch_default_bodyContext): CCSTSwitchDefaultBody {
     return {
       type: 'SwitchDefaultBody',
-      statement: this.visit(ctx.statement()) as CCSTStatement,
+      statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
     }
   }
 

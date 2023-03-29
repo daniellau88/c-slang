@@ -445,11 +445,11 @@ switch_body
    ;
 
 switch_case_body
-   : CASE expression COLON statement
+   : CASE expression COLON (statement)*
    ;
 
 switch_default_body
-   : DEFAULT COLON statement
+   : DEFAULT COLON (statement)*
    ;
 
 

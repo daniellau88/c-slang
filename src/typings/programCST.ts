@@ -660,12 +660,12 @@ export interface CCSTSwitchBody extends CCSTNodeBase {
 export interface CCSTSwitchCaseBody extends CCSTNodeBase {
   type: 'SwitchCaseBody'
   expression: CCSTExpression
-  statement: CCSTStatement
+  statements: Array<CCSTStatement>
 }
 
 export interface CCSTSwitchDefaultBody extends CCSTNodeBase {
   type: 'SwitchDefaultBody'
-  statement: CCSTStatement
+  statements: Array<CCSTStatement>
 }
 
 export interface CCSTWhileStatement extends CCSTNodeBase {

@@ -96,3 +96,64 @@ int* y(int b) {
 `,
   [{}, {}, {}],
 )
+
+testExpression(
+  `
+int main() {
+  int x = 5;
+  if (x == 0) {
+    return x;
+  }
+
+  if (x == 0) {
+    return x;
+  } else {
+    return x + 1;
+  }
+}
+`,
+  [{}],
+)
+
+testExpression(
+  `
+int main() {
+  int a = 2;
+  for (int i = 0; i < 10; i++) {
+    if (i % 2 == 0) continue;
+    a += 2;
+  }
+}
+`,
+  [{}],
+)
+
+testExpression(
+  `
+int main() {
+  while (x) {
+    if (x == 2) break;
+    x++;
+  }
+}
+`,
+  [{}],
+)
+
+testExpression(
+  `
+int main() {
+  switch (x) {
+    case 1:
+      x += 2;
+      break;
+    case 3:
+    case 4:
+      break;
+    default:
+      x += 1;
+  }
+}
+`,
+  [{}],
+)
