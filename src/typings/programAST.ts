@@ -110,7 +110,7 @@ export interface CASTDoStatement extends BaseStatement {
 export interface CASTForStatement extends BaseStatement {
   type: 'ForStatement'
   statement: CASTStatement
-  initExpression?: CASTExpression
+  initDeclaration?: CASTDeclarationStatement
   testExpression?: CASTExpression
   updateExpression?: CASTExpression
 }

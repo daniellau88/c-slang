@@ -123,6 +123,9 @@ int main() {
     if (i % 2 == 0) continue;
     a += 2;
   }
+  for (;;) {
+    break;
+  }
 }
 `,
   [{}],

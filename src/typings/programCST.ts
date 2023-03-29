@@ -683,9 +683,15 @@ export interface CCSTDoStatement extends CCSTNodeBase {
 export interface CCSTForStatement extends CCSTNodeBase {
   type: 'ForStatement'
   statement: CCSTStatement
-  initExpression?: CCSTExpression
+  initDeclaration?: CCSTForInitDeclaration
   testExpression?: CCSTExpression
   updateExpression?: CCSTExpression
+}
+
+export interface CCSTForInitDeclaration extends CCSTNodeBase {
+  type: 'ForInitDeclaration'
+  declarationSpecifiers: CCSTDeclarationSpecifier
+  initDeclaratorList: CCSTInitDeclaratorList
 }
 
 export interface CCSTGotoStatement extends CCSTNodeBase {
@@ -888,3 +894,4 @@ export type CCSTNode =
   | CCSTGotoStatement
   | CCSTContinueStatement
   | CCSTBreakStatement
+  | CCSTForInitDeclaration

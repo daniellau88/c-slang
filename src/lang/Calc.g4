@@ -467,9 +467,12 @@ do_statement
 
 // For Statement
 for_statement
-   : FOR OPEN_PARENTHESES (init=expression)? SEMICOLON (test=expression)? SEMICOLON (update=expression)? CLOSE_PARENTHESES statement
+   : FOR OPEN_PARENTHESES (init=for_init_declaration)? SEMICOLON (test=expression)? SEMICOLON (update=expression)? CLOSE_PARENTHESES statement
    ;
 
+for_init_declaration
+   : declaration_specifiers init_declarator_list
+   ;
 
 // Goto Statement
 goto_statement

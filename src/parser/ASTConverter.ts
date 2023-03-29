@@ -57,6 +57,7 @@ import {
   CCSTExclusiveOrExpression,
   CCSTExpression,
   CCSTExpressionStatement,
+  CCSTForInitDeclaration,
   CCSTForStatement,
   CCSTFunctionDefinition,
   CCSTIdentifier,
@@ -421,14 +422,29 @@ function visitCCSTForStatement(node: CCSTForStatement): CASTForStatement {
   return {
     type: 'ForStatement',
     statement: visitCCSTStatement(node.statement),
-    initExpression:
-      node.initExpression !== undefined ? visitCCSTExpression(node.initExpression)[0] : undefined, // TODO: Assume first expression
+    initDeclaration:
+      node.initDeclaration !== undefined
+        ? visitCCSTForInitDeclaration(node.initDeclaration)
+        : undefined,
     testExpression:
       node.testExpression !== undefined ? visitCCSTExpression(node.testExpression)[0] : undefined, // TODO: Assume first expression
     updateExpression:
       node.updateExpression !== undefined
         ? visitCCSTExpression(node.updateExpression)[0]
         : undefined, // TODO: Assume first expression
+  }
+}
+
+// Same as DeclarationStatement (just without the semicolon)
+function visitCCSTForInitDeclaration(node: CCSTForInitDeclaration): CASTDeclarationStatement {
+  const baseType = visitCCSTDeclarationSpecifier(node.declarationSpecifiers)
+
+  return {
+    type: 'DeclarationStatement',
+    declarations: visitCCSTInitDeclaratorList(node.initDeclaratorList).map(x => {
+      x.declarationType.typeModifiers.push(baseType.typeModifiers[0])
+      return x
+    }),
   }
 }
 

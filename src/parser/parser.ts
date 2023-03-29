@@ -54,6 +54,7 @@ import {
   ExpressionTypeAssignmentContext,
   ExpressionTypeExpressionContext,
   Float_constantContext,
+  For_init_declarationContext,
   For_statementContext,
   Function_definitionContext,
   Goto_statementContext,
@@ -157,6 +158,7 @@ import {
   CCSTExpression,
   CCSTExpressionStatement,
   CCSTFloatConstant,
+  CCSTForInitDeclaration,
   CCSTForStatement,
   CCSTFunctionDefinition,
   CCSTGotoStatement,
@@ -1335,14 +1337,14 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   }
 
   visitFor_statement(ctx: For_statementContext): CCSTForStatement {
-    const initExpressionContext = ctx._init
+    const initDeclarationContext = ctx._init
     const testExpressionContext = ctx._test
     const updateExpressionContext = ctx._update
     return {
       type: 'ForStatement',
-      initExpression:
-        initExpressionContext !== undefined
-          ? (this.visit(initExpressionContext) as CCSTExpression)
+      initDeclaration:
+        initDeclarationContext !== undefined
+          ? this.visitFor_init_declaration(initDeclarationContext)
           : undefined,
       testExpression:
         testExpressionContext !== undefined
@@ -1353,6 +1355,14 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
           ? (this.visit(updateExpressionContext) as CCSTExpression)
           : undefined,
       statement: this.visit(ctx.statement()) as CCSTStatement,
+    }
+  }
+
+  visitFor_init_declaration(ctx: For_init_declarationContext): CCSTForInitDeclaration {
+    return {
+      type: 'ForInitDeclaration',
+      declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
+      initDeclaratorList: this.visitInit_declarator_list(ctx.init_declarator_list()),
     }
   }
 
