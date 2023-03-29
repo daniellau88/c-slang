@@ -7,10 +7,8 @@ import {
   MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
-import { POINTER_BASE_TYPE } from './utils/typeUtils'
+import { RTS } from './utils/RTS'
 import {
-  binaryToInt,
-  intToBinary,
   LogicError,
   peek,
   pop,
@@ -29,10 +27,7 @@ export class ProgramState {
   private A: Array<CASTNode | MicroCode>
   private OS: Array<number>
   private OSType: Record<number, ProgramType>
-
-  private RTS: Array<number>
-  private RTSTypeAdditionalInfo: Record<number, ProgramType> // TODO: Allow different size of RTS // RTS should not have type associated with it, this is for display purposes
-  private RTSStart: number // RTSStart is where the old start pointer is located at
+  private RTS: RTS
 
   private FD: Array<MicroCodeFunctionDefiniton>
 
@@ -48,9 +43,7 @@ export class ProgramState {
     this.A = [ast]
     this.OS = []
     this.OSType = {}
-    this.RTS = []
-    this.RTSTypeAdditionalInfo = {}
-    this.RTSStart = -1
+    this.RTS = new RTS(1000000)
     this.FD = []
     this.E = [{ record: {} }]
     this.LogOutput = []
@@ -130,49 +123,35 @@ export class ProgramState {
   }
 
   pushRTS(binary: number, type?: ProgramType) {
-    const newIndex = this.RTS.length
-    push(this.RTS, binary)
-    if (type) this.RTSTypeAdditionalInfo[newIndex] = type
+    this.RTS.push(binary, type)
   }
 
   popRTS(): number {
-    const result = pop(this.RTS)
-    const newIndex = this.RTS.length
-    delete this.RTSTypeAdditionalInfo[newIndex]
-    return result
+    return this.RTS.pop()
   }
 
   printRTS() {
-    printBinariesWithTypes(this.RTS, this.RTSTypeAdditionalInfo, 'RTS: ')
+    this.RTS.print()
   }
 
   getRTSAtIndex(index: number): number {
-    if (index >= this.RTS.length) throw new RuntimeError('Invalid memory access')
-    return this.RTS[index]
+    return this.RTS.getAtIndex(index)
   }
 
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
-    this.RTS[index] = binary
-    if (type) this.RTSTypeAdditionalInfo[index] = type
+    return this.RTS.setAtIndex(index, binary, type)
   }
 
   getRTSLength(): number {
-    return this.RTS.length
+    return this.RTS.getLength()
   }
 
   shrinkRTSToIndex(index: number) {
-    const initialSize = this.RTS.length
-    this.RTS = this.RTS.slice(0, index + 1)
-    // Might take some time if shrinking is huge
-    for (let i = index; i < initialSize; i++) {
-      if (i in this.RTSTypeAdditionalInfo) delete this.RTSTypeAdditionalInfo[i]
-    }
+    this.RTS.shrinkToIndex(index)
   }
 
   allocateSizeOnRTS(size: number, type?: ProgramType) {
-    for (let i = 0; i < size; i++) {
-      this.pushRTS(0, type)
-    }
+    this.RTS.allocateSizeOn(size, type)
   }
 
   pushFD(fd: MicroCodeFunctionDefiniton) {
@@ -254,7 +233,6 @@ export class ProgramState {
 
   printState() {
     this.printOS()
-    console.log('RTSStart: ' + this.RTSStart)
     this.printRTS()
     this.printE()
     console.log('')
@@ -269,18 +247,15 @@ export class ProgramState {
   }
 
   getRTSStart(): number {
-    return this.RTSStart
+    return this.RTS.getStart()
   }
 
   saveAndUpdateRTSStartOntoStack() {
-    const rtsStart = this.RTSStart
-    this.RTSStart = this.getRTSLength()
-    this.pushRTS(intToBinary(rtsStart), POINTER_BASE_TYPE)
+    this.RTS.saveAndUpdateStartOntoStack()
   }
 
   popAndRestoreRTSStartOntoStack() {
-    const prevRTSStart = this.popRTS()
-    this.RTSStart = binaryToInt(prevRTSStart)
+    this.RTS.popAndRestoreStartOntoStack()
   }
 
   getReturnRegister(): ReturnRegisterType {
