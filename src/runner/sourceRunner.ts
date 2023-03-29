@@ -1,15 +1,12 @@
-import * as es from 'estree'
-
 import { IOptions, Result } from '..'
 import { CannotFindModuleError } from '../errors/localImportErrors'
 import { evaluate } from '../interpreter/interpreter'
-import { hoistAndMergeImports } from '../localImports/transformers/hoistAndMergeImports'
-import { removeExports } from '../localImports/transformers/removeExports'
-import { removeNonSourceModuleImports } from '../localImports/transformers/removeNonSourceModuleImports'
+import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse } from '../parser/parser'
 import { PreemptiveScheduler } from '../schedulers'
 import { Context, Scheduler, Variant } from '../types'
-import { validateAndAnnotate } from '../validator/validator'
+import { CASTProgram } from '../typings/programAST'
+import { CCSTProgram } from '../typings/programCST'
 import { determineVariant, resolvedErrorPromise } from './utils'
 
 const DEFAULT_SOURCE_OPTIONS: IOptions = {
@@ -24,7 +21,11 @@ const DEFAULT_SOURCE_OPTIONS: IOptions = {
   throwInfiniteLoops: true,
 }
 
-function runInterpreter(program: es.Program, context: Context, options: IOptions): Promise<Result> {
+function runInterpreter(
+  program: CASTProgram,
+  context: Context,
+  options: IOptions,
+): Promise<Result> {
   const it = evaluate(program, context)
   const scheduler: Scheduler = new PreemptiveScheduler(options.steps)
   return scheduler.run(it, context)
@@ -40,34 +41,18 @@ export async function sourceRunner(
   context.errors = []
 
   // Parse and validate
-  const program: es.Program | undefined = parse(code, context)
+  const program: CCSTProgram | undefined = parse(code, context)
   if (!program) {
     return resolvedErrorPromise
   }
-
-  // TODO: Remove this after runners have been refactored.
-  //       These should be done as part of the local imports
-  //       preprocessing step.
-  removeExports(program)
-  removeNonSourceModuleImports(program)
-  hoistAndMergeImports(program)
-
-  validateAndAnnotate(program, context)
-  context.unTypecheckedCode.push(code)
 
   if (context.errors.length > 0) {
     return resolvedErrorPromise
   }
 
-  // Handle preludes
-  if (context.prelude !== null) {
-    const prelude = context.prelude
-    context.prelude = null
-    await sourceRunner(prelude, context, { ...options, isPrelude: true })
-    return sourceRunner(code, context, options)
-  }
+  const programAST: CASTProgram = convertCSTProgramToAST(program)
 
-  return runInterpreter(program, context, theOptions)
+  return runInterpreter(programAST, context, theOptions)
 }
 
 export async function sourceFilesRunner(
@@ -81,13 +66,6 @@ export async function sourceFilesRunner(
     context.errors.push(new CannotFindModuleError(entrypointFilePath))
     return resolvedErrorPromise
   }
-
-  context.variant = determineVariant(context, options)
-  // TODO: Make use of the preprocessed program AST after refactoring runners.
-  // const preprocessedProgram = preprocessFileImports(files, entrypointFilePath, context)
-  // if (!preprocessedProgram) {
-  //   return resolvedErrorPromise
-  // }
 
   return sourceRunner(entrypointCode, context, options)
 }

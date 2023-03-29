@@ -3,7 +3,7 @@ import { start } from 'repl' // 'repl' here refers to the module named 'repl' in
 import { inspect } from 'util'
 
 import { sourceLanguages } from '../constants'
-import { createContext, IOptions, parseError, runInContext } from '../index'
+import { createContext, IOptions, runInContext } from '../index'
 import { ExecutionMethod, Variant } from '../types'
 
 function startRepl(
@@ -35,7 +35,7 @@ function startRepl(
               if (obj.status === 'finished' || obj.status === 'suspended-non-det') {
                 callback(null, obj.value)
               } else {
-                callback(new Error(parseError(context.errors)), undefined)
+                // callback(new Error(parseError(context.errors)), undefined)
               }
             })
           },
@@ -52,7 +52,7 @@ function startRepl(
         },
       )
     } else {
-      console.error(parseError(context.errors))
+      // console.error(parseError(context.errors))
     }
   })
 }

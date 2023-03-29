@@ -1,5 +1,6 @@
 // Variable determining chapter of Source is contained in this file.
 
+import { ProgramState } from './interpreter/programState'
 import { Context, Environment, Variant } from './types'
 
 export class LazyBuiltIn {
@@ -104,6 +105,7 @@ export const createEmptyContext = <T>(
     moduleContexts: {},
     unTypecheckedCode: [],
     previousCode: [],
+    programState: new ProgramState(),
   }
 }
 
