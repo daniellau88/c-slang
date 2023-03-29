@@ -638,6 +638,69 @@ export interface CCSTCompoundStatement extends CCSTNodeBase {
   statements: Array<CCSTStatement>
 }
 
+export interface CCSTIfStatement extends CCSTNodeBase {
+  type: 'IfStatement'
+  expression: CCSTExpression
+  ifTrue: CCSTStatement
+  ifFalse?: CCSTStatement
+}
+
+export interface CCSTSwitchStatement extends CCSTNodeBase {
+  type: 'SwitchStatement'
+  expression: CCSTExpression
+  switchBody: CCSTSwitchBody
+}
+
+export interface CCSTSwitchBody extends CCSTNodeBase {
+  type: 'SwitchBody'
+  switchCaseBodies: Array<CCSTSwitchCaseBody>
+  switchDefaultBody?: CCSTSwitchDefaultBody
+}
+
+export interface CCSTSwitchCaseBody extends CCSTNodeBase {
+  type: 'SwitchCaseBody'
+  expression: CCSTExpression
+  statement: CCSTStatement
+}
+
+export interface CCSTSwitchDefaultBody extends CCSTNodeBase {
+  type: 'SwitchDefaultBody'
+  statement: CCSTStatement
+}
+
+export interface CCSTWhileStatement extends CCSTNodeBase {
+  type: 'WhileStatement'
+  expression: CCSTExpression
+  statement: CCSTStatement
+}
+
+export interface CCSTDoStatement extends CCSTNodeBase {
+  type: 'DoStatement'
+  statement: CCSTStatement
+  expression: CCSTExpression
+}
+
+export interface CCSTForStatement extends CCSTNodeBase {
+  type: 'ForStatement'
+  statement: CCSTStatement
+  initExpression?: CCSTExpression
+  testExpression?: CCSTExpression
+  updateExpression?: CCSTExpression
+}
+
+export interface CCSTGotoStatement extends CCSTNodeBase {
+  type: 'GotoStatement'
+  identifier: CCSTIdentifier
+}
+
+export interface CCSTContinueStatement extends CCSTNodeBase {
+  type: 'ContinueStatement'
+}
+
+export interface CCSTBreakStatement extends CCSTNodeBase {
+  type: 'BreakStatement'
+}
+
 export interface CCSTReturnStatement extends CCSTNodeBase {
   type: 'ReturnStatement'
   expression?: CCSTExpression
@@ -647,9 +710,9 @@ interface CCSTStatementBase extends CCSTNodeBase {
   type: 'Statement'
 }
 
-interface CCSTStatementTypeExpression extends CCSTStatementBase {
-  subtype: 'Expression'
-  statement: CCSTExpressionStatement
+interface CCSTStatementTypeLabeled extends CCSTStatementBase {
+  subtype: 'Labeled'
+  statement: CCSTLabeledStatement
 }
 
 interface CCSTStatementTypeDeclaration extends CCSTStatementBase {
@@ -657,9 +720,54 @@ interface CCSTStatementTypeDeclaration extends CCSTStatementBase {
   statement: CCSTDeclarationStatement
 }
 
+interface CCSTStatementTypeExpression extends CCSTStatementBase {
+  subtype: 'Expression'
+  statement: CCSTExpressionStatement
+}
+
 interface CCSTStatementTypeCompound extends CCSTStatementBase {
   subtype: 'Compound'
   statement: CCSTCompoundStatement
+}
+
+interface CCSTStatementTypeIf extends CCSTStatementBase {
+  subtype: 'If'
+  statement: CCSTIfStatement
+}
+
+interface CCSTStatementTypeSwitch extends CCSTStatementBase {
+  subtype: 'Switch'
+  statement: CCSTSwitchStatement
+}
+
+interface CCSTStatementTypeWhile extends CCSTStatementBase {
+  subtype: 'While'
+  statement: CCSTWhileStatement
+}
+
+interface CCSTStatementTypeDo extends CCSTStatementBase {
+  subtype: 'Do'
+  statement: CCSTDoStatement
+}
+
+interface CCSTStatementTypeFor extends CCSTStatementBase {
+  subtype: 'For'
+  statement: CCSTForStatement
+}
+
+interface CCSTStatementTypeGoto extends CCSTStatementBase {
+  subtype: 'Goto'
+  statement: CCSTGotoStatement
+}
+
+interface CCSTStatementTypeContinue extends CCSTStatementBase {
+  subtype: 'Continue'
+  statement: CCSTContinueStatement
+}
+
+interface CCSTStatementTypeBreak extends CCSTStatementBase {
+  subtype: 'Break'
+  statement: CCSTBreakStatement
 }
 
 interface CCSTStatementTypeReturn extends CCSTStatementBase {
@@ -668,9 +776,18 @@ interface CCSTStatementTypeReturn extends CCSTStatementBase {
 }
 
 export type CCSTStatement =
-  | CCSTStatementTypeExpression
+  | CCSTStatementTypeLabeled
   | CCSTStatementTypeDeclaration
+  | CCSTStatementTypeExpression
   | CCSTStatementTypeCompound
+  | CCSTStatementTypeIf
+  | CCSTStatementTypeSwitch
+  | CCSTStatementTypeWhile
+  | CCSTStatementTypeDo
+  | CCSTStatementTypeFor
+  | CCSTStatementTypeGoto
+  | CCSTStatementTypeContinue
+  | CCSTStatementTypeBreak
   | CCSTStatementTypeReturn
 
 export interface CCSTIdentifier extends CCSTNodeBase {
@@ -759,3 +876,15 @@ export type CCSTNode =
   | CCSTCompoundStatement
   | CCSTReturnStatement
   | CCSTDeclarationStatement
+  | CCSTLabeledStatement
+  | CCSTIfStatement
+  | CCSTSwitchStatement
+  | CCSTSwitchBody
+  | CCSTSwitchCaseBody
+  | CCSTSwitchDefaultBody
+  | CCSTWhileStatement
+  | CCSTDoStatement
+  | CCSTForStatement
+  | CCSTGotoStatement
+  | CCSTContinueStatement
+  | CCSTBreakStatement

@@ -4389,7 +4389,7 @@ export class CalcParser extends Parser {
         this.state = 679
         this.match(CalcParser.OPEN_PARENTHESES)
         this.state = 680
-        _localctx._cond = this.expression(0)
+        this.expression(0)
         this.state = 681
         this.match(CalcParser.CLOSE_PARENTHESES)
         this.state = 682
@@ -4432,7 +4432,7 @@ export class CalcParser extends Parser {
         this.state = 688
         this.match(CalcParser.OPEN_PARENTHESES)
         this.state = 689
-        _localctx._cond = this.expression(0)
+        this.expression(0)
         this.state = 690
         this.match(CalcParser.CLOSE_PARENTHESES)
         this.state = 691
@@ -4572,7 +4572,7 @@ export class CalcParser extends Parser {
         this.state = 715
         this.match(CalcParser.OPEN_PARENTHESES)
         this.state = 716
-        _localctx._cond = this.expression(0)
+        this.expression(0)
         this.state = 717
         this.match(CalcParser.CLOSE_PARENTHESES)
         this.state = 718
@@ -4607,7 +4607,7 @@ export class CalcParser extends Parser {
         this.state = 723
         this.match(CalcParser.OPEN_PARENTHESES)
         this.state = 724
-        _localctx._cond = this.expression(0)
+        this.expression(0)
         this.state = 725
         this.match(CalcParser.CLOSE_PARENTHESES)
         this.state = 726
@@ -4665,7 +4665,7 @@ export class CalcParser extends Parser {
         ) {
           {
             this.state = 730
-            this.expression(0)
+            _localctx._init = this.expression(0)
           }
         }
 
@@ -4698,7 +4698,7 @@ export class CalcParser extends Parser {
         ) {
           {
             this.state = 734
-            this.expression(0)
+            _localctx._test = this.expression(0)
           }
         }
 
@@ -4731,7 +4731,7 @@ export class CalcParser extends Parser {
         ) {
           {
             this.state = 738
-            this.expression(0)
+            _localctx._update = this.expression(0)
           }
         }
 
@@ -10025,7 +10025,6 @@ export class Compound_statementContext extends ParserRuleContext {
 }
 
 export class If_statementContext extends ParserRuleContext {
-  public _cond!: ExpressionContext
   public _if_true!: StatementContext
   public _if_false!: StatementContext
   public IF(): TerminalNode {
@@ -10034,11 +10033,11 @@ export class If_statementContext extends ParserRuleContext {
   public OPEN_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.OPEN_PARENTHESES, 0)
   }
-  public CLOSE_PARENTHESES(): TerminalNode {
-    return this.getToken(CalcParser.CLOSE_PARENTHESES, 0)
-  }
   public expression(): ExpressionContext {
     return this.getRuleContext(0, ExpressionContext)
+  }
+  public CLOSE_PARENTHESES(): TerminalNode {
+    return this.getToken(CalcParser.CLOSE_PARENTHESES, 0)
   }
   public statement(): StatementContext[]
   public statement(i: number): StatementContext
@@ -10082,21 +10081,20 @@ export class If_statementContext extends ParserRuleContext {
 }
 
 export class Switch_statementContext extends ParserRuleContext {
-  public _cond!: ExpressionContext
   public SWITCH(): TerminalNode {
     return this.getToken(CalcParser.SWITCH, 0)
   }
   public OPEN_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.OPEN_PARENTHESES, 0)
   }
+  public expression(): ExpressionContext {
+    return this.getRuleContext(0, ExpressionContext)
+  }
   public CLOSE_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.CLOSE_PARENTHESES, 0)
   }
   public switch_body(): Switch_bodyContext {
     return this.getRuleContext(0, Switch_bodyContext)
-  }
-  public expression(): ExpressionContext {
-    return this.getRuleContext(0, ExpressionContext)
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState)
@@ -10257,21 +10255,20 @@ export class Switch_default_bodyContext extends ParserRuleContext {
 }
 
 export class While_statementContext extends ParserRuleContext {
-  public _cond!: ExpressionContext
   public WHILE(): TerminalNode {
     return this.getToken(CalcParser.WHILE, 0)
   }
   public OPEN_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.OPEN_PARENTHESES, 0)
   }
+  public expression(): ExpressionContext {
+    return this.getRuleContext(0, ExpressionContext)
+  }
   public CLOSE_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.CLOSE_PARENTHESES, 0)
   }
   public statement(): StatementContext {
     return this.getRuleContext(0, StatementContext)
-  }
-  public expression(): ExpressionContext {
-    return this.getRuleContext(0, ExpressionContext)
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState)
@@ -10303,7 +10300,6 @@ export class While_statementContext extends ParserRuleContext {
 }
 
 export class Do_statementContext extends ParserRuleContext {
-  public _cond!: ExpressionContext
   public DO(): TerminalNode {
     return this.getToken(CalcParser.DO, 0)
   }
@@ -10316,14 +10312,14 @@ export class Do_statementContext extends ParserRuleContext {
   public OPEN_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.OPEN_PARENTHESES, 0)
   }
+  public expression(): ExpressionContext {
+    return this.getRuleContext(0, ExpressionContext)
+  }
   public CLOSE_PARENTHESES(): TerminalNode {
     return this.getToken(CalcParser.CLOSE_PARENTHESES, 0)
   }
   public end_statement_delimiter(): End_statement_delimiterContext {
     return this.getRuleContext(0, End_statement_delimiterContext)
-  }
-  public expression(): ExpressionContext {
-    return this.getRuleContext(0, ExpressionContext)
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState)
@@ -10355,6 +10351,9 @@ export class Do_statementContext extends ParserRuleContext {
 }
 
 export class For_statementContext extends ParserRuleContext {
+  public _init!: ExpressionContext
+  public _test!: ExpressionContext
+  public _update!: ExpressionContext
   public FOR(): TerminalNode {
     return this.getToken(CalcParser.FOR, 0)
   }
