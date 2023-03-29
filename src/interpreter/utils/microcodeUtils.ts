@@ -37,7 +37,7 @@ import {
 export const wordSize = 8
 
 // Microcode are allowed to touch any of the given structures
-export const executeMicrocode = (state: ProgramState, node: MicroCode) => {
+export function* executeMicrocode(state: ProgramState, node: MicroCode) {
   switch (node.tag) {
     case 'load_func': {
       const newIndex = state.getFDLength()

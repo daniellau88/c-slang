@@ -9,6 +9,7 @@ import { SourceLocation } from 'acorn'
 import * as es from 'estree'
 
 import { EnvTree } from './createContext'
+import { ProgramState } from './interpreter/programState'
 
 /**
  * Defines functions that act as built-ins, but might rely on
@@ -102,6 +103,8 @@ export interface Context<T = any> {
     environments: Environment[]
     nodes: es.Node[]
   }
+
+  programState: ProgramState
 
   numberOfOuterEnvironments: number
 

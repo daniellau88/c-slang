@@ -39,8 +39,8 @@ export class ProgramState {
 
   private GlobalLength: number
 
-  constructor(ast: CASTNode, builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
-    this.A = [ast]
+  constructor() {
+    this.A = []
     this.OS = []
     this.OSType = {}
     this.RTS = new RTS(1000000)
@@ -49,7 +49,13 @@ export class ProgramState {
     this.LogOutput = []
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
+  }
 
+  initializeAST(ast: CASTNode) {
+    this.A = [ast]
+  }
+
+  initializeBuiltInFunctions(builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     const builtinFunctionKeys = Object.keys(builtinFunctions)
     builtinFunctionKeys.forEach(key => {
       const newIndex = this.FD.length

@@ -1,4 +1,4 @@
-import { CASTNode } from '../typings/programAST'
+import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
 import { BinaryWithType, BuiltinFunctionDefinition, MicroCode } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
@@ -7,7 +7,7 @@ import { INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
 import { binaryToFormattedString, isMicrocode, parseStringToAST } from './utils/utils'
 
 // Builtin functions must always add a value onto the OS (whether directly or indirectly)
-const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
+export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   printfLog: {
     func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
       state.pushLogOutput(...arg)
@@ -31,11 +31,14 @@ const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
 
 const step_limit = 1000000
 
-const execute = (program: string, withLog: boolean = false): ProgramState => {
-  const ast = parseStringToAST(program)
-  if (withLog) console.log(JSON.stringify(ast))
-  const state = new ProgramState(ast, builtinFunctions)
+export const initializeProgramStateWithProgramAST = (programAST: CASTProgram): ProgramState => {
+  const programState = new ProgramState()
+  programState.initializeAST(programAST)
+  programState.initializeBuiltInFunctions(builtinFunctions)
+  return programState
+}
 
+export function* execute(state: ProgramState, withLog: boolean = false) {
   let i = 0
   if (withLog) state.printState()
   while (i < step_limit) {
@@ -43,9 +46,9 @@ const execute = (program: string, withLog: boolean = false): ProgramState => {
     const cmd = state.popA() as CASTNode | MicroCode
     if (withLog) console.log('cmd:', cmd)
     if (isMicrocode(cmd)) {
-      executeMicrocode(state, cmd)
+      yield* executeMicrocode(state, cmd)
     } else {
-      astToMicrocode(state, cmd)
+      yield* astToMicrocode(state, cmd)
     }
     if (withLog) state.printState()
     i++
@@ -62,6 +65,18 @@ const execute = (program: string, withLog: boolean = false): ProgramState => {
  * testing
  * *******/
 
+export const testProgram = (program: string, withLog: boolean = false): ProgramState => {
+  const programAST = parseStringToAST(program) as CASTProgram
+  const programState = initializeProgramStateWithProgramAST(programAST)
+  const programGenerator = execute(programState, withLog)
+
+  let programStep = programGenerator.next()
+  while (!programStep.done) {
+    programStep = programGenerator.next()
+  }
+  return programState
+}
+
 const test = (program: string) => {
   console.log(
     '',
@@ -72,16 +87,12 @@ Test case: ` +
       program +
       '\n',
   )
-  const programState = execute(program, true)
+  const programState = testProgram(program, true)
 
   console.log('Log outputs:')
   programState.getLogOutput().forEach(x => {
     console.log(binaryToFormattedString(x.binary, x.type))
   })
-}
-
-export const testProgram = (program: string): ProgramState => {
-  return execute(program)
 }
 
 // Uncomment where necessary to see the logs of running a program

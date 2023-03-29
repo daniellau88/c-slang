@@ -1,18 +1,18 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CASTDeclaration, CASTFunctionDefinition, CASTNode } from '../../typings/programAST'
+import { CASTDeclaration, CASTNode } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import { CASTUnaryOperatorWithoutDerefence } from './typeUtils'
 import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
-export const astToMicrocode = (state: ProgramState, node: CASTNode) => {
+export function* astToMicrocode(state: ProgramState, node: CASTNode) {
   switch (node.type) {
     case 'Program':
       ;[...node.children].reverse().forEach(x => state.pushA(x))
       return
     case 'FunctionDefinition':
-      const fdNode = node as CASTFunctionDefinition
+      const fdNode = node
       if (fdNode.identifier.name === 'main') {
         state.setGlobalLength(state.getRTSLength())
         state.pushA({ tag: 'func_apply', arity: 0 })
