@@ -36,11 +36,6 @@ export interface CASTFunctionParameter {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseStatement extends BaseNode {}
 
-export interface CASTExpressionStatement extends BaseStatement {
-  type: 'ExpressionStatement'
-  expressions: Array<CASTExpression>
-}
-
 export interface CASTDeclarationStatement extends BaseStatement {
   type: 'DeclarationStatement'
   declarations: Array<CASTDeclaration>
@@ -53,20 +48,103 @@ export interface CASTDeclaration extends BaseNode {
   init?: CASTExpression
 }
 
-export interface CASTCompoundStatement extends BaseExpression {
+export interface CASTExpressionStatement extends BaseStatement {
+  type: 'ExpressionStatement'
+  expressions: Array<CASTExpression>
+}
+
+export interface CASTCompoundStatement extends BaseStatement {
   type: 'CompoundStatement'
   statements: Array<CASTStatement>
 }
 
-export interface CASTReturnStatement extends BaseExpression {
+export interface CASTIfStatement extends BaseStatement {
+  type: 'IfStatement'
+  condition: CASTExpression
+  ifTrue: CASTStatement
+  ifFalse?: CASTStatement
+}
+
+export interface CASTSwitchStatement extends BaseStatement {
+  type: 'SwitchStatement'
+  expression: CASTExpression
+  body: CASTSwitchBody
+}
+
+export interface CASTSwitchBody extends BaseNode {
+  type: 'SwitchBody'
+  clauses: Array<CASTSwitchClauseBody>
+}
+
+interface CASTSwitchClauseBodyBase extends BaseNode {
+  type: 'SwitchClauseBody'
+}
+
+interface CASTSwitchClauseBodyBaseTypeCase extends CASTSwitchClauseBodyBase {
+  subtype: 'Case'
+  expression: CASTExpression
+  statements: Array<CASTStatement>
+}
+
+interface CASTSwitchClauseBodyBaseTypeDefault extends CASTSwitchClauseBodyBase {
+  subtype: 'Default'
+  statements: Array<CASTStatement>
+}
+
+export type CASTSwitchClauseBody =
+  | CASTSwitchClauseBodyBaseTypeCase
+  | CASTSwitchClauseBodyBaseTypeDefault
+
+export interface CASTWhileStatement extends BaseStatement {
+  type: 'WhileStatement'
+  condition: CASTExpression
+  statement: CASTStatement
+}
+
+export interface CASTDoStatement extends BaseStatement {
+  type: 'DoStatement'
+  condition: CASTExpression
+  statement: CASTStatement
+}
+
+export interface CASTForStatement extends BaseStatement {
+  type: 'ForStatement'
+  statement: CASTStatement
+  initDeclaration?: CASTDeclarationStatement
+  testExpression?: CASTExpression
+  updateExpression?: CASTExpression
+}
+
+export interface CASTGotoStatement extends BaseStatement {
+  type: 'GotoStatement'
+  identifier: CASTIdentifier
+}
+
+export interface CASTContinueStatement extends BaseStatement {
+  type: 'ContinueStatement'
+}
+
+export interface CASTBreakStatement extends BaseStatement {
+  type: 'BreakStatement'
+}
+
+export interface CASTReturnStatement extends BaseStatement {
   type: 'ReturnStatement'
   expression?: CASTExpression
 }
 
 export type CASTStatement =
+  | CASTDeclarationStatement
   | CASTExpressionStatement
   | CASTCompoundStatement
-  | CASTDeclarationStatement
+  | CASTIfStatement
+  | CASTSwitchStatement
+  | CASTWhileStatement
+  | CASTDoStatement
+  | CASTForStatement
+  | CASTGotoStatement
+  | CASTContinueStatement
+  | CASTBreakStatement
   | CASTReturnStatement
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

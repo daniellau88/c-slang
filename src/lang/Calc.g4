@@ -431,13 +431,13 @@ compound_statement
 
 // If Statement
 if_statement
-   : IF OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES if_true=statement (ELSE if_false=statement)?
+   : IF OPEN_PARENTHESES expression CLOSE_PARENTHESES if_true=statement (ELSE if_false=statement)?
    ;
 
 
 // Switch Statement
 switch_statement
-   : SWITCH OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES switch_body
+   : SWITCH OPEN_PARENTHESES expression CLOSE_PARENTHESES switch_body
    ;
 
 switch_body
@@ -445,31 +445,34 @@ switch_body
    ;
 
 switch_case_body
-   : CASE expression COLON statement
+   : CASE expression COLON (statement)*
    ;
 
 switch_default_body
-   : DEFAULT COLON statement
+   : DEFAULT COLON (statement)*
    ;
 
 
 // While Statement
 while_statement
-   : WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES statement
+   : WHILE OPEN_PARENTHESES expression CLOSE_PARENTHESES statement
    ;
 
 
 // Do Statement
 do_statement
-   : DO statement WHILE OPEN_PARENTHESES cond=expression CLOSE_PARENTHESES end_statement_delimiter
+   : DO statement WHILE OPEN_PARENTHESES expression CLOSE_PARENTHESES end_statement_delimiter
    ;
 
 
 // For Statement
 for_statement
-   : FOR OPEN_PARENTHESES (expression)? SEMICOLON (expression)? SEMICOLON (expression)? CLOSE_PARENTHESES statement
+   : FOR OPEN_PARENTHESES (init=for_init_declaration)? SEMICOLON (test=expression)? SEMICOLON (update=expression)? CLOSE_PARENTHESES statement
    ;
 
+for_init_declaration
+   : declaration_specifiers init_declarator_list
+   ;
 
 // Goto Statement
 goto_statement

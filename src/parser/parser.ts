@@ -18,6 +18,7 @@ import {
   Assignment_operatorContext,
   AssignmentExpressionTypeAssignmentContext,
   AssignmentExpressionTypeConditionalContext,
+  Break_statementContext,
   CalcParser,
   CastExpressionTypeCastContext,
   CastExpressionTypeUnaryContext,
@@ -29,6 +30,7 @@ import {
   ConstantTypeCharacterContext,
   ConstantTypeFloatContext,
   ConstantTypeIntegerContext,
+  Continue_statementContext,
   Declaration_specifiersContext,
   Declaration_statementContext,
   DeclaratorContext,
@@ -42,6 +44,7 @@ import {
   DirectDeclaratorTypeRecursiveArrayContext,
   DirectDeclaratorTypeRecursiveIdentifiersContext,
   DirectDeclaratorTypeRecursiveParametersContext,
+  Do_statementContext,
   EqualityExpressionTypeEqualityEqualContext,
   EqualityExpressionTypeEqualityNotEqualContext,
   EqualityExpressionTypeRelationalContext,
@@ -51,8 +54,12 @@ import {
   ExpressionTypeAssignmentContext,
   ExpressionTypeExpressionContext,
   Float_constantContext,
+  For_init_declarationContext,
+  For_statementContext,
   Function_definitionContext,
+  Goto_statementContext,
   IdentifierContext,
+  If_statementContext,
   InclusiveOrExpressionTypeExclusiveOrContext,
   InclusiveOrExpressionTypeInclusiveOrContext,
   Init_declarator_listContext,
@@ -62,6 +69,7 @@ import {
   InitializerTypeArrayContext,
   InitializerTypeConditionalExpressionContext,
   Integer_constantContext,
+  Labeled_statementContext,
   LogicalAndExpressionTypeInclusiveOrContext,
   LogicalAndExpressionTypeLogicalAndContext,
   LogicalOrExpressionTypeLogicalAndContext,
@@ -96,10 +104,23 @@ import {
   ShfitExpressionTypeAdditiveContext,
   ShfitExpressionTypeShiftLeftContext,
   ShfitExpressionTypeShiftRightContext,
+  StatementTypeBreakContext,
   StatementTypeCompoundContext,
+  StatementTypeContinueContext,
   StatementTypeDeclarationContext,
+  StatementTypeDoContext,
   StatementTypeExpressionContext,
+  StatementTypeForContext,
+  StatementTypeGotoContext,
+  StatementTypeIfContext,
+  StatementTypeLabeledContext,
   StatementTypeReturnContext,
+  StatementTypeSwitchContext,
+  StatementTypeWhileContext,
+  Switch_bodyContext,
+  Switch_case_bodyContext,
+  Switch_default_bodyContext,
+  Switch_statementContext,
   Type_nameContext,
   Type_specifierContext,
   Unary_operatorContext,
@@ -108,6 +129,7 @@ import {
   UnaryExpressionTypePostfixContext,
   UnaryExpressionTypeSizeOfContext,
   UnaryExpressionTypeUnaryOperatorContext,
+  While_statementContext,
 } from '../lang/CalcParser'
 import { CalcVisitor } from '../lang/CalcVisitor'
 import { Context, ErrorSeverity, ErrorType, SourceError } from '../types'
@@ -117,30 +139,38 @@ import {
   CCSTAndExpression,
   CCSTAssignmentExpression,
   CCSTAssignmentOperator,
+  CCSTBreakStatement,
   CCSTCastExpression,
   CCSTCharacterConstant,
   CCSTCompoundStatement,
   CCSTConditionalExpression,
   CCSTConstant,
   CCSTConstantExpression,
+  CCSTContinueStatement,
   CCSTDeclarationSpecifier,
   CCSTDeclarationStatement,
   CCSTDeclarator,
   CCSTDirectAbstractDeclarator,
   CCSTDirectDeclarator,
+  CCSTDoStatement,
   CCSTEqualityExpression,
   CCSTExclusiveOrExpression,
   CCSTExpression,
   CCSTExpressionStatement,
   CCSTFloatConstant,
+  CCSTForInitDeclaration,
+  CCSTForStatement,
   CCSTFunctionDefinition,
+  CCSTGotoStatement,
   CCSTIdentifier,
+  CCSTIfStatement,
   CCSTInclusiveOrExpression,
   CCSTInitDeclarator,
   CCSTInitDeclaratorList,
   CCSTInitializer,
   CCSTInitializerList,
   CCSTIntegerConstant,
+  CCSTLabeledStatement,
   CCSTLogicalAndExpression,
   CCSTLogicalOrExpression,
   CCSTMultiplicativeExpression,
@@ -156,10 +186,15 @@ import {
   CCSTReturnStatement,
   CCSTShiftExpression,
   CCSTStatement,
+  CCSTSwitchBody,
+  CCSTSwitchCaseBody,
+  CCSTSwitchDefaultBody,
+  CCSTSwitchStatement,
   CCSTTypeName,
   CCSTTypeSpecifier,
   CCSTUnaryExpression,
   CCSTUnaryOperator,
+  CCSTWhileStatement,
 } from '../typings/programCST'
 import { stripIndent } from '../utils/formatters'
 
@@ -345,6 +380,14 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ParameterDeclaration',
       subtype: 'Normal',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
+    }
+  }
+
+  visitLabeled_statement(ctx: Labeled_statementContext): CCSTLabeledStatement {
+    return {
+      type: 'LabeledStatement',
+      identifier: this.visitIdentifier(ctx.identifier()),
+      statement: this.visit(ctx.statement()) as CCSTStatement,
     }
   }
 
@@ -1232,6 +1275,116 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
+  visitIf_statement(ctx: If_statementContext): CCSTIfStatement {
+    return {
+      type: 'IfStatement',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
+      ifTrue: this.visit(ctx._if_true) as CCSTStatement,
+      ifFalse:
+        ctx._if_false !== undefined ? (this.visit(ctx._if_false) as CCSTStatement) : undefined,
+    }
+  }
+
+  visitSwitch_statement(ctx: Switch_statementContext): CCSTSwitchStatement {
+    return {
+      type: 'SwitchStatement',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
+      switchBody: this.visitSwitch_body(ctx.switch_body()),
+    }
+  }
+
+  visitSwitch_body(ctx: Switch_bodyContext): CCSTSwitchBody {
+    const switchDefaultBodyContext = ctx.switch_default_body()
+    return {
+      type: 'SwitchBody',
+      switchCaseBodies: ctx.switch_case_body().map(x => this.visitSwitch_case_body(x)),
+      switchDefaultBody:
+        switchDefaultBodyContext !== undefined
+          ? this.visitSwitch_default_body(switchDefaultBodyContext)
+          : undefined,
+    }
+  }
+
+  visitSwitch_case_body(ctx: Switch_case_bodyContext): CCSTSwitchCaseBody {
+    return {
+      type: 'SwitchCaseBody',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
+      statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
+    }
+  }
+
+  visitSwitch_default_body(ctx: Switch_default_bodyContext): CCSTSwitchDefaultBody {
+    return {
+      type: 'SwitchDefaultBody',
+      statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
+    }
+  }
+
+  visitWhile_statement(ctx: While_statementContext): CCSTWhileStatement {
+    return {
+      type: 'WhileStatement',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
+      statement: this.visit(ctx.statement()) as CCSTStatement,
+    }
+  }
+
+  visitDo_statement(ctx: Do_statementContext): CCSTDoStatement {
+    return {
+      type: 'DoStatement',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
+      statement: this.visit(ctx.statement()) as CCSTStatement,
+    }
+  }
+
+  visitFor_statement(ctx: For_statementContext): CCSTForStatement {
+    const initDeclarationContext = ctx._init
+    const testExpressionContext = ctx._test
+    const updateExpressionContext = ctx._update
+    return {
+      type: 'ForStatement',
+      initDeclaration:
+        initDeclarationContext !== undefined
+          ? this.visitFor_init_declaration(initDeclarationContext)
+          : undefined,
+      testExpression:
+        testExpressionContext !== undefined
+          ? (this.visit(testExpressionContext) as CCSTExpression)
+          : undefined,
+      updateExpression:
+        updateExpressionContext !== undefined
+          ? (this.visit(updateExpressionContext) as CCSTExpression)
+          : undefined,
+      statement: this.visit(ctx.statement()) as CCSTStatement,
+    }
+  }
+
+  visitFor_init_declaration(ctx: For_init_declarationContext): CCSTForInitDeclaration {
+    return {
+      type: 'ForInitDeclaration',
+      declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
+      initDeclaratorList: this.visitInit_declarator_list(ctx.init_declarator_list()),
+    }
+  }
+
+  visitGoto_statement(ctx: Goto_statementContext): CCSTGotoStatement {
+    return {
+      type: 'GotoStatement',
+      identifier: this.visitIdentifier(ctx.identifier()),
+    }
+  }
+
+  visitContinue_statement(ctx: Continue_statementContext): CCSTContinueStatement {
+    return {
+      type: 'ContinueStatement',
+    }
+  }
+
+  visitBreak_statement(ctx: Break_statementContext): CCSTBreakStatement {
+    return {
+      type: 'BreakStatement',
+    }
+  }
+
   visitReturn_statement(ctx: Return_statementContext): CCSTReturnStatement {
     const expressionCtx = ctx.expression()
     let expression = undefined
@@ -1245,11 +1398,11 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
-  visitStatementTypeExpression(ctx: StatementTypeExpressionContext): CCSTStatement {
+  visitStatementTypeLabeled(ctx: StatementTypeLabeledContext): CCSTStatement {
     return {
       type: 'Statement',
-      subtype: 'Expression',
-      statement: this.visitExpression_statement(ctx.expression_statement()),
+      subtype: 'Labeled',
+      statement: this.visitLabeled_statement(ctx.labeled_statement()),
     }
   }
 
@@ -1261,11 +1414,83 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
+  visitStatementTypeExpression(ctx: StatementTypeExpressionContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Expression',
+      statement: this.visitExpression_statement(ctx.expression_statement()),
+    }
+  }
+
   visitStatementTypeCompound(ctx: StatementTypeCompoundContext): CCSTStatement {
     return {
       type: 'Statement',
       subtype: 'Compound',
       statement: this.visitCompound_statement(ctx.compound_statement()),
+    }
+  }
+
+  visitStatementTypeIf(ctx: StatementTypeIfContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'If',
+      statement: this.visitIf_statement(ctx.if_statement()),
+    }
+  }
+
+  visitStatementTypeSwitch(ctx: StatementTypeSwitchContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Switch',
+      statement: this.visitSwitch_statement(ctx.switch_statement()),
+    }
+  }
+
+  visitStatementTypeWhile(ctx: StatementTypeWhileContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'While',
+      statement: this.visitWhile_statement(ctx.while_statement()),
+    }
+  }
+
+  visitStatementTypeDo(ctx: StatementTypeDoContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Do',
+      statement: this.visitDo_statement(ctx.do_statement()),
+    }
+  }
+
+  visitStatementTypeFor(ctx: StatementTypeForContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'For',
+      statement: this.visitFor_statement(ctx.for_statement()),
+    }
+  }
+
+  visitStatementTypeGoto(ctx: StatementTypeGotoContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Goto',
+      statement: this.visitGoto_statement(ctx.goto_statement()),
+    }
+  }
+
+  visitStatementTypeContinue(ctx: StatementTypeContinueContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Continue',
+      statement: this.visitContinue_statement(ctx.continue_statement()),
+    }
+  }
+
+  visitStatementTypeBreak(ctx: StatementTypeBreakContext): CCSTStatement {
+    return {
+      type: 'Statement',
+      subtype: 'Break',
+      statement: this.visitBreak_statement(ctx.break_statement()),
     }
   }
 

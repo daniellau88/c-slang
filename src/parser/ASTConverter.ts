@@ -5,24 +5,33 @@ import {
   CASTAssignmentOperator,
   CASTBaseType,
   CASTBinaryOperator,
+  CASTBreakStatement,
   CASTCompoundStatement,
+  CASTContinueStatement,
   CASTDeclaration,
   CASTDeclarationStatement,
+  CASTDoStatement,
   CASTExpression,
   CASTExpressionStatement,
+  CASTForStatement,
   CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
+  CASTIfStatement,
   CASTLiteral,
   CASTProgram,
   CASTReturnStatement,
   CASTSizeOfExpression,
   CASTStatement,
+  CASTSwitchBody,
+  CASTSwitchClauseBody,
+  CASTSwitchStatement,
   CASTType,
   CASTTypeModifier,
   CASTUnaryExpression,
   CASTUnaryOperator,
+  CASTWhileStatement,
   ProgramType,
 } from '../typings/programAST'
 import {
@@ -31,22 +40,28 @@ import {
   CCSTAndExpression,
   CCSTAssignmentExpression,
   CCSTAssignmentOperator,
+  CCSTBreakStatement,
   CCSTCastExpression,
   CCSTCompoundStatement,
   CCSTConditionalExpression,
   CCSTConstant,
   CCSTConstantExpression,
+  CCSTContinueStatement,
   CCSTDeclarationSpecifier,
   CCSTDeclarationStatement,
   CCSTDeclarator,
   CCSTDirectAbstractDeclarator,
   CCSTDirectDeclarator,
+  CCSTDoStatement,
   CCSTEqualityExpression,
   CCSTExclusiveOrExpression,
   CCSTExpression,
   CCSTExpressionStatement,
+  CCSTForInitDeclaration,
+  CCSTForStatement,
   CCSTFunctionDefinition,
   CCSTIdentifier,
+  CCSTIfStatement,
   CCSTInclusiveOrExpression,
   CCSTInitDeclarator,
   CCSTInitDeclaratorList,
@@ -65,10 +80,15 @@ import {
   CCSTReturnStatement,
   CCSTShiftExpression,
   CCSTStatement,
+  CCSTSwitchBody,
+  CCSTSwitchCaseBody,
+  CCSTSwitchDefaultBody,
+  CCSTSwitchStatement,
   CCSTTypeName,
   CCSTTypeSpecifier,
   CCSTUnaryExpression,
   CCSTUnaryOperator,
+  CCSTWhileStatement,
 } from '../typings/programCST'
 
 export function convertCSTProgramToAST(node: CCSTProgram): CASTProgram {
@@ -247,14 +267,32 @@ function visitCCSTStatement(node: CCSTStatement): CASTStatement {
   const statement = node.statement
   const statementType = statement.type
   switch (statementType) {
-    case 'CompoundStatement':
-      return visitCCSTCompoundStatement(statement)
+    case 'LabeledStatement':
+      throw new Error('Not supported')
     case 'DeclarationStatement':
       return visitCCSTDeclarationStatement(statement)
-    case 'ReturnStatement':
-      return visitCCSTReturnStatement(statement)
     case 'ExpressionStatement':
       return visitCCSTExpressionStatement(statement)
+    case 'CompoundStatement':
+      return visitCCSTCompoundStatement(statement)
+    case 'IfStatement':
+      return visitCCSTIfStatement(statement)
+    case 'SwitchStatement':
+      return visitCCSTSwitchStatement(statement)
+    case 'WhileStatement':
+      return visitCCSTWhileStatement(statement)
+    case 'DoStatement':
+      return visitCCSTDoStatement(statement)
+    case 'ForStatement':
+      return visitCCSTForStatement(statement)
+    case 'ContinueStatement':
+      return visitCCSTContinueStatement(statement)
+    case 'BreakStatement':
+      return visitCCSTBreakStatement(statement)
+    case 'GotoStatement':
+      throw new Error('Not supported')
+    case 'ReturnStatement':
+      return visitCCSTReturnStatement(statement)
     default:
       throw new Error('Not supported')
   }
@@ -315,6 +353,110 @@ function visitCCSTCompoundStatement(node: CCSTCompoundStatement): CASTCompoundSt
   return {
     type: 'CompoundStatement',
     statements: node.statements.map(x => visitCCSTStatement(x)),
+  }
+}
+
+function visitCCSTIfStatement(node: CCSTIfStatement): CASTIfStatement {
+  return {
+    type: 'IfStatement',
+    condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
+    ifTrue: visitCCSTStatement(node.ifTrue),
+    ifFalse: node.ifFalse !== undefined ? visitCCSTStatement(node.ifFalse) : undefined,
+  }
+}
+
+function visitCCSTSwitchStatement(node: CCSTSwitchStatement): CASTSwitchStatement {
+  return {
+    type: 'SwitchStatement',
+    expression: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
+    body: visitCCSTSwitchBody(node.switchBody),
+  }
+}
+
+function visitCCSTSwitchBody(node: CCSTSwitchBody): CASTSwitchBody {
+  const clauses: Array<CASTSwitchClauseBody> = []
+  node.switchCaseBodies.forEach(x => clauses.push(visitCCSTSwitchCaseBody(x)))
+  if (node.switchDefaultBody) {
+    clauses.push(visitCCSTSwitchDefaultBody(node.switchDefaultBody))
+  }
+  return {
+    type: 'SwitchBody',
+    clauses: clauses,
+  }
+}
+
+function visitCCSTSwitchCaseBody(node: CCSTSwitchCaseBody): CASTSwitchClauseBody {
+  return {
+    type: 'SwitchClauseBody',
+    subtype: 'Case',
+    expression: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
+    statements: node.statements.map(x => visitCCSTStatement(x)),
+  }
+}
+
+function visitCCSTSwitchDefaultBody(node: CCSTSwitchDefaultBody): CASTSwitchClauseBody {
+  return {
+    type: 'SwitchClauseBody',
+    subtype: 'Default',
+    statements: node.statements.map(x => visitCCSTStatement(x)),
+  }
+}
+
+function visitCCSTWhileStatement(node: CCSTWhileStatement): CASTWhileStatement {
+  return {
+    type: 'WhileStatement',
+    condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
+    statement: visitCCSTStatement(node.statement),
+  }
+}
+
+function visitCCSTDoStatement(node: CCSTDoStatement): CASTDoStatement {
+  return {
+    type: 'DoStatement',
+    condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
+    statement: visitCCSTStatement(node.statement),
+  }
+}
+
+function visitCCSTForStatement(node: CCSTForStatement): CASTForStatement {
+  return {
+    type: 'ForStatement',
+    statement: visitCCSTStatement(node.statement),
+    initDeclaration:
+      node.initDeclaration !== undefined
+        ? visitCCSTForInitDeclaration(node.initDeclaration)
+        : undefined,
+    testExpression:
+      node.testExpression !== undefined ? visitCCSTExpression(node.testExpression)[0] : undefined, // TODO: Assume first expression
+    updateExpression:
+      node.updateExpression !== undefined
+        ? visitCCSTExpression(node.updateExpression)[0]
+        : undefined, // TODO: Assume first expression
+  }
+}
+
+// Same as DeclarationStatement (just without the semicolon)
+function visitCCSTForInitDeclaration(node: CCSTForInitDeclaration): CASTDeclarationStatement {
+  const baseType = visitCCSTDeclarationSpecifier(node.declarationSpecifiers)
+
+  return {
+    type: 'DeclarationStatement',
+    declarations: visitCCSTInitDeclaratorList(node.initDeclaratorList).map(x => {
+      x.declarationType.typeModifiers.push(baseType.typeModifiers[0])
+      return x
+    }),
+  }
+}
+
+function visitCCSTContinueStatement(node: CCSTContinueStatement): CASTContinueStatement {
+  return {
+    type: 'ContinueStatement',
+  }
+}
+
+function visitCCSTBreakStatement(node: CCSTBreakStatement): CASTBreakStatement {
+  return {
+    type: 'BreakStatement',
   }
 }
 

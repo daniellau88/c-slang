@@ -153,6 +153,7 @@ import { Switch_default_bodyContext } from './CalcParser'
 import { While_statementContext } from './CalcParser'
 import { Do_statementContext } from './CalcParser'
 import { For_statementContext } from './CalcParser'
+import { For_init_declarationContext } from './CalcParser'
 import { Goto_statementContext } from './CalcParser'
 import { Continue_statementContext } from './CalcParser'
 import { Break_statementContext } from './CalcParser'
@@ -2111,6 +2112,17 @@ export interface CalcListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitFor_statement?: (ctx: For_statementContext) => void
+
+  /**
+   * Enter a parse tree produced by `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  enterFor_init_declaration?: (ctx: For_init_declarationContext) => void
+  /**
+   * Exit a parse tree produced by `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  exitFor_init_declaration?: (ctx: For_init_declarationContext) => void
 
   /**
    * Enter a parse tree produced by `CalcParser.goto_statement`.
