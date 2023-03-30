@@ -3,9 +3,11 @@ import * as es from 'estree'
 export type CASTNode =
   | CASTProgram
   | CASTFunctionDefinition
+  | CASTFunctionParameter
   | CASTExpression
   | CASTStatement
   | CASTDeclaration
+  | CASTDummyNode
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseNode {
@@ -13,12 +15,16 @@ interface BaseNode {
   loc?: es.SourceLocation | null | undefined
 }
 
-export interface CASTProgram extends BaseNode {
-  type: 'Program'
-  children: Array<CASTStatement | CASTFunctionDefinition>
+export interface CASTDummyNode extends BaseNode {
+  type: 'Dummy'
 }
 
-export interface CASTFunctionDefinition {
+export interface CASTProgram extends BaseNode {
+  type: 'Program'
+  children: Array<CASTDeclarationStatement | CASTFunctionDefinition>
+}
+
+export interface CASTFunctionDefinition extends BaseNode {
   type: 'FunctionDefinition'
   identifier: CASTIdentifier
   parameters: Array<CASTFunctionParameter>
@@ -26,7 +32,7 @@ export interface CASTFunctionDefinition {
   returnType: CASTType
 }
 
-export interface CASTFunctionParameter {
+export interface CASTFunctionParameter extends BaseNode {
   type: 'FunctionParameter'
   identifier?: CASTIdentifier
   paramType: CASTType

@@ -1,3 +1,4 @@
+import { Context, CustomBuiltIns } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
 import { BinaryWithType, BuiltinFunctionDefinition, MicroCode } from './typings'
@@ -7,6 +8,10 @@ import { incrementPointerDepth, INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/ty
 import { binaryToFormattedString, isMicrocode, parseStringToAST } from './utils/utils'
 
 // Builtin functions must always add a value onto the OS (whether directly or indirectly)
+export const defaultExternalBuiltinFunctions: CustomBuiltIns = {
+  printfLog: () => {},
+}
+
 export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   printfLog: {
     func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
@@ -39,18 +44,30 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   },
 }
 
+export const importBuiltins = (
+  programState: ProgramState,
+  externalBuiltinFunctions: CustomBuiltIns,
+  context?: Context,
+) => {
+  const newPrintfLog = {
+    ...builtinFunctions.printfLog,
+  }
+  newPrintfLog.func = (state: ProgramState, ...arg: Array<any>) => {
+    if (context) externalBuiltinFunctions.printfLog(context.externalContext, arg)
+    builtinFunctions.printfLog.func(state, ...arg)
+  }
+  programState.defineBuiltInFunction('printfLog', newPrintfLog)
+
+  programState.defineBuiltInFunction('sizeof', builtinFunctions.sizeof)
+  programState.defineBuiltInFunction('malloc', builtinFunctions.malloc)
+  programState.defineBuiltInFunction('free', builtinFunctions.free)
+}
+
 /* ****************
  * interpreter loop
  * ****************/
 
 const step_limit = 1000000
-
-export const initializeProgramStateWithProgramAST = (programAST: CASTProgram): ProgramState => {
-  const programState = new ProgramState()
-  programState.initializeAST(programAST)
-  programState.initializeBuiltInFunctions(builtinFunctions)
-  return programState
-}
 
 export function* execute(state: ProgramState, withLog: boolean = false) {
   let i = 0
@@ -60,9 +77,9 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
     const cmd = state.popA() as CASTNode | MicroCode
     if (withLog) console.log('cmd:', cmd)
     if (isMicrocode(cmd)) {
-      yield* executeMicrocode(state, cmd)
+      yield executeMicrocode(state, cmd)
     } else {
-      yield* astToMicrocode(state, cmd)
+      yield astToMicrocode(state, cmd)
     }
     if (withLog) state.printState()
     i++
@@ -81,7 +98,11 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
 
 export const testProgram = (program: string, withLog: boolean = false): ProgramState => {
   const programAST = parseStringToAST(program) as CASTProgram
-  const programState = initializeProgramStateWithProgramAST(programAST)
+  const programState = new ProgramState()
+
+  programState.initializeAST(programAST)
+  importBuiltins(programState, defaultExternalBuiltinFunctions)
+
   const programGenerator = execute(programState, withLog)
 
   let programStep = programGenerator.next()

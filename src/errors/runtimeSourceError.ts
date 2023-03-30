@@ -2,13 +2,14 @@ import * as es from 'estree'
 
 import { UNKNOWN_LOCATION } from '../constants'
 import { ErrorSeverity, ErrorType, SourceError } from '../types'
+import { CASTNode } from '../typings/programAST'
 
 export class RuntimeSourceError implements SourceError {
   public type = ErrorType.RUNTIME
   public severity = ErrorSeverity.ERROR
   public location: es.SourceLocation
 
-  constructor(node?: es.Node) {
+  constructor(node?: CASTNode) {
     this.location = node ? node.loc! : UNKNOWN_LOCATION
   }
 
@@ -18,5 +19,46 @@ export class RuntimeSourceError implements SourceError {
 
   public elaborate() {
     return this.explain()
+  }
+}
+
+export class NotImplementedError extends RuntimeSourceError {
+  public msg: string
+
+  constructor(msg?: string, node?: CASTNode) {
+    super(node)
+    this.msg = msg ? msg : ''
+  }
+
+  public explain() {
+    return 'Unimplemented error: ' + this.msg
+  }
+}
+
+// Error that happens as a result of wrong implementation
+export class LogicError extends RuntimeSourceError {
+  public msg: string
+
+  constructor(msg?: string, node?: CASTNode) {
+    super(node)
+    this.msg = msg ? msg : ''
+  }
+
+  public explain() {
+    return 'Logic error: ' + this.msg
+  }
+}
+
+// Error that happens as a result of runtime issues
+export class RuntimeError extends RuntimeSourceError {
+  public msg: string
+
+  constructor(msg?: string, node?: CASTNode) {
+    super(node)
+    this.msg = msg ? msg : ''
+  }
+
+  public explain() {
+    return 'Runtime error: ' + this.msg
   }
 }

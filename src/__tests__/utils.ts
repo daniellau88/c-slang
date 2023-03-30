@@ -2,6 +2,7 @@ import { ProgramState } from '../interpreter/programState'
 import { BinaryWithType } from '../interpreter/typings'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { binaryToInt, intToBinary } from '../interpreter/utils/utils'
+import { SourceError } from '../types'
 
 export const verifyProgramCompleted = (output: ProgramState) => {
   expect(output.getRTSLength()).toBe(output.getGlobalLength())
@@ -35,9 +36,17 @@ export type Newable<T> = { new (...args: any[]): T }
 
 export const expectThrowError = (
   program: () => ProgramState,
-  errorType: Newable<Error>,
+  errorType: Newable<SourceError>,
   errorMessage: string,
 ) => {
-  expect(program).toThrow(errorType)
-  expect(program).toThrow(errorMessage)
+  let thrownError
+  try {
+    program()
+    // Error not thrown
+    expect(false).toBe(true)
+  } catch (error) {
+    thrownError = error
+  }
+  expect(thrownError instanceof errorType).toBe(true)
+  expect(thrownError.msg).toBe(errorMessage)
 }

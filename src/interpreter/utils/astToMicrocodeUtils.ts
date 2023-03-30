@@ -1,5 +1,6 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
+import { NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -12,10 +13,10 @@ import {
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
 import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
-import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
+import { shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
-export function* astToMicrocode(state: ProgramState, node: CASTNode) {
+export function astToMicrocode(state: ProgramState, node: CASTNode) {
   switch (node.type) {
     case 'Program':
       ;[...node.children].reverse().forEach(x => state.pushA(x))

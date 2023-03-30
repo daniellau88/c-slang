@@ -1,7 +1,7 @@
 import { NullableMappedPosition, RawSourceMap, SourceMapConsumer } from 'source-map'
 
 import { UNKNOWN_LOCATION } from '../constants'
-import { ConstAssignment, ExceptionError, UndefinedVariable } from '../errors/errors'
+import { ExceptionError, UndefinedVariable } from '../errors/errors'
 import { SourceError } from '../types'
 import { locationDummyNode } from '../utils/astCreator'
 
@@ -118,9 +118,7 @@ export async function toSourceError(error: Error, sourceMap?: RawSourceMap): Pro
   const errorMessageContains = (possibleMessages: string[]) =>
     possibleMessages.some(possibleMessage => errorMessage.includes(possibleMessage))
 
-  if (errorMessageContains(ASSIGNMENT_TO_CONST_ERROR_MESSAGES)) {
-    return new ConstAssignment(locationDummyNode(line, column), identifier)
-  } else if (errorMessageContains(UNDEFINED_VARIABLE_MESSAGES)) {
+  if (errorMessageContains(UNDEFINED_VARIABLE_MESSAGES)) {
     return new UndefinedVariable(identifier, locationDummyNode(line, column))
   } else {
     const location =

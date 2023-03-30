@@ -1,8 +1,9 @@
 import { describe, test } from '@jest/globals'
 
+import { RuntimeError } from '../errors/runtimeSourceError'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
+import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
 describe('heap', () => {

@@ -1,3 +1,4 @@
+import { LogicError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -5,13 +6,8 @@ import {
   ProgramType,
 } from '../../typings/programAST'
 import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
-import {
-  FALSE_BOOLEAN_BINARY_WITH_TYPE,
-  FLOAT_BASE_TYPE,
-  INT_BASE_TYPE,
-  TRUE_BOOLEAN_BINARY_WITH_TYPE,
-} from './typeUtils'
-import { binaryToInt, intToBinary, LogicError, NotImplementedError, RuntimeError } from './utils'
+import { FALSE_BOOLEAN_BINARY_WITH_TYPE, TRUE_BOOLEAN_BINARY_WITH_TYPE } from './typeUtils'
+import { binaryToInt, intToBinary } from './utils'
 
 export enum ArithmeticType {
   Integer = 0,
@@ -19,13 +15,13 @@ export enum ArithmeticType {
 }
 
 export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType => {
-  if (type.length === 0) throw new LogicError('Type is empty')
+  if (type.length === 0) throw new RuntimeError('Type is empty')
 
   if (type[0].subtype === 'Pointer') {
     return ArithmeticType.Integer
   }
 
-  if (type[0].subtype !== 'BaseType') throw new LogicError('Type is not base type')
+  if (type[0].subtype !== 'BaseType') throw new RuntimeError('Type is not base type')
 
   switch (type[0].baseType) {
     case 'int':
@@ -276,7 +272,7 @@ export const doBinaryOperation = (
       return getBinaryValueFromJSValueWithType(op1 >> op2, operand1.type)
     }
     default:
-      throw new NotImplementedError()
+      throw new LogicError()
   }
 }
 

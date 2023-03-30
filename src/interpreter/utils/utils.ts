@@ -1,28 +1,9 @@
 import createContext from '../../createContext'
+import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType, MicroCode } from '../typings'
-
-export class NotImplementedError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
-
-// Error that happens as a result of wrong implementation
-export class LogicError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
-
-// Error that happens as a result of runtime issues
-export class RuntimeError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
 
 export const stringify = (x: any) => JSON.stringify(x)
 

@@ -10,17 +10,14 @@ import * as es from 'estree'
 
 import { EnvTree } from './createContext'
 import { ProgramState } from './interpreter/programState'
+import { CASTFunctionCallExpression, CASTFunctionDefinition, CASTNode } from './typings/programAST'
 
 /**
  * Defines functions that act as built-ins, but might rely on
  * different implementations. e.g display() in a web application.
  */
 export interface CustomBuiltIns {
-  rawDisplay: (value: Value, str: string, externalContext: any) => Value
-  prompt: (value: Value, str: string, externalContext: any) => string | null
-  alert: (value: Value, str: string, externalContext: any) => void
-  /* Used for list visualisation. See #12 */
-  visualiseList: (list: any, externalContext: any) => void
+  printfLog: Function
 }
 
 export enum ErrorType {
@@ -101,7 +98,7 @@ export interface Context<T = any> {
     isRunning: boolean
     environmentTree: EnvTree
     environments: Environment[]
-    nodes: es.Node[]
+    nodes: CASTNode[]
   }
 
   programState: ProgramState
@@ -269,9 +266,9 @@ export type TSDisallowedTypes = typeof disallowedTypes[number]
 export type TSBasicType = PrimitiveType | TSAllowedTypes | TSDisallowedTypes
 
 // Types for nodes used in type inference
-export type NodeWithInferredType<T extends es.Node> = InferredType & T
+export type NodeWithInferredType<T extends CASTNode> = InferredType & T
 
-export type FuncDeclWithInferredTypeAnnotation = NodeWithInferredType<es.FunctionDeclaration> &
+export type FuncDeclWithInferredTypeAnnotation = NodeWithInferredType<CASTFunctionDefinition> &
   TypedFuncDecl
 
 export type InferredType = Untypable | Typed | NotYetTyped
@@ -369,7 +366,7 @@ export interface PredicateType {
 }
 
 export type PredicateTest = {
-  node: NodeWithInferredType<es.CallExpression>
+  node: NodeWithInferredType<CASTFunctionCallExpression>
   ifTrueType: Type | ForAll
   argVarName: string
 }

@@ -1,31 +1,23 @@
-import {
-  ArrowFunctionExpression,
-  BlockStatement,
-  ForStatement,
-  FunctionDeclaration,
-  Identifier,
-  ImportSpecifier,
-  Node,
-  SourceLocation,
-  VariableDeclarator,
-} from 'estree'
+import { SourceLocation } from 'estree'
 
 import { Context } from './types'
 import {
-  ancestor,
-  base,
-  findNodeAt,
-  FullWalkerCallback,
-  recursive,
-  WalkerCallback,
-} from './utils/walkers'
+  CASTCompoundStatement,
+  CASTDeclaration,
+  CASTFunctionDefinition,
+  CASTIdentifier,
+  CASTNode,
+} from './typings/programAST'
+import { ancestor, findNodeAt, recursive, WalkerCallback } from './utils/walkers'
+
+type Node = CASTNode
 
 // Finds the innermost node that matches the given location
 export function findIdentifierNode(
   root: Node,
   context: Context,
   loc: { line: number; column: number },
-): Identifier | undefined {
+): CASTIdentifier | undefined {
   function findByLocationPredicate(type: string, node: Node) {
     const location = node.loc
     const nodeType = node.type
@@ -41,33 +33,29 @@ export function findIdentifierNode(
   }
 
   const found = findNodeAt(root, undefined, undefined, findByLocationPredicate, customWalker)
-  return found?.node as Identifier
+  return found?.node as CASTIdentifier
 }
 
 // Recursively searches up the ancestors of the identifier from innermost to outermost scope
-export function findDeclarationNode(program: Node, identifier: Identifier): Node | undefined {
+export function findDeclarationNode(program: Node, identifier: CASTIdentifier): Node | undefined {
   const ancestors = findAncestors(program, identifier)
   if (!ancestors) return undefined
 
   const declarations: Node[] = []
   for (const root of ancestors) {
     recursive(root, undefined, {
-      BlockStatement(node: BlockStatement, state: any, callback) {
+      CompoundStatement(node: CASTCompoundStatement, state: any, callback) {
         if (containsNode(node, identifier)) {
-          node.body.map(n => callback(n, state))
+          node.statements.map(n => callback(n, state))
         }
       },
-      ForStatement(node: ForStatement, state: any, callback: WalkerCallback<any>) {
-        if (containsNode(node, identifier)) {
-          callback(node.init as any, state)
-          callback(node.body, state)
-        }
-      },
-      FunctionDeclaration(node: FunctionDeclaration, state: any, callback: WalkerCallback<any>) {
-        if (node.id && node.id.name === identifier.name) {
-          declarations.push(node.id)
+      FunctionDefinition(node: CASTFunctionDefinition, state: any, callback: WalkerCallback<any>) {
+        if (node.identifier.name === identifier.name) {
+          declarations.push(node.identifier)
         } else if (containsNode(node, identifier)) {
-          const param = node.params.find(n => (n as Identifier).name === identifier.name)
+          const param = node.parameters.find(n =>
+            n.identifier ? n.identifier.name === identifier.name : false,
+          )
           if (param) {
             declarations.push(param)
           } else {
@@ -75,24 +63,9 @@ export function findDeclarationNode(program: Node, identifier: Identifier): Node
           }
         }
       },
-      ArrowFunctionExpression(node: ArrowFunctionExpression, state: any, callback: any) {
-        if (containsNode(node, identifier)) {
-          const param = node.params.find(n => (n as Identifier).name === identifier.name)
-          if (param) {
-            declarations.push(param)
-          } else {
-            callback(node.body, state)
-          }
-        }
-      },
-      VariableDeclarator(node: VariableDeclarator, _state: any, _callback: WalkerCallback<any>) {
-        if ((node.id as Identifier).name === identifier.name) {
-          declarations.push(node.id)
-        }
-      },
-      ImportSpecifier(node: ImportSpecifier, _state: any, _callback: WalkerCallback<any>) {
-        if ((node.imported as Identifier).name === identifier.name) {
-          declarations.push(node.imported)
+      Declaration(node: CASTDeclaration, _state: any, _callback: WalkerCallback<any>) {
+        if (node.identifier.name === identifier.name) {
+          declarations.push(node.identifier)
         }
       },
     })
@@ -139,12 +112,12 @@ export function isInLoc(line: number, col: number, location: SourceLocation): bo
   }
 }
 
-export function findAncestors(root: Node, identifier: Identifier): Node[] | undefined {
+export function findAncestors(root: Node, identifier: CASTIdentifier): Node[] | undefined {
   let foundAncestors: Node[] = []
   ancestor(
     root,
     {
-      Identifier: (node: Identifier, ancestors: [Node]) => {
+      Identifier: (node: CASTIdentifier, ancestors: [Node]) => {
         if (identifier.name === node.name && identifier.loc === node.loc) {
           foundAncestors = Object.assign([], ancestors).reverse()
           foundAncestors.shift() // Remove the identifier node
@@ -166,9 +139,4 @@ export function findAncestors(root: Node, identifier: Identifier): Node[] | unde
   return foundAncestors
 }
 
-const customWalker = {
-  ...base,
-  ImportSpecifier(node: ImportSpecifier, st: never, c: FullWalkerCallback<never>) {
-    c(node.imported, st, 'Expression')
-  },
-}
+const customWalker = undefined

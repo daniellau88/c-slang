@@ -1,3 +1,4 @@
+import { LogicError, RuntimeError } from '../errors/runtimeSourceError'
 import { CASTNode, ProgramType } from '../typings/programAST'
 import {
   BinaryWithType,
@@ -9,14 +10,12 @@ import {
 } from './typings'
 import { RTM } from './utils/RTM'
 import {
-  LogicError,
   peek,
   pop,
   popStackAndType,
   printBinariesWithTypes,
   push,
   pushStackAndType,
-  RuntimeError,
 } from './utils/utils'
 
 type ReturnRegisterType =
@@ -55,24 +54,27 @@ export class ProgramState {
     this.A = [ast]
   }
 
+  defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
+    const newIndex = this.FD.length
+    if (this.E[0].record[key] !== undefined) {
+      throw new LogicError('Builtin function ' + key + ' has already been defined')
+    }
+    push(this.FD, {
+      subtype: 'builtin_func',
+      func: builtinFunctionDefintion.func,
+      returnProgType: builtinFunctionDefintion.returnProgType,
+      arity: builtinFunctionDefintion.arity,
+    })
+    this.addRecordToGlobalE(key, {
+      subtype: 'func',
+      funcIndex: newIndex,
+    })
+  }
+
   initializeBuiltInFunctions(builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     const builtinFunctionKeys = Object.keys(builtinFunctions)
     builtinFunctionKeys.forEach(key => {
-      const newIndex = this.FD.length
-      if (this.E[0].record[key] !== undefined) {
-        throw new LogicError('Buitlin function ' + key + ' has already been defined')
-      }
-      const builtinFunctionDefintion = builtinFunctions[key]
-      push(this.FD, {
-        subtype: 'builtin_func',
-        func: builtinFunctionDefintion.func,
-        returnProgType: builtinFunctionDefintion.returnProgType,
-        arity: builtinFunctionDefintion.arity,
-      })
-      this.addRecordToGlobalE(key, {
-        subtype: 'func',
-        funcIndex: newIndex,
-      })
+      this.defineBuiltInFunction(key, builtinFunctionKeys[key])
     })
   }
 

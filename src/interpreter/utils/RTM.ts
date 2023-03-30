@@ -1,6 +1,7 @@
+import { RuntimeError } from '../../errors/runtimeSourceError'
 import { ProgramType } from '../../typings/programAST'
 import { POINTER_BASE_TYPE } from './typeUtils'
-import { binaryToInt, intToBinary, pop, printBinariesWithTypes, push, RuntimeError } from './utils'
+import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
 const WORD_SIZE = 8
 
