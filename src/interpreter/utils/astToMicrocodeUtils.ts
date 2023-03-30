@@ -1,8 +1,12 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CASTBinaryOperator, CASTDeclaration, CASTNode } from '../../typings/programAST'
+import { CASTAssignmentOperator, CASTBinaryOperator, CASTDeclaration, CASTNode } from '../../typings/programAST'
 import { ProgramState } from '../programState'
-import { CASTUnaryOperatorIncrement, CASTUnaryOperatorWithoutDerefence } from './typeUtils'
+import {
+  CASTUnaryOperatorWithoutDerefence,
+  convertAssignmentOperatorToBinaryOperator,
+} from './arithmeticUtils'
+import { CASTUnaryOperatorIncrement } from './typeUtils'
 import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
@@ -69,8 +73,20 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     case 'AssignmentExpression': {
       state.pushA({ tag: 'assgn' })
+
+      const isBasicAssignment = node.operator === CASTAssignmentOperator.Equal
+      if (!isBasicAssignment) {
+        state.pushA({
+          tag: 'bin_op_auto_promotion',
+          operator: convertAssignmentOperatorToBinaryOperator(node.operator),
+        })
+      }
       if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
       state.pushA(node.right)
+      if (!isBasicAssignment) {
+        if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref' })
+        state.pushA({ tag: 'duplicate_top_os' })
+      }
       state.pushA(node.left)
       return
     }

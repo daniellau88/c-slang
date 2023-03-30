@@ -44,6 +44,10 @@ interface PopOSMicroCode extends MicroCodeBase {
   tag: 'pop_os'
 }
 
+interface DuplicateTopOSMicroCode extends MicroCodeBase {
+  tag: 'duplicate_top_os'
+}
+
 interface EnterScopeMicroCode extends MicroCodeBase {
   tag: 'enter_scope'
   declarations: Array<CASTDeclaration>
@@ -155,6 +159,7 @@ export type MicroCode =
   | LoadVarMicroCode
   | FuncApplyMicroCode
   | PopOSMicroCode
+  | DuplicateTopOSMicroCode
   | EnterScopeMicroCode
   | ExitScopeMicroCode
   | DeclarationMicroCode

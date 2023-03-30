@@ -55,4 +55,31 @@ describe('assignment', () => {
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
+
+  test('assignment wth operator', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = 2, y = 3, z = 4;
+        printfLog(x, y, z);
+        x += y;
+        y += 3;
+        z -= 1 + x;
+        printfLog(x, y, z);
+        return 0;
+      }
+    `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+      { binary: intToBinary(-2), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
 })

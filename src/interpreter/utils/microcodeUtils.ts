@@ -8,17 +8,19 @@ import { ProgramState } from '../programState'
 import { BinaryWithType, MicroCode, MicroCodeBinaryOperator } from '../typings'
 import {
   ArithmeticType,
-  CASTUnaryOperatorIncrement,
   CASTUnaryOperatorWithoutDerefence,
   convertBinaryOperatorToMicroCodeBinaryOperator,
-  decrementPointerDepth,
   doBinaryOperation,
-  doUnaryOperationIncrement,
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
+  getBaseTypePromotionPriority,
+} from './arithmeticUtils'
+import {
+  CASTUnaryOperatorIncrement,
+  decrementPointerDepth,
+  doUnaryOperationIncrement,
   FLOAT_BASE_TYPE,
   getArrayItemsType,
-  getBaseTypePromotionPriority,
   incrementPointerDepth,
   INT_BASE_TYPE,
   isBaseType,
@@ -162,6 +164,13 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'pop_os':
       state.popOS()
       return
+    case 'duplicate_top_os': {
+      const topOS = state.peekOS()
+      if (topOS) {
+        state.pushOS(topOS.binary, topOS.type)
+      }
+      return
+    }
     case 'enter_scope': {
       state.saveAndUpdateRTSStartOntoStack()
       state.extendScopeE()
@@ -406,7 +415,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         if (isSkipDerefenceOperator) {
           result = doUnaryOperationWithoutDereference(operand, node.operator)
         } else {
-          result = doUnaryOperationWithDereference(operand, node.operator, state)
+          result = doUnaryOperationWithDereference(operand, node.operator)
         }
         state.pushOS(result.binary, result.type)
       }
