@@ -332,9 +332,9 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         const microcodeOperator = (() => {
           switch (node.operator) {
             case CASTBinaryOperator.Plus:
-              return MicroCodeBinaryOperator.PointerAddition
+              return MicroCodeBinaryOperator.IntAddition
             case CASTBinaryOperator.Minus:
-              return MicroCodeBinaryOperator.PointerSubtraction
+              return MicroCodeBinaryOperator.IntSubtraction
             default:
               throw new RuntimeError('Cannot perform operation between pointer and integer')
           }
