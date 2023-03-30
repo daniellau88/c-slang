@@ -332,14 +332,6 @@ export const doBinaryOperation = (
   }
 }
 
-export const CASTUnaryOperatorWithoutDerefence = [
-  CASTUnaryOperator.PreIncrement,
-  CASTUnaryOperator.PreDecrement,
-  CASTUnaryOperator.Address,
-  CASTUnaryOperator.PostIncrement,
-  CASTUnaryOperator.PostDecrement,
-]
-
 const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType): number => {
   const arithmeticType = getBaseTypePromotionPriority(binaryWithType.type)
   switch (arithmeticType) {
@@ -364,49 +356,81 @@ const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType): 
   }
 }
 
-const getUnaryOperationIncrementResult = (
+export const CASTUnaryOperatorIncrement = [
+  CASTUnaryOperator.PreIncrement,
+  CASTUnaryOperator.PreDecrement,
+  CASTUnaryOperator.PostIncrement,
+  CASTUnaryOperator.PostDecrement,
+]
+
+const performUnaryOperationIncrement = (
   operandAddress: BinaryWithType,
   type: 'increment' | 'decrement',
+  unaryType: 'post' | 'pre',
   state: ProgramState,
-): { preResult: BinaryWithType; postResult: BinaryWithType } => {
-  const operandAddressInt = binaryToInt(operandAddress.binary)
-  const operandDereferencedValue = state.getRTSAtIndex(operandAddressInt)
-  const dereferencedType = decrementPointerDepth(operandAddress.type)
+) => {
+  // Cannot perform increments on arrays
+  if (operandAddress.type[0].subtype !== 'Pointer')
+    throw new Error('Argument given is not a pointer')
 
-  const operandValue = getJSValueFromBinaryWithType({
-    binary: operandDereferencedValue,
-    type: dereferencedType,
-  })
+  const operand = state.getRTSAtIndex(binaryToInt(operandAddress.binary))
+  const operandType = decrementPointerDepth(operandAddress.type)
 
-  const result = type === 'increment' ? operandValue + 1 : operandValue - 1
-  const resultBinary = getBinaryValueFromJSValueWithType(result, dereferencedType)
+  state.printOS()
+  if (unaryType === 'post') {
+    state.pushOS(operand, operandType)
+  }
 
-  state.setRTSAtIndex(operandAddressInt, resultBinary.binary, resultBinary.type)
+  state.pushOS(operandAddress.binary, operandAddress.type)
+  state.pushOS(operand, operandType)
 
-  return {
-    preResult: { binary: operandDereferencedValue, type: dereferencedType },
-    postResult: resultBinary,
+  state.printOS()
+
+  if (unaryType === 'post') {
+    state.pushA({ tag: 'pop_os' })
+  }
+
+  state.pushA({ tag: 'assgn' })
+  if (type === 'increment') {
+    state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
+  } else {
+    state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Minus })
+  }
+  state.pushA({ tag: 'load_int', value: 1 })
+}
+
+export const doUnaryOperationIncrement = (
+  operand: BinaryWithType,
+  operator: CASTUnaryOperator,
+  state: ProgramState,
+) => {
+  switch (operator) {
+    case CASTUnaryOperator.PreIncrement: {
+      performUnaryOperationIncrement(operand, 'increment', 'pre', state)
+      return
+    }
+    case CASTUnaryOperator.PreDecrement: {
+      performUnaryOperationIncrement(operand, 'decrement', 'pre', state)
+      return
+    }
+    case CASTUnaryOperator.PostIncrement: {
+      performUnaryOperationIncrement(operand, 'increment', 'post', state)
+      return
+    }
+    case CASTUnaryOperator.PostDecrement: {
+      performUnaryOperationIncrement(operand, 'decrement', 'post', state)
+      return
+    }
   }
 }
+
+export const CASTUnaryOperatorWithoutDerefence = [CASTUnaryOperator.Address]
 
 export const doUnaryOperationWithoutDereference = (
   operand: BinaryWithType,
   operator: CASTUnaryOperator,
-  state: ProgramState,
 ): BinaryWithType => {
   switch (operator) {
-    case CASTUnaryOperator.PreIncrement: {
-      return getUnaryOperationIncrementResult(operand, 'increment', state).postResult
-    }
-    case CASTUnaryOperator.PreDecrement: {
-      return getUnaryOperationIncrementResult(operand, 'decrement', state).postResult
-    }
-    case CASTUnaryOperator.PostIncrement: {
-      return getUnaryOperationIncrementResult(operand, 'increment', state).preResult
-    }
-    case CASTUnaryOperator.PostDecrement: {
-      return getUnaryOperationIncrementResult(operand, 'decrement', state).preResult
-    }
     case CASTUnaryOperator.Address: {
       return operand
     }

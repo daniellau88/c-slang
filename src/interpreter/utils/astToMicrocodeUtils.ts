@@ -2,7 +2,7 @@
 
 import { CASTBinaryOperator, CASTDeclaration, CASTNode } from '../../typings/programAST'
 import { ProgramState } from '../programState'
-import { CASTUnaryOperatorWithoutDerefence } from './typeUtils'
+import { CASTUnaryOperatorIncrement, CASTUnaryOperatorWithoutDerefence } from './typeUtils'
 import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
@@ -95,7 +95,9 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     case 'UnaryExpression': {
       state.pushA({ tag: 'unary_op', operator: node.operator })
       const shouldDeref = shouldDerefExpression(node.expression)
-      const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
+      const isSkipDerefenceOperator =
+        CASTUnaryOperatorWithoutDerefence.includes(node.operator) ||
+        CASTUnaryOperatorIncrement.includes(node.operator)
       if (!shouldDeref && isSkipDerefenceOperator) {
         throw new RuntimeError('Cannot dereference non-address')
       }

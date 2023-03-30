@@ -8,10 +8,12 @@ import { ProgramState } from '../programState'
 import { BinaryWithType, MicroCode, MicroCodeBinaryOperator } from '../typings'
 import {
   ArithmeticType,
+  CASTUnaryOperatorIncrement,
   CASTUnaryOperatorWithoutDerefence,
   convertBinaryOperatorToMicroCodeBinaryOperator,
   decrementPointerDepth,
   doBinaryOperation,
+  doUnaryOperationIncrement,
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
   FLOAT_BASE_TYPE,
@@ -394,14 +396,20 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'unary_op': {
       const operand = state.popOS()
-      let result: BinaryWithType
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
-      if (isSkipDerefenceOperator) {
-        result = doUnaryOperationWithoutDereference(operand, node.operator, state)
+      const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
+      if (isIncrementOperator) {
+        // Use the bin op auto promotion microcode to handle these cases
+        doUnaryOperationIncrement(operand, node.operator, state)
       } else {
-        result = doUnaryOperationWithDereference(operand, node.operator, state)
+        let result: BinaryWithType
+        if (isSkipDerefenceOperator) {
+          result = doUnaryOperationWithoutDereference(operand, node.operator)
+        } else {
+          result = doUnaryOperationWithDereference(operand, node.operator, state)
+        }
+        state.pushOS(result.binary, result.type)
       }
-      state.pushOS(result.binary, result.type)
       return
     }
     case 'return': {
