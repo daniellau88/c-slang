@@ -139,7 +139,7 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     // statements
     case 'IfStatement': {
-      state.pushA({ tag: 'conditional_statement_op', ifTrue: node.ifTrue, ifFalse: node.ifFalse})
+      state.pushA({ tag: 'conditional_statement_op', ifTrue: node.ifTrue, ifFalse: node.ifFalse })
       state.pushA(node.condition)
       return
     }
@@ -158,21 +158,26 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
 
     case 'ForStatement': {
       const declarations: CASTDeclaration[] = []
-      if(node.initDeclaration) {
+      if (node.initDeclaration) {
         node.initDeclaration.declarations.forEach(x => {
           declarations.push(x)
         })
       }
-      state.pushA({ tag: 'exit_scope', declarations: declarations})
-      state.pushA({tag: 'for_op', statement: node.statement, testExpression: node.testExpression, updateExpression: node.updateExpression})
-      if(node.testExpression) {
+      state.pushA({ tag: 'exit_scope', declarations: declarations })
+      state.pushA({
+        tag: 'for_op',
+        statement: node.statement,
+        testExpression: node.testExpression,
+        updateExpression: node.updateExpression,
+      })
+      if (node.testExpression) {
         state.pushA(node.testExpression)
       }
-      if(node.initDeclaration) state.pushA(node.initDeclaration)
-      state.pushA({ tag: 'enter_scope', declarations: declarations})
+      if (node.initDeclaration) state.pushA(node.initDeclaration)
+      state.pushA({ tag: 'enter_scope', declarations: declarations })
       return
     }
-    
+
     case 'BreakStatement': {
       state.pushA({ tag: 'break_op' })
       return

@@ -441,49 +441,49 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'conditional_statement_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
-      if(Boolean(binaryToInt(indexBinary))) {
+      if (Boolean(binaryToInt(indexBinary))) {
         state.pushA(node.ifTrue)
       } else {
-        if(node.ifFalse) state.pushA(node.ifFalse)
+        if (node.ifFalse) state.pushA(node.ifFalse)
       }
       return
     }
 
     case 'while_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
-      if(Boolean(binaryToInt(indexBinary))) {
-        state.pushA({tag: 'break_marker'})
+      if (Boolean(binaryToInt(indexBinary))) {
+        state.pushA({ tag: 'break_marker' })
         state.pushA(node)
         state.pushA(node.condition)
-        state.pushA({tag: 'continue_marker'})
+        state.pushA({ tag: 'continue_marker' })
         state.pushA(node.statement)
-      } 
+      }
       return
     }
 
     case 'for_op': {
-    let testExpressionValue = true
-    if(node.testExpression) {
-      const { binary: indexBinary, type: indexType } = state.popOS()
-      testExpressionValue = Boolean(binaryToInt(indexBinary))
-    }
-    if (testExpressionValue) {
-      state.pushA({tag: 'break_marker'})
-      state.pushA(node)
-      if(node.testExpression) state.pushA(node.testExpression)
-      if(node.updateExpression) {
-        state.pushA({ tag: 'pop_os' })
-        state.pushA(node.updateExpression)
+      let testExpressionValue = true
+      if (node.testExpression) {
+        const { binary: indexBinary, type: indexType } = state.popOS()
+        testExpressionValue = Boolean(binaryToInt(indexBinary))
       }
-      state.pushA({tag: 'continue_marker'})
-      state.pushA(node.statement)
-    }
-    return
+      if (testExpressionValue) {
+        state.pushA({ tag: 'break_marker' })
+        state.pushA(node)
+        if (node.testExpression) state.pushA(node.testExpression)
+        if (node.updateExpression) {
+          state.pushA({ tag: 'pop_os' })
+          state.pushA(node.updateExpression)
+        }
+        state.pushA({ tag: 'continue_marker' })
+        state.pushA(node.statement)
+      }
+      return
     }
 
     case 'break_op': {
-      while(true) {
-        let cmd = state.popA()
+      while (true) {
+        const cmd = state.popA()
         if (isMicrocode(cmd)) {
           if (cmd.tag == 'exit_scope') {
             state.popScopeE()
@@ -496,14 +496,14 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       }
       return
     }
-    
+
     case 'break_marker': {
       return
     }
 
     case 'continue_op': {
-      while(true) {
-        let cmd = state.popA()
+      while (true) {
+        const cmd = state.popA()
         if (isMicrocode(cmd)) {
           if (cmd.tag == 'exit_scope') {
             state.popScopeE()

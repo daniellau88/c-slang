@@ -67,7 +67,7 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
 
 export const testProgram = (program: string, withLog: boolean = false): ProgramState => {
   const programAST = parseStringToAST(program) as CASTProgram
-  console.log("PROGRAM AST")
+  console.log('PROGRAM AST')
   console.log(programAST)
   const programState = initializeProgramStateWithProgramAST(programAST)
   const programGenerator = execute(programState, withLog)
@@ -141,7 +141,7 @@ test(
     }
     return 0;
   }
-  `
+  `,
 )
 // test(
 //   `
