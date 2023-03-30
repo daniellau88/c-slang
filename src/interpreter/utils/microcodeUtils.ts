@@ -18,7 +18,6 @@ import {
 import {
   CASTUnaryOperatorIncrement,
   decrementPointerDepth,
-  doUnaryOperationIncrement,
   FLOAT_BASE_TYPE,
   getArrayItemsType,
   incrementPointerDepth,
@@ -408,17 +407,16 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
       const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
       if (isIncrementOperator) {
-        // Use the bin op auto promotion microcode to handle these cases
-        doUnaryOperationIncrement(operand, node.operator, state)
-      } else {
-        let result: BinaryWithType
-        if (isSkipDerefenceOperator) {
-          result = doUnaryOperationWithoutDereference(operand, node.operator)
-        } else {
-          result = doUnaryOperationWithDereference(operand, node.operator)
-        }
-        state.pushOS(result.binary, result.type)
+        throw new LogicError('Unary expression is handled earlier')
       }
+
+      let result: BinaryWithType
+      if (isSkipDerefenceOperator) {
+        result = doUnaryOperationWithoutDereference(operand, node.operator)
+      } else {
+        result = doUnaryOperationWithDereference(operand, node.operator)
+      }
+      state.pushOS(result.binary, result.type)
       return
     }
     case 'return': {

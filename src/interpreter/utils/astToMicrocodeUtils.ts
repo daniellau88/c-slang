@@ -1,12 +1,17 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CASTAssignmentOperator, CASTBinaryOperator, CASTDeclaration, CASTNode } from '../../typings/programAST'
+import {
+  CASTAssignmentOperator,
+  CASTBinaryOperator,
+  CASTDeclaration,
+  CASTNode,
+} from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import {
   CASTUnaryOperatorWithoutDerefence,
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
-import { CASTUnaryOperatorIncrement } from './typeUtils'
+import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
 import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
@@ -109,11 +114,34 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'UnaryExpression': {
+      const isIncrement = CASTUnaryOperatorIncrement.includes(node.operator)
+      if (isIncrement) {
+        const incrementType = getUnaryOperatorIncrementType(node.operator)
+        const binOp =
+          incrementType.incrementType === 'increment'
+            ? CASTBinaryOperator.Plus
+            : CASTBinaryOperator.Minus
+
+        if (incrementType.unaryType === 'post') {
+          state.pushA({ tag: 'pop_os' })
+        }
+        state.pushA({ tag: 'assgn' })
+        state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp })
+        state.pushA({ tag: 'load_int', value: 1 })
+        state.pushA({ tag: 'deref' })
+        state.pushA({ tag: 'duplicate_top_os' })
+        if (incrementType.unaryType === 'post') {
+          state.pushA(node.expression) // Have to evaluate expression twice because the first needs to be derefed
+          state.pushA({ tag: 'deref' })
+        }
+        state.pushA(node.expression)
+        return
+      }
+
       state.pushA({ tag: 'unary_op', operator: node.operator })
       const shouldDeref = shouldDerefExpression(node.expression)
-      const isSkipDerefenceOperator =
-        CASTUnaryOperatorWithoutDerefence.includes(node.operator) ||
-        CASTUnaryOperatorIncrement.includes(node.operator)
+      const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
+
       if (!shouldDeref && isSkipDerefenceOperator) {
         throw new RuntimeError('Cannot dereference non-address')
       }

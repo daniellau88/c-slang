@@ -1,12 +1,6 @@
-import {
-  CASTBinaryOperator,
-  CASTTypeModifier,
-  CASTUnaryOperator,
-  ProgramType,
-} from '../../typings/programAST'
-import { ProgramState } from '../programState'
+import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
-import { binaryToInt, intToBinary, RuntimeError, typeToString } from './utils'
+import { intToBinary, LogicError, RuntimeError, typeToString } from './utils'
 
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
@@ -109,61 +103,23 @@ export const CASTUnaryOperatorIncrement = [
   CASTUnaryOperator.PostDecrement,
 ]
 
-const performUnaryOperationIncrement = (
-  operandAddress: BinaryWithType,
-  type: 'increment' | 'decrement',
-  unaryType: 'post' | 'pre',
-  state: ProgramState,
-) => {
-  // Cannot perform increments on arrays
-  if (operandAddress.type[0].subtype !== 'Pointer')
-    throw new Error('Argument given is not a pointer')
-
-  const operand = state.getRTSAtIndex(binaryToInt(operandAddress.binary))
-  const operandType = decrementPointerDepth(operandAddress.type)
-
-  if (unaryType === 'post') {
-    state.pushOS(operand, operandType)
-  }
-
-  state.pushOS(operandAddress.binary, operandAddress.type)
-  state.pushOS(operand, operandType)
-
-  if (unaryType === 'post') {
-    state.pushA({ tag: 'pop_os' })
-  }
-
-  state.pushA({ tag: 'assgn' })
-  if (type === 'increment') {
-    state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
-  } else {
-    state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Minus })
-  }
-  state.pushA({ tag: 'load_int', value: 1 })
+interface IncrementType {
+  incrementType: 'increment' | 'decrement'
+  unaryType: 'pre' | 'post'
 }
 
-export const doUnaryOperationIncrement = (
-  operand: BinaryWithType,
-  operator: CASTUnaryOperator,
-  state: ProgramState,
-) => {
+export const getUnaryOperatorIncrementType = (operator: CASTUnaryOperator): IncrementType => {
   switch (operator) {
-    case CASTUnaryOperator.PreIncrement: {
-      performUnaryOperationIncrement(operand, 'increment', 'pre', state)
-      return
-    }
-    case CASTUnaryOperator.PreDecrement: {
-      performUnaryOperationIncrement(operand, 'decrement', 'pre', state)
-      return
-    }
-    case CASTUnaryOperator.PostIncrement: {
-      performUnaryOperationIncrement(operand, 'increment', 'post', state)
-      return
-    }
-    case CASTUnaryOperator.PostDecrement: {
-      performUnaryOperationIncrement(operand, 'decrement', 'post', state)
-      return
-    }
+    case CASTUnaryOperator.PreIncrement:
+      return { incrementType: 'increment', unaryType: 'pre' }
+    case CASTUnaryOperator.PreDecrement:
+      return { incrementType: 'decrement', unaryType: 'pre' }
+    case CASTUnaryOperator.PostIncrement:
+      return { incrementType: 'increment', unaryType: 'post' }
+    case CASTUnaryOperator.PostDecrement:
+      return { incrementType: 'decrement', unaryType: 'post' }
+    default:
+      throw new LogicError('Unary operator is not of increment type')
   }
 }
 
