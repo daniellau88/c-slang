@@ -6,6 +6,7 @@ import {
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
+  CASTStatement,
   CASTUnaryOperator,
   ProgramType,
 } from '../typings/programAST'
@@ -169,6 +170,48 @@ export type MicroCode =
   | DeclarationEvaluateTypeModifierIterativeMicroCode
   | DeclarationAllocateMemoryMicroCode
   | ArrayAddressComputeMicroCode
+  | ConditionalStatementMicrocode
+  | WhileLoopMicrocode
+  | ForLoopMicrocode
+  | BreakMicrocode
+  | BreakMarker
+  | ContinueMicrocode
+  | ContinueMarker
+
+interface ContinueMarker extends MicroCodeBase {
+  tag: 'continue_marker'
+}
+
+interface ContinueMicrocode extends MicroCodeBase {
+  tag: 'continue_op'
+}
+
+interface BreakMarker extends MicroCodeBase {
+  tag: 'break_marker'
+}
+
+interface BreakMicrocode extends MicroCodeBase {
+  tag: 'break_op'
+}
+
+interface ForLoopMicrocode extends MicroCodeBase {
+  tag: 'for_op'
+  statement: CASTStatement
+  testExpression?: CASTExpression
+  updateExpression?: CASTExpression
+}
+
+interface WhileLoopMicrocode extends MicroCodeBase {
+  tag: 'while_op'
+  condition: CASTExpression
+  statement: CASTStatement
+}
+
+interface ConditionalStatementMicrocode extends MicroCodeBase {
+  tag: 'conditional_statement_op'
+  ifTrue: CASTStatement
+  ifFalse?: CASTStatement
+}
 
 interface ERecordBase {
   subtype: string

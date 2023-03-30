@@ -135,6 +135,52 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
         if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
         state.pushA(node.expression)
       }
+      return
+    }
+    // statements
+    case 'IfStatement': {
+      state.pushA({ tag: 'conditional_statement_op', ifTrue: node.ifTrue, ifFalse: node.ifFalse})
+      state.pushA(node.condition)
+      return
+    }
+
+    case 'WhileStatement': {
+      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA(node.condition)
+      return
+    }
+    case 'DoStatement': {
+      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA(node.condition)
+      state.pushA(node.statement)
+      return
+    }
+
+    case 'ForStatement': {
+      const declarations: CASTDeclaration[] = []
+      if(node.initDeclaration) {
+        node.initDeclaration.declarations.forEach(x => {
+          declarations.push(x)
+        })
+      }
+      state.pushA({ tag: 'exit_scope', declarations: declarations})
+      state.pushA({tag: 'for_op', statement: node.statement, testExpression: node.testExpression, updateExpression: node.updateExpression})
+      if(node.testExpression) {
+        state.pushA(node.testExpression)
+      }
+      if(node.initDeclaration) state.pushA(node.initDeclaration)
+      state.pushA({ tag: 'enter_scope', declarations: declarations})
+      return
+    }
+    
+    case 'BreakStatement': {
+      state.pushA({ tag: 'break_op' })
+      return
+    }
+
+    case 'ContinueStatement': {
+      state.pushA({ tag: 'continue_op' })
+      return
     }
   }
 }

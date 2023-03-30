@@ -439,6 +439,87 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
       return
     }
+    case 'conditional_statement_op': {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      if(Boolean(binaryToInt(indexBinary))) {
+        state.pushA(node.ifTrue)
+      } else {
+        if(node.ifFalse) state.pushA(node.ifFalse)
+      }
+      return
+    }
+
+    case 'while_op': {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      if(Boolean(binaryToInt(indexBinary))) {
+        state.pushA({tag: 'break_marker'})
+        state.pushA(node)
+        state.pushA(node.condition)
+        state.pushA({tag: 'continue_marker'})
+        state.pushA(node.statement)
+      } 
+      return
+    }
+
+    case 'for_op': {
+    let testExpressionValue = true
+    if(node.testExpression) {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      testExpressionValue = Boolean(binaryToInt(indexBinary))
+    }
+    if (testExpressionValue) {
+      state.pushA({tag: 'break_marker'})
+      state.pushA(node)
+      if(node.testExpression) state.pushA(node.testExpression)
+      if(node.updateExpression) {
+        state.pushA({ tag: 'pop_os' })
+        state.pushA(node.updateExpression)
+      }
+      state.pushA({tag: 'continue_marker'})
+      state.pushA(node.statement)
+    }
+    return
+    }
+
+    case 'break_op': {
+      while(true) {
+        let cmd = state.popA()
+        if (isMicrocode(cmd)) {
+          if (cmd.tag == 'exit_scope') {
+            state.popScopeE()
+            state.shrinkRTSToIndex(state.getRTSStart())
+            state.popAndRestoreRTSStartOntoStack()
+          } else if (cmd.tag == 'break_marker') {
+            break
+          }
+        }
+      }
+      return
+    }
+    
+    case 'break_marker': {
+      return
+    }
+
+    case 'continue_op': {
+      while(true) {
+        let cmd = state.popA()
+        if (isMicrocode(cmd)) {
+          if (cmd.tag == 'exit_scope') {
+            state.popScopeE()
+            state.shrinkRTSToIndex(state.getRTSStart())
+            state.popAndRestoreRTSStartOntoStack()
+          } else if (cmd.tag == 'continue_marker') {
+            break
+          }
+        }
+      }
+    }
+
+    case 'continue_marker': {
+      return
+    }
+
     default:
       throw new NotImplementedError()
   }

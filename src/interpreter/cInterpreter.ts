@@ -67,6 +67,8 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
 
 export const testProgram = (program: string, withLog: boolean = false): ProgramState => {
   const programAST = parseStringToAST(program) as CASTProgram
+  console.log("PROGRAM AST")
+  console.log(programAST)
   const programState = initializeProgramStateWithProgramAST(programAST)
   const programGenerator = execute(programState, withLog)
 
@@ -96,16 +98,65 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
+// test(
+//   `
+//   int main() {
+//     int x = 10;
+//     if (x == 5) {
+//       x++;
+//     } else if (x == 3){
+//       x--;
+//     } else {
+//       x = 0;
+//     }
+//     printfLog(x);
+//     return 0;
+//   }
+// `,
+// )
 
 // test(
 //   `
 //   int main() {
-//     int x = -10;
-//     int* a = &x;
-//     int b = *a + 1;
-//     float c = *a + 2;
-//     printfLog(x, a, b, c);
+//     int x = 0;
+//     while(x != 5) {
+//       x++;
+//       if (x == 2) {
+//         break;
+//       }
+//     }
+//     printfLog(x);
 //     return 0;
 //   }
-// `,
+//   `
+// )
+test(
+  `
+  int main() {
+    for(int i = 0; i < 100; i++) {
+      if(i == 10) {
+        continue;
+      }
+      printfLog(i);
+    }
+    return 0;
+  }
+  `
+)
+// test(
+//   `
+//   int main() {
+//     int x = 0;
+//     do {
+//       if(x == 5) {
+//         continue;
+//       }
+//       x++;
+//       printfLog(x);
+//     }
+//     while(x < 10);
+//     printfLog(x);
+//     return 0;
+//   }
+//   `
 // )
