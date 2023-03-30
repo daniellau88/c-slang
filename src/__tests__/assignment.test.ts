@@ -86,4 +86,50 @@ describe('assignment', () => {
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
+
+  test('assignment wth operator all', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = 2, y = 3, z = 4;
+        x += 2;
+        printfLog(x);
+        x -= 3;
+        printfLog(x);
+        x *= 13;
+        printfLog(x);
+        x /= 5;
+        printfLog(x);
+        x %= 3;
+        printfLog(x);
+        x <<= 3;
+        printfLog(x);
+        x >>= 2;
+        printfLog(x);
+        y &= 6;
+        printfLog(y);
+        y ^= 6;
+        printfLog(y);
+        y |= 3;
+        printfLog(y);
+        return 0;
+      }
+    `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(13), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(16), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(7), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
 })
