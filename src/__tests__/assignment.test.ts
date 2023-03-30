@@ -1,7 +1,7 @@
 import { describe, test } from '@jest/globals'
 
 import { testProgram } from '../interpreter/cInterpreter'
-import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { incrementPointerDepth,INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
 
@@ -61,11 +61,13 @@ describe('assignment', () => {
       `
       int main() {
         int x = 2, y = 3, z = 4;
-        printfLog(x, y, z);
+        int* a = &x;
+        printfLog(x, y, z, a);
         x += y;
         y += 3;
         z -= 1 + x;
-        printfLog(x, y, z);
+        a += 2;
+        printfLog(x, y, z, a);
         return 0;
       }
     `,
@@ -76,9 +78,11 @@ describe('assignment', () => {
       { binary: intToBinary(2), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: INT_BASE_TYPE },
       { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: incrementPointerDepth(INT_BASE_TYPE) },
       { binary: intToBinary(5), type: INT_BASE_TYPE },
       { binary: intToBinary(6), type: INT_BASE_TYPE },
       { binary: intToBinary(-2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: incrementPointerDepth(INT_BASE_TYPE) },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
