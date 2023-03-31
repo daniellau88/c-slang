@@ -108,8 +108,8 @@ describe('loop', () => {
   })
 
   test('do while loop with break', () => {
-      const output = testProgram(
-          `
+    const output = testProgram(
+      `
           int main() {
               int x = 0;
               do {
@@ -122,13 +122,11 @@ describe('loop', () => {
               return 0;
           }
           `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-          { binary: intToBinary(10), type: INT_BASE_TYPE }
-        ]
-        expectLogOutputToBe(logOutput, expectedLogOutput)
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
   })
   test('for loop with continue', () => {
     const output = testProgram(
@@ -177,8 +175,8 @@ describe('loop', () => {
   })
 
   test('do while loop with continue', () => {
-      const output = testProgram(
-          `
+    const output = testProgram(
+      `
           int main() {
               int x = 0;
               int i = 0;
@@ -193,12 +191,10 @@ describe('loop', () => {
               return 0;
           }
           `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-          { binary: intToBinary(10), type: INT_BASE_TYPE }
-        ]
-        expectLogOutputToBe(logOutput, expectedLogOutput)
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })
