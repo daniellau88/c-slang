@@ -150,8 +150,10 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'DoStatement': {
+      state.pushA({ tag: 'break_marker'})
       state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
       state.pushA(node.condition)
+      state.pushA({ tag: 'continue_marker'})
       state.pushA(node.statement)
       return
     }
