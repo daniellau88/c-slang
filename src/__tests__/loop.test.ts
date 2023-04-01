@@ -1,9 +1,9 @@
 import { describe, test } from '@jest/globals'
 
 import { testProgram } from '../interpreter/cInterpreter'
-import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { intToBinary } from '../interpreter/utils/utils'
+import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
 
 describe('loop', () => {
   test('regular for loop', () => {
@@ -195,6 +195,74 @@ describe('loop', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('edge case for loop', () => {
+    const output = testProgram(
+      `
+          int main() {
+            int x = 0;
+            for(;;) {
+              x++;
+              if(x == 10) {
+                break;
+              }
+            }
+            printfLog(x);
+            return 0;
+          }
+          `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('nested for loop', () => {
+    const output = testProgram(
+      `
+          int main() {
+            int x = 0;
+            for(int i = 0; i < 10; i++) {
+              for(int j = 0; j < 10; j++) {
+                x++;
+              }
+            }
+            printfLog(x);
+            return 0;
+          }
+          `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(100), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('nested while loop', () => {
+    const output = testProgram(
+      `
+          int main() {
+            int x = 0;
+            int i = 0;
+            while(i < 10) {
+              int j = 0;
+              while(j < 10) {
+                x++;
+                j++;
+              }
+              i++;
+            }
+            printfLog(x);
+            return 0;
+          }
+          `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(100), type: INT_BASE_TYPE }]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })
