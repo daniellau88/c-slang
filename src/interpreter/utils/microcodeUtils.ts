@@ -522,7 +522,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
 
     case 'switch_body_op': {
-      // if default, 
+      // if default,
       if (node.subtype === 'Default') {
         const { binary: valueLeft, type: typeRight } = state.popOS()
         state.popOS()
