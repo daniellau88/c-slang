@@ -521,6 +521,32 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
 
+    case 'switch_body_op': {
+      if (node.subtype === 'Default') {
+        const { binary: valueLeft, type: typeRight } = state.popOS()
+        const { binary: binaryCheck, type: typeCheck } = state.popOS()
+        state.pushOS(binaryCheck, typeCheck)
+        state.pushOS(valueLeft, typeRight)
+        ;[...node.statements].reverse().forEach(x => {
+          state.pushA(x);
+        })
+      } else {
+        const { binary: valueRight, type: typeRight } = state.popOS()
+        const { binary: valueLeft, type: typeLeft } = state.popOS()
+        const { binary: binaryCheck, type: typeCheck } = state.popOS()
+        if (isTruthy(binaryCheck) || valueLeft == valueRight) {
+          ;[...node.statements].reverse().forEach(x => {
+            state.pushA(x);
+          })
+          state.pushOS(intToBinary(1), INT_BASE_TYPE)
+        } else {
+          state.pushOS(intToBinary(0), INT_BASE_TYPE)
+        }
+        state.pushOS(valueLeft, typeLeft)
+      }
+      return
+    }
+
     default:
       throw new NotImplementedError()
   }

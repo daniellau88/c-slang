@@ -177,6 +177,7 @@ export type MicroCode =
   | BreakMarker
   | ContinueMicrocode
   | ContinueMarker
+  | SwitchBodyMicrocode
 
 interface ContinueMarker extends MicroCodeBase {
   tag: 'continue_marker'
@@ -211,6 +212,12 @@ interface ConditionalStatementMicrocode extends MicroCodeBase {
   tag: 'conditional_statement_op'
   ifTrue: CASTStatement
   ifFalse?: CASTStatement
+}
+
+interface SwitchBodyMicrocode extends MicroCodeBase {
+  tag: 'switch_body_op'
+  subtype: string
+  statements: Array<CASTStatement>
 }
 
 interface ERecordBase {
