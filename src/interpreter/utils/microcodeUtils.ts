@@ -441,10 +441,10 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'conditional_statement_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
-      if (Boolean(binaryToInt(indexBinary))) {
-        state.pushA(node.ifTrue)
-      } else {
+      if (indexBinary === 0) {
         if (node.ifFalse) state.pushA(node.ifFalse)
+      } else {
+        state.pushA(node.ifTrue)
       }
       return
     }
