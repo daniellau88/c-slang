@@ -28,6 +28,7 @@ import {
   binaryToInt,
   intToBinary,
   isMicrocode,
+  isTruthy,
   LogicError,
   NotImplementedError,
   RuntimeError,
@@ -441,10 +442,10 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'conditional_statement_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
-      if (indexBinary === 0) {
-        if (node.ifFalse) state.pushA(node.ifFalse)
-      } else {
+      if (isTruthy(indexBinary)) {
         state.pushA(node.ifTrue)
+      } else {
+        if (node.ifFalse) state.pushA(node.ifFalse)
       }
       return
     }
