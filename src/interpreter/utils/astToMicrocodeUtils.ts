@@ -191,6 +191,7 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     }
 
     case 'SwitchStatement': {
+      // cleaning up OS
       state.pushA({ tag: 'pop_os' })
       state.pushA({ tag: 'pop_os' })
       state.pushA({ tag: 'break_marker' })
@@ -204,6 +205,8 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
       })
       if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
       state.pushA(node.expression)
+      // to know that there is already a case body that has passed the test, we need to add this 
+      // to track the status. Initial is false (no case has been passed)
       state.pushA({ tag: 'load_int', value: 0 })
       return
     }
