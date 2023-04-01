@@ -528,7 +528,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushOS(binaryCheck, typeCheck)
         state.pushOS(valueLeft, typeRight)
         ;[...node.statements].reverse().forEach(x => {
-          state.pushA(x);
+          state.pushA(x)
         })
       } else {
         const { binary: valueRight, type: typeRight } = state.popOS()
@@ -536,7 +536,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         const { binary: binaryCheck, type: typeCheck } = state.popOS()
         if (isTruthy(binaryCheck) || valueLeft == valueRight) {
           ;[...node.statements].reverse().forEach(x => {
-            state.pushA(x);
+            state.pushA(x)
           })
           state.pushOS(intToBinary(1), INT_BASE_TYPE)
         } else {

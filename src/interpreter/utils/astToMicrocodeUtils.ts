@@ -191,21 +191,21 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     }
 
     case 'SwitchStatement': {
-      state.pushA({tag: 'pop_os'})
-      state.pushA({tag: 'pop_os'})
-      state.pushA({ tag: 'break_marker'})
+      state.pushA({ tag: 'pop_os' })
+      state.pushA({ tag: 'pop_os' })
+      state.pushA({ tag: 'break_marker' })
       ;[...node.body.clauses].reverse().forEach(x => {
         if (x.subtype === 'Default') {
-          state.pushA({ tag: 'switch_body_op', subtype: 'Default', statements: x.statements})
+          state.pushA({ tag: 'switch_body_op', subtype: 'Default', statements: x.statements })
         } else {
-          state.pushA({ tag: 'switch_body_op', subtype: 'Case', statements: x.statements})
+          state.pushA({ tag: 'switch_body_op', subtype: 'Case', statements: x.statements })
           state.pushA(x.expression)
         }
       })
-      if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref'})
+      if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
       state.pushA(node.expression)
-      state.pushA({tag: 'load_int', value: 0})
-      return 
+      state.pushA({ tag: 'load_int', value: 0 })
+      return
     }
   }
 }
