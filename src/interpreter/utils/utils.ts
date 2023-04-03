@@ -175,3 +175,7 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
       return false
   }
 }
+
+export const isTruthy = (binary: number): boolean => {
+  return binary !== 0
+}

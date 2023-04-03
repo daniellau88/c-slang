@@ -1,6 +1,6 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CASTDeclaration, CASTNode } from '../../typings/programAST'
+import { CASTBinaryOperator, CASTDeclaration, CASTNode } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import { CASTUnaryOperatorWithoutDerefence } from './typeUtils'
 import { NotImplementedError, RuntimeError, shouldDerefExpression } from './utils'
@@ -135,6 +135,83 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
         if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
         state.pushA(node.expression)
       }
+      return
+    }
+    // statements
+    case 'IfStatement': {
+      state.pushA({ tag: 'conditional_statement_op', ifTrue: node.ifTrue, ifFalse: node.ifFalse })
+      state.pushA(node.condition)
+      return
+    }
+
+    case 'WhileStatement': {
+      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA(node.condition)
+      return
+    }
+    case 'DoStatement': {
+      state.pushA({ tag: 'break_marker' })
+      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA(node.condition)
+      state.pushA({ tag: 'continue_marker' })
+      state.pushA(node.statement)
+      return
+    }
+
+    case 'ForStatement': {
+      const declarations: CASTDeclaration[] = []
+      if (node.initDeclaration) {
+        node.initDeclaration.declarations.forEach(x => {
+          declarations.push(x)
+        })
+      }
+      state.pushA({ tag: 'exit_scope', declarations: declarations })
+      state.pushA({
+        tag: 'for_op',
+        statement: node.statement,
+        testExpression: node.testExpression,
+        updateExpression: node.updateExpression,
+      })
+      if (node.testExpression) {
+        state.pushA(node.testExpression)
+      }
+      if (node.initDeclaration) state.pushA(node.initDeclaration)
+      state.pushA({ tag: 'enter_scope', declarations: declarations })
+      return
+    }
+
+    case 'BreakStatement': {
+      state.pushA({ tag: 'break_op' })
+      return
+    }
+
+    case 'ContinueStatement': {
+      state.pushA({ tag: 'continue_op' })
+      return
+    }
+
+    case 'SwitchStatement': {
+      // cleaning up OS
+      state.pushA({ tag: 'pop_os' })
+      state.pushA({ tag: 'break_marker' })
+      ;[...node.body.clauses].reverse().forEach(x => {
+        if (x.subtype === 'Default') {
+          state.pushA({ tag: 'switch_body_op', subtype: 'Default', statements: x.statements })
+          // no comparison should be done, default is automatic pass
+          state.pushA({ tag: 'load_int', value: 1 })
+        } else {
+          state.pushA({ tag: 'switch_body_op', subtype: 'Case', statements: x.statements })
+          // do the case comparison first
+          state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.EqualityEqual })
+          state.pushA(x.expression)
+          if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
+          state.pushA(node.expression)
+        }
+      })
+      // to know that there is already a case body that has passed the test, we need to add this
+      // to track the status. Initial is false (no case has been passed)
+      state.pushA({ tag: 'load_int', value: 0 })
+      return
     }
   }
 }

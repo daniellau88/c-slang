@@ -36,7 +36,7 @@ export class RTS {
     for (let i = 0; i < this.getLength(); i++) {
       dummy.push(this.Memory.getFloat64(i * WORD_SIZE))
     }
-    printBinariesWithTypes(dummy, this.TypeAdditionalInfo, ': ')
+    printBinariesWithTypes(dummy, this.TypeAdditionalInfo, 'RTS: ')
   }
 
   getAtIndex(index: number): number {

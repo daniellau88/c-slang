@@ -28,6 +28,7 @@ import {
   binaryToInt,
   intToBinary,
   isMicrocode,
+  isTruthy,
   LogicError,
   NotImplementedError,
   RuntimeError,
@@ -439,6 +440,102 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
       return
     }
+    case 'conditional_statement_op': {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      if (isTruthy(indexBinary)) {
+        state.pushA(node.ifTrue)
+      } else {
+        if (node.ifFalse) state.pushA(node.ifFalse)
+      }
+      return
+    }
+
+    case 'while_op': {
+      const { binary: indexBinary, type: indexType } = state.popOS()
+      if (Boolean(binaryToInt(indexBinary))) {
+        state.pushA({ tag: 'break_marker' })
+        state.pushA(node)
+        state.pushA(node.condition)
+        state.pushA({ tag: 'continue_marker' })
+        state.pushA(node.statement)
+      }
+      return
+    }
+
+    case 'for_op': {
+      let testExpressionValue = true
+      if (node.testExpression) {
+        const { binary: indexBinary, type: indexType } = state.popOS()
+        testExpressionValue = Boolean(binaryToInt(indexBinary))
+      }
+      if (testExpressionValue) {
+        state.pushA({ tag: 'break_marker' })
+        state.pushA(node)
+        if (node.testExpression) state.pushA(node.testExpression)
+        if (node.updateExpression) {
+          state.pushA({ tag: 'pop_os' })
+          state.pushA(node.updateExpression)
+        }
+        state.pushA({ tag: 'continue_marker' })
+        state.pushA(node.statement)
+      }
+      return
+    }
+
+    case 'break_op': {
+      while (true) {
+        const cmd = state.popA()
+        if (isMicrocode(cmd)) {
+          if (cmd.tag == 'exit_scope') {
+            state.popScopeE()
+            state.shrinkRTSToIndex(state.getRTSStart())
+            state.popAndRestoreRTSStartOntoStack()
+          } else if (cmd.tag == 'break_marker') {
+            break
+          }
+        }
+      }
+      return
+    }
+
+    case 'break_marker': {
+      return
+    }
+
+    case 'continue_op': {
+      while (true) {
+        const cmd = state.popA()
+        if (isMicrocode(cmd)) {
+          if (cmd.tag == 'exit_scope') {
+            state.popScopeE()
+            state.shrinkRTSToIndex(state.getRTSStart())
+            state.popAndRestoreRTSStartOntoStack()
+          } else if (cmd.tag == 'continue_marker') {
+            break
+          }
+        }
+      }
+    }
+
+    case 'continue_marker': {
+      return
+    }
+
+    case 'switch_body_op': {
+      const { binary: caseCheck, type: typeLeft } = state.popOS()
+      const { binary: passedCheck, type: typeCheck } = state.popOS()
+      if (isTruthy(passedCheck) || isTruthy(caseCheck)) {
+        ;[...node.statements].reverse().forEach(x => {
+          state.pushA(x)
+        })
+        // "case" has been passed. Update status to 1
+        state.pushOS(intToBinary(1), INT_BASE_TYPE)
+      } else {
+        state.pushOS(intToBinary(0), INT_BASE_TYPE)
+      }
+      return
+    }
+
     default:
       throw new NotImplementedError()
   }
