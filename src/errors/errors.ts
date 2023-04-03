@@ -14,7 +14,7 @@ import { stringify } from '../utils/stringify'
 import { RuntimeSourceError } from './runtimeSourceError'
 
 export class InterruptedError extends RuntimeSourceError {
-  constructor(node: CASTNode) {
+  constructor(node?: CASTNode) {
     super(node)
   }
 
@@ -88,7 +88,7 @@ export class CallingNonFunctionValue extends RuntimeSourceError {
 
     const callArgs = (this.node as CASTFunctionCallExpression).argumentExpression
 
-    argStr = callArgs.map(generate).join(', ')
+    argStr = callArgs.map(x => stringify(x)).join(', ')
 
     const elabStr = `Because ${calleeStr} is not a function, you cannot run ${calleeStr}(${argStr}).`
     const multStr = `If you were planning to perform multiplication by ${calleeStr}, you need to use the * operator.`
@@ -174,10 +174,10 @@ export class VariableRedeclaration extends RuntimeSourceError {
       if (this.node.type === 'FunctionDefinition') {
         initStr =
           '(' +
-          (this.node as CASTFunctionDefinition).parameters.map(generate).join(',') +
+          (this.node as CASTFunctionDefinition).parameters.map(x => stringify(x)).join(',') +
           ') => {...'
       } else if (this.node.type === 'Declaration') {
-        initStr = generate((this.node as CASTDeclaration).init)
+        initStr = stringify((this.node as CASTDeclaration).init)
       }
 
       return `${elabStr} As such, you can just do\n\n\t${this.name} = ${initStr};\n`
@@ -229,6 +229,20 @@ export class SetPropertyError extends RuntimeSourceError {
 
   public explain() {
     return `Cannot assign property ${this.prop} of ${stringify(this.obj)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotDereferenceTypeError extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot dereference non-address of type ${stringify(this.node.type)}.`
   }
 
   public elaborate() {

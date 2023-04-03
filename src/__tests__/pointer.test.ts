@@ -1,5 +1,6 @@
 import { describe, test } from '@jest/globals'
 
+import { CannotDereferenceTypeError } from '../errors/errors'
 import { RuntimeError } from '../errors/runtimeSourceError'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
@@ -162,6 +163,24 @@ describe('pointer', () => {
       `,
       )
     expectThrowError(program, RuntimeError, `Get Memory error, Memory is not allocated`)
+  })
+
+  test('unary address dereference literal', () => {
+    const program = () =>
+      testProgram(
+        `
+        int main() {
+          int* a = &5;
+          printfLog(a);
+          return 0;
+        }
+      `,
+      )
+    expectThrowError(
+      program,
+      CannotDereferenceTypeError,
+      'Cannot dereference non-address of type "Literal".',
+    )
   })
 
   test('function pointer', () => {

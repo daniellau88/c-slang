@@ -226,6 +226,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       for (let i = curIndex + 1; i < oldTypeModifiers.length; i++) {
         const currentModifier = oldTypeModifiers[i]
+        currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
           if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref' })

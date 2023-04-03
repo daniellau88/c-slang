@@ -1,7 +1,7 @@
 import { Context, CustomBuiltIns } from '../types'
-import { CASTNode, CASTProgram } from '../typings/programAST'
+import { CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
-import { BinaryWithType, BuiltinFunctionDefinition, MicroCode } from './typings'
+import { BinaryWithType, BuiltinFunctionDefinition } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
 import { executeMicrocode } from './utils/microcodeUtils'
 import { incrementPointerDepth, INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
@@ -74,7 +74,7 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
   if (withLog) state.printState()
   while (i < step_limit) {
     if (state.isAEmpty()) break
-    const cmd = state.popA() as CASTNode | MicroCode
+    const cmd = state.popA()
     if (withLog) console.log('cmd:', cmd)
     if (isMicrocode(cmd)) {
       yield executeMicrocode(state, cmd)
@@ -105,9 +105,14 @@ export const testProgram = (program: string, withLog: boolean = false): ProgramS
 
   const programGenerator = execute(programState, withLog)
 
-  let programStep = programGenerator.next()
-  while (!programStep.done) {
-    programStep = programGenerator.next()
+  try {
+    let programStep = programGenerator.next()
+    while (!programStep.done) {
+      programStep = programGenerator.next()
+    }
+  } catch (e) {
+    if (withLog && e.explain) console.error(e.explain())
+    throw e
   }
   return programState
 }

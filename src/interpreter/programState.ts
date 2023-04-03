@@ -1,11 +1,11 @@
 import { LogicError, RuntimeError } from '../errors/runtimeSourceError'
 import { CASTNode, ProgramType } from '../typings/programAST'
 import {
+  AgendaNode,
   BinaryWithType,
   BuiltinFunctionDefinition,
   ERecord,
   EScope,
-  MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
 import { RTM } from './utils/RTM'
@@ -23,7 +23,7 @@ type ReturnRegisterType =
   | { binary: undefined; assigned: false }
 
 export class ProgramState {
-  private A: Array<CASTNode | MicroCode>
+  private A: Array<AgendaNode>
   private OS: Array<number>
   private OSType: Record<number, ProgramType>
   private RTM: RTM
@@ -98,15 +98,15 @@ export class ProgramState {
     }
   }
 
-  pushA(cmd: CASTNode | MicroCode) {
+  pushA(cmd: AgendaNode) {
     push(this.A, cmd)
   }
 
-  popA(): CASTNode | MicroCode {
+  popA(): AgendaNode {
     return pop(this.A)
   }
 
-  peekA(): CASTNode | MicroCode | undefined {
+  peekA(): AgendaNode | undefined {
     return peek(this.A)
   }
 

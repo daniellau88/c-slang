@@ -1,6 +1,7 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
+import { CannotDereferenceTypeError } from '../../errors/errors'
+import { NotImplementedError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -144,7 +145,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
 
       if (!shouldDeref && isSkipDerefenceOperator) {
-        throw new RuntimeError('Cannot dereference non-address')
+        throw new CannotDereferenceTypeError(node.expression)
       }
       if (shouldDeref && !isSkipDerefenceOperator) {
         state.pushA({ tag: 'deref' })

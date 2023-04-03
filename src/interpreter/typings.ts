@@ -6,6 +6,7 @@ import {
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
+  CASTNode,
   CASTStatement,
   CASTUnaryOperator,
   ProgramType,
@@ -295,3 +296,5 @@ export interface BuiltinFunctionDefinition {
   returnProgType: ProgramType
   arity: number
 }
+
+export type AgendaNode = CASTNode | MicroCode

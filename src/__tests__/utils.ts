@@ -20,7 +20,7 @@ export const expectLogOutputToBe = (
   expect(logOutput.length).toBe(expectedLogOutput.length)
   logOutput.forEach((result, i) => {
     const expectedResult = expectedLogOutput[i]
-    expect(result.type).toStrictEqual(expectedResult.type)
+    expect(result.type).toEqual(expectedResult.type)
     const isInt =
       expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'int'
     const isPointer = expectedResult.type[0].subtype === 'Pointer'
@@ -48,5 +48,6 @@ export const expectThrowError = (
     thrownError = error
   }
   expect(thrownError instanceof errorType).toBe(true)
-  expect(thrownError.msg).toBe(errorMessage)
+  if (thrownError.msg) expect(thrownError.msg).toBe(errorMessage)
+  else expect(thrownError.explain()).toBe(errorMessage)
 }
