@@ -33,7 +33,7 @@ interface LoadFloatMicroCode extends MicroCodeBase {
 
 interface LoadVarMicroCode extends MicroCodeBase {
   tag: 'load_var'
-  name: string
+  identifier: CASTIdentifier
 }
 
 interface FuncApplyMicroCode extends MicroCodeBase {
@@ -109,6 +109,7 @@ interface ExitFuncMicroCode extends MicroCodeBase {
 
 interface DereferenceMicroCode extends MicroCodeBase {
   tag: 'deref'
+  node: CASTNode
 }
 
 interface ReturnMicroCode extends MicroCodeBase {

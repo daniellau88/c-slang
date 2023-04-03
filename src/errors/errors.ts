@@ -162,7 +162,7 @@ export class VariableRedeclaration extends RuntimeSourceError {
   }
 
   public explain() {
-    return `Redeclaring name ${this.name}.`
+    return `Redeclaration of name ${this.name}.`
   }
 
   public elaborate() {

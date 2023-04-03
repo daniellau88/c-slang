@@ -1,3 +1,4 @@
+import { CannotDereferenceTypeError, UndefinedVariable, VariableRedeclaration } from '../../errors/errors'
 import { LogicError, NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
@@ -40,7 +41,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const newIndex = state.getFDLength()
       const funcName = node.function.identifier.name
       if (state.hasKeyGlobalE(funcName)) {
-        throw new RuntimeError('Function ' + funcName + ' has already been defined')
+        throw new VariableRedeclaration(node.function, funcName)
       }
       state.pushFD({
         subtype: 'func',
@@ -65,9 +66,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
     case 'load_var': {
-      const record = state.lookupE(node.name)
+      const name = node.identifier.name
+      const record = state.lookupE(name)
       if (!record) {
-        throw new RuntimeError('Variable ' + node.name + ' not declared')
+        throw new UndefinedVariable(name, node.identifier)
       }
 
       switch (record.subtype) {
@@ -86,7 +88,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'deref': {
       const { binary, type } = state.popOS()
-      if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
+      if (type[0].subtype !== 'Pointer') {
+        throw new CannotDereferenceTypeError(node.node)
+      }
       const newType = decrementPointerDepth(type)
       if (newType[0].subtype === 'Array') {
         state.pushOS(binary, newType)
@@ -184,7 +188,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       if (init) {
         state.pushA({ tag: 'assgn' })
-        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
         state.pushA(init)
       }
 
@@ -229,7 +233,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
-          if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref' })
+          if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref', node: currentModifier.size })
           state.pushA(currentModifier.size)
           return
         }
@@ -356,7 +360,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'conditional_op': {
       const predicate = state.popOS()
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
-      if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref', node: expressionToPush })
       state.pushA(expressionToPush)
       return
     }
@@ -391,7 +395,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       expressions.forEach((x, i) => {
         if (i !== expressions.length - 1)
           state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntMultiply })
-        if (!isMicrocode(x) && shouldDerefExpression(x)) state.pushA({ tag: 'deref' })
+        if (!isMicrocode(x) && shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
         state.pushA(x)
       })
       return

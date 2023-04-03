@@ -88,10 +88,10 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           operator: convertAssignmentOperatorToBinaryOperator(node.operator),
         })
       }
-      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref', node: node.right })
       state.pushA(node.right)
       if (!isBasicAssignment) {
-        if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
         state.pushA({ tag: 'duplicate_top_os' })
       }
       state.pushA(node.left)
@@ -99,15 +99,15 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     case 'BinaryExpression': {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator })
-      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref', node: node.right })
       state.pushA(node.right)
-      if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
       state.pushA(node.left) // Do the left first
       return
     }
     case 'ConditionalExpression': {
       state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue })
-      if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref', node: node.predicate })
       state.pushA(node.predicate)
       return
     }
@@ -130,11 +130,11 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         state.pushA({ tag: 'assgn' })
         state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp })
         state.pushA({ tag: 'load_int', value: 1 })
-        state.pushA({ tag: 'deref' })
+        state.pushA({ tag: 'deref', node: node.expression })
         state.pushA({ tag: 'duplicate_top_os' })
         if (incrementType.unaryType === 'post') {
           state.pushA(node.expression) // Have to evaluate expression twice because the first needs to be derefed
-          state.pushA({ tag: 'deref' })
+          state.pushA({ tag: 'deref', node: node.expression })
         }
         state.pushA(node.expression)
         return
@@ -148,28 +148,28 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         throw new CannotDereferenceTypeError(node.expression)
       }
       if (shouldDeref && !isSkipDerefenceOperator) {
-        state.pushA({ tag: 'deref' })
+        state.pushA({ tag: 'deref', node: node.expression })
       }
       state.pushA(node.expression)
       return
     }
     case 'ArrayAccessExpression': {
       state.pushA({ tag: 'array_add_comp' })
-      if (shouldDerefExpression(node.indexExpression)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.indexExpression)) state.pushA({ tag: 'deref', node: node.indexExpression })
       state.pushA(node.indexExpression)
-      if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref', node: node.expression })
       state.pushA(node.expression)
       return
     }
     case 'Identifier': {
-      state.pushA({ tag: 'load_var', name: node.name })
+      state.pushA({ tag: 'load_var', identifier: node })
       return
     }
     case 'FunctionCallExpression': {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length })
       // Insert from left to right into OS (i.e. evaluate left first)
       node.argumentExpression.forEach(x => {
-        if (shouldDerefExpression(x)) state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
         state.pushA(x)
       })
       state.pushA(node.expression)
@@ -180,7 +180,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'return', withExpression: hasExpression })
 
       if (node.expression) {
-        if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
+        if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref', node: node.expression })
         state.pushA(node.expression)
       }
       return
@@ -252,7 +252,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           // do the case comparison first
           state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.EqualityEqual })
           state.pushA(x.expression)
-          if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref' })
+          if (shouldDerefExpression(node.expression)) state.pushA({ tag: 'deref', node: node.expression })
           state.pushA(node.expression)
         }
       })
