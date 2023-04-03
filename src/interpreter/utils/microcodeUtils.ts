@@ -522,30 +522,16 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
 
     case 'switch_body_op': {
-      // if default,
-      if (node.subtype === 'Default') {
-        const { binary: valueLeft, type: typeRight } = state.popOS()
-        state.popOS()
-        // "default" case has been passed. Update status to 1
-        state.pushOS(intToBinary(1), INT_BASE_TYPE)
-        state.pushOS(valueLeft, typeRight)
+      const { binary: caseCheck, type: typeLeft } = state.popOS()
+      const { binary: passedCheck, type: typeCheck } = state.popOS()
+      if (isTruthy(passedCheck) || isTruthy(caseCheck)) {
         ;[...node.statements].reverse().forEach(x => {
           state.pushA(x)
         })
+        // "case" has been passed. Update status to 1
+        state.pushOS(intToBinary(1), INT_BASE_TYPE)
       } else {
-        const { binary: valueRight, type: typeRight } = state.popOS()
-        const { binary: valueLeft, type: typeLeft } = state.popOS()
-        const { binary: binaryCheck, type: typeCheck } = state.popOS()
-        if (isTruthy(binaryCheck) || valueLeft == valueRight) {
-          ;[...node.statements].reverse().forEach(x => {
-            state.pushA(x)
-          })
-          // "case" has been passed. Update status to 1
-          state.pushOS(intToBinary(1), INT_BASE_TYPE)
-        } else {
-          state.pushOS(intToBinary(0), INT_BASE_TYPE)
-        }
-        state.pushOS(valueLeft, typeLeft)
+        state.pushOS(intToBinary(0), INT_BASE_TYPE)
       }
       return
     }
