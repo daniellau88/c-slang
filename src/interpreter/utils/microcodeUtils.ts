@@ -1,6 +1,7 @@
 import {
   CannotDereferenceTypeError,
   InvalidNumberOfArguments,
+  ReturnNotCalled,
   UndefinedVariable,
   VariableRedeclaration,
 } from '../../errors/errors'
@@ -142,13 +143,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushRTS(args[i].binary, args[i].type)
       }
 
-      state.pushA({ tag: 'exit_func' })
+      state.pushA({ tag: 'exit_func', node: node.node, funcNode: functionToCall })
       ;[...functionToCall.body.statements].reverse().forEach(x => state.pushA(x))
       return
     }
     case 'exit_func':
       if (!state.getReturnRegister().assigned) {
-        throw new RuntimeError('Return function not called')
+        throw new ReturnNotCalled(node.node, node.funcNode.identifier.name)
       }
 
       state.shrinkRTSToIndex(state.getRTSStart())
@@ -188,7 +189,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const init = node.declaration.init
       const record = state.lookupE(name)
       if (record) {
-        throw new RuntimeError('Invalid redeclaration of ' + name)
+        throw new VariableRedeclaration(node.declaration, name)
       }
 
       if (init) {

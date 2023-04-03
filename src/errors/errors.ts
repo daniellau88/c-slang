@@ -249,3 +249,17 @@ export class CannotDereferenceTypeError extends RuntimeSourceError {
     return 'TODO'
   }
 }
+
+export class ReturnNotCalled extends RuntimeSourceError {
+  constructor(node: CASTNode, private name: string) {
+    super(node)
+  }
+
+  public explain() {
+    return `Return statement not called for function ${this.name}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}

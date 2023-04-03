@@ -3,6 +3,7 @@ import {
   CASTCompoundStatement,
   CASTDeclaration,
   CASTExpression,
+  CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
@@ -39,7 +40,7 @@ interface LoadVarMicroCode extends MicroCodeBase {
 interface FuncApplyMicroCode extends MicroCodeBase {
   tag: 'func_apply'
   arity: number
-  node: CASTNode
+  node: CASTFunctionCallExpression
 }
 
 interface PopOSMicroCode extends MicroCodeBase {
@@ -106,6 +107,8 @@ interface BinaryOperationAutoPromotionMicroCode extends MicroCodeBase {
 
 interface ExitFuncMicroCode extends MicroCodeBase {
   tag: 'exit_func'
+  funcNode: MicroCodeCASTFunctionDefinition
+  node: CASTFunctionCallExpression
 }
 
 interface DereferenceMicroCode extends MicroCodeBase {
@@ -266,14 +269,14 @@ interface MicroCodeFunctionBase {
   subtype: string
 }
 
-interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
+export interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
   subtype: 'builtin_func'
   func: Function
   returnProgType: ProgramType
   arity: number
 }
 
-interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
+export interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
   subtype: 'func'
   arity: number
   returnProgType: ProgramType
