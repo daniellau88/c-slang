@@ -10,13 +10,16 @@ import {
   ArithmeticType,
   CASTUnaryOperatorWithoutDerefence,
   convertBinaryOperatorToMicroCodeBinaryOperator,
-  decrementPointerDepth,
   doBinaryOperation,
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
+  getBaseTypePromotionPriority,
+} from './arithmeticUtils'
+import {
+  CASTUnaryOperatorIncrement,
+  decrementPointerDepth,
   FLOAT_BASE_TYPE,
   getArrayItemsType,
-  getBaseTypePromotionPriority,
   incrementPointerDepth,
   INT_BASE_TYPE,
   isBaseType,
@@ -160,6 +163,13 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'pop_os':
       state.popOS()
       return
+    case 'duplicate_top_os': {
+      const topOS = state.peekOS()
+      if (topOS) {
+        state.pushOS(topOS.binary, topOS.type)
+      }
+      return
+    }
     case 'enter_scope': {
       state.saveAndUpdateRTSStartOntoStack()
       state.extendScopeE()
@@ -322,9 +332,9 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         const microcodeOperator = (() => {
           switch (node.operator) {
             case CASTBinaryOperator.Plus:
-              return MicroCodeBinaryOperator.PointerAddition
+              return MicroCodeBinaryOperator.IntAddition
             case CASTBinaryOperator.Minus:
-              return MicroCodeBinaryOperator.PointerSubtraction
+              return MicroCodeBinaryOperator.IntSubtraction
             default:
               throw new RuntimeError('Cannot perform operation between pointer and integer')
           }
@@ -394,12 +404,17 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'unary_op': {
       const operand = state.popOS()
-      let result: BinaryWithType
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
+      const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
+      if (isIncrementOperator) {
+        throw new LogicError('Unary expression is handled earlier')
+      }
+
+      let result: BinaryWithType
       if (isSkipDerefenceOperator) {
-        result = doUnaryOperationWithoutDereference(operand, node.operator, state)
+        result = doUnaryOperationWithoutDereference(operand, node.operator)
       } else {
-        result = doUnaryOperationWithDereference(operand, node.operator, state)
+        result = doUnaryOperationWithDereference(operand, node.operator)
       }
       state.pushOS(result.binary, result.type)
       return

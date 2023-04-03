@@ -7,6 +7,7 @@ import {
   INT_BASE_TYPE,
 } from '../interpreter/utils/typeUtils'
 import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
+import { ProgramType } from '../typings/programAST'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
 
 describe('pointer', () => {
@@ -34,6 +35,37 @@ describe('pointer', () => {
       { binary: intToBinary(26), type: INT_BASE_TYPE }, // Might need to change address if structure changes
       { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: incrementPointerDepth(INT_BASE_TYPE) },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('pointer unary arithmetic', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[2], b = 2, c = 3, d = 4, e = 5;
+        int (*f)[2] = &a;
+        int (*g)[2] = f++;
+        printfLog(f, g);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const intArrayType: ProgramType = [
+      { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
+      {
+        type: 'TypeModifier',
+        subtype: 'Array',
+        size: { type: 'Literal', subtype: 'Int', value: '2' },
+      },
+      { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
+    ]
+    const expectedLogOutput = [
+      { binary: intToBinary(3), type: intArrayType },
+      { binary: intToBinary(1), type: intArrayType },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

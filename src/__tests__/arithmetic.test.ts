@@ -101,7 +101,7 @@ describe('arithmetic', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('integer unary skip dereference', () => {
+  test('integer unary increments', () => {
     const output = testProgram(
       `
       int main() {

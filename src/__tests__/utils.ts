@@ -20,11 +20,12 @@ export const expectLogOutputToBe = (
   logOutput.forEach((result, i) => {
     const expectedResult = expectedLogOutput[i]
     expect(result.type).toStrictEqual(expectedResult.type)
-    if (expectedResult.type[0].subtype === 'BaseType') {
-      if (expectedResult.type[0].baseType === 'int') {
-        expect(binaryToInt(result.binary)).toBe(binaryToInt(expectedResult.binary))
-        return
-      }
+    const isInt =
+      expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'int'
+    const isPointer = expectedResult.type[0].subtype === 'Pointer'
+    if (isInt || isPointer) {
+      expect(binaryToInt(result.binary)).toBe(binaryToInt(expectedResult.binary))
+      return
     }
     expect(result.binary).toBe(expectedResult.binary)
   })
