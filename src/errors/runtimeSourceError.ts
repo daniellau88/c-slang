@@ -10,7 +10,7 @@ export class RuntimeSourceError implements SourceError {
   public location: es.SourceLocation
 
   constructor(node?: CASTNode) {
-    this.location = node ? node.loc! : UNKNOWN_LOCATION
+    this.location = node ? (node.loc ? node.loc : UNKNOWN_LOCATION) : UNKNOWN_LOCATION
   }
 
   public explain() {

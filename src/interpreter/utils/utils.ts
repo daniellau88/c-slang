@@ -131,7 +131,8 @@ export const parseStringToAST = (program: string): CASTNode => {
     throw new Error('Cannot parse program')
   }
 
-  return convertCSTProgramToAST(parsedProgram)
+  const ast = convertCSTProgramToAST(parsedProgram)
+  return ast
 }
 
 export const printBinariesWithTypes = (

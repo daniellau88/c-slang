@@ -310,7 +310,7 @@ export interface CASTIdentifier extends BaseExpression {
   name: string
 }
 
-interface CASTTypeModifierBase {
+interface CASTTypeModifierBase extends BaseNode {
   type: 'TypeModifier'
 }
 
@@ -344,7 +344,7 @@ export type CASTTypeModifier =
 
 export type ProgramType = Array<CASTTypeModifier>
 
-export interface CASTType {
+export interface CASTType extends BaseNode {
   type: 'Type'
   typeModifiers: ProgramType
 }

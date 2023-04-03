@@ -295,6 +295,7 @@ function contextToLocation(ctx: ParserRuleContext): es.SourceLocation {
     },
   }
 }
+
 class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitProgram(ctx: ProgramContext): CCSTProgram {
     const definitions: Array<CCSTFunctionDefinition | CCSTDeclarationStatement> = []
@@ -306,6 +307,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'Program',
       children: definitions,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -326,6 +328,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       declarator: this.visitDeclarator(ctx.declarator()),
       declarationStatements: declarationStatements,
       compoundStatement: this.visitCompound_statement(ctx.compound_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -334,6 +337,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ParameterTypeList',
       parameterList: this.visitParameter_list(ctx.parameter_list()),
       hasVarArg: Boolean(ctx.VAR_ARG()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -348,6 +352,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ParameterList',
       parameterDeclaration: this.visit(ctx.parameter_declaration()) as CCSTParameterDeclaration,
       parameterList: parameterList,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -359,6 +364,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Declarator',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
       declarator: this.visitDeclarator(ctx.declarator()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -370,6 +376,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'AbstractDeclarator',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
       abstractDeclarator: this.visit(ctx.abstract_declarator()) as CCSTAbstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -380,6 +387,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ParameterDeclaration',
       subtype: 'Normal',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -388,6 +396,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'LabeledStatement',
       identifier: this.visitIdentifier(ctx.identifier()),
       statement: this.visit(ctx.statement()) as CCSTStatement,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -396,6 +405,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DeclarationStatement',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
       initDeclaratorList: this.visitInit_declarator_list(ctx.init_declarator_list()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -403,6 +413,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'DeclarationSpecifier',
       typeSpecifier: this.visitType_specifier(ctx.type_specifier()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -412,6 +423,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'InitDeclaratorList',
       initDeclarators: initDeclarators,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -426,6 +438,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'InitDeclarator',
       declarator: this.visitDeclarator(ctx.declarator()),
       initializer: initializer,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -440,6 +453,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Declarator',
       pointer: pointer,
       directDeclarator: this.visit(ctx.direct_declarator()) as CCSTDirectDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -450,6 +464,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DirectDeclarator',
       subtype: 'Identifier',
       identifier: this.visitIdentifier(ctx.identifier()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -460,6 +475,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DirectDeclarator',
       subtype: 'NestedDeclarator',
       declarator: this.visitDeclarator(ctx.declarator()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -477,6 +493,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'RecursiveArray',
       directDeclarator: this.visit(ctx.direct_declarator()) as CCSTDirectDeclarator,
       constantExpression: constantExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -494,6 +511,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'RecursiveParameters',
       directDeclarator: this.visit(ctx.direct_declarator()) as CCSTDirectDeclarator,
       parameterTypeList: parameterTypeList,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -505,6 +523,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'RecursiveIdentifier',
       directDeclarator: this.visit(ctx.direct_declarator()) as CCSTDirectDeclarator,
       identifiers: ctx.identifier().map(x => this.visitIdentifier(x)),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -515,6 +534,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Initializer',
       subtype: 'ConditionalExpression',
       conditionalExpression: this.visit(ctx.conditional_expression()) as CCSTConditionalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -523,6 +543,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Initializer',
       subtype: 'Array',
       initializerList: this.visit(ctx.initializer_list()) as CCSTInitializerList,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -533,6 +554,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'InitializerList',
       subtype: 'Initializer',
       initializer: this.visit(ctx.initializer()) as CCSTInitializer,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -544,6 +566,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'RecursiveInitializer',
       initializerList: this.visit(ctx.initializer_list()) as CCSTInitializerList,
       initializer: this.visit(ctx.initializer()) as CCSTInitializer,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -551,6 +574,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'ExpressionStatement',
       expression: this.visit(ctx.expression()) as CCSTExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -559,6 +583,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Expression',
       subtype: 'Assignment',
       assignmentExpression: this.visit(ctx.assignment_expression()) as CCSTAssignmentExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -568,6 +593,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Expression',
       assignmentExpression: this.visit(ctx.assignment_expression()) as CCSTAssignmentExpression,
       expression: this.visit(ctx.expression()) as CCSTExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -578,6 +604,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'AssignmentExpression',
       subtype: 'Conditional',
       conditionalExpression: this.visit(ctx.conditional_expression()) as CCSTConditionalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -590,6 +617,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       unaryExpression: this.visit(ctx.unary_expression()) as CCSTUnaryExpression,
       assignmentExpression: this.visit(ctx.assignment_expression()) as CCSTAssignmentExpression,
       assignmentOperator: this.visitAssignment_operator(ctx.assignment_operator()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -597,6 +625,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'ConstantExpression',
       conditionalExpression: this.visit(ctx.conditional_expression()) as CCSTConditionalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -609,6 +638,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       expression: this.visit(ctx.expression()) as CCSTExpression,
       conditionalExpression: this.visit(ctx.conditional_expression()) as CCSTConditionalExpression,
       logicalOrExpression: this.visit(ctx.logical_or_expression()) as CCSTLogicalOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -619,6 +649,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ConditionalExpression',
       subtype: 'LogicalOr',
       logicalOrExpression: this.visit(ctx.logical_or_expression()) as CCSTLogicalOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -629,6 +660,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'LogicalOrExpression',
       subtype: 'LogicalAnd',
       logicalAndExpression: this.visit(ctx.logical_and_expression()) as CCSTLogicalAndExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -640,6 +672,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'LogicalOr',
       logicalAndExpression: this.visit(ctx.logical_and_expression()) as CCSTLogicalAndExpression,
       logicalOrExpression: this.visit(ctx.logical_or_expression()) as CCSTLogicalOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -651,6 +684,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'LogicalAnd',
       logicalAndExpression: this.visit(ctx.logical_and_expression()) as CCSTLogicalAndExpression,
       inclusiveOrExpression: this.visit(ctx.inclusive_or_expression()) as CCSTInclusiveOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -661,6 +695,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'LogicalAndExpression',
       subtype: 'InclusiveOr',
       inclusiveOrExpression: this.visit(ctx.inclusive_or_expression()) as CCSTInclusiveOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -671,6 +706,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'InclusiveOrExpression',
       subtype: 'ExclusiveOr',
       exclusiveOrExpression: this.visit(ctx.exclusive_or_expression()) as CCSTExclusiveOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -682,6 +718,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'InclusiveOr',
       exclusiveOrExpression: this.visit(ctx.exclusive_or_expression()) as CCSTExclusiveOrExpression,
       inclusiveOrExpression: this.visit(ctx.inclusive_or_expression()) as CCSTInclusiveOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -692,6 +729,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ExclusiveOrExpression',
       subtype: 'And',
       andExpression: this.visit(ctx.and_expression()) as CCSTAndExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -703,6 +741,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'ExclusiveOr',
       andExpression: this.visit(ctx.and_expression()) as CCSTAndExpression,
       exclusiveOrExpression: this.visit(ctx.exclusive_or_expression()) as CCSTExclusiveOrExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -712,6 +751,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'And',
       andExpression: this.visit(ctx.and_expression()) as CCSTAndExpression,
       equalityExpression: this.visit(ctx.equality_expression()) as CCSTEqualityExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -720,6 +760,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'AndExpression',
       subtype: 'Equality',
       equalityExpression: this.visit(ctx.equality_expression()) as CCSTEqualityExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -732,6 +773,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       equalityOperator: 'Equal',
       equalityExpression: this.visit(ctx.equality_expression()) as CCSTEqualityExpression,
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -744,6 +786,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       equalityOperator: 'NotEqual',
       equalityExpression: this.visit(ctx.equality_expression()) as CCSTEqualityExpression,
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -754,6 +797,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'EqualityExpression',
       subtype: 'Relational',
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -766,6 +810,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       relationalOperator: 'GreaterThan',
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -778,6 +823,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       relationalOperator: 'GreaterThanOrEqual',
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -790,6 +836,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       relationalOperator: 'LessThan',
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -802,6 +849,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       relationalOperator: 'LessThanOrEqual',
       relationalExpression: this.visit(ctx.relational_expression()) as CCSTRelationalExpression,
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -812,6 +860,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'RelationalExpression',
       subtype: 'Shift',
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -822,6 +871,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       shiftOperator: 'ShiftLeft',
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
       additiveExpression: this.visit(ctx.additive_expression()) as CCSTAdditiveExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -834,6 +884,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       shiftOperator: 'ShiftRight',
       shiftExpression: this.visit(ctx.shift_expression()) as CCSTShiftExpression,
       additiveExpression: this.visit(ctx.additive_expression()) as CCSTAdditiveExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -842,6 +893,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ShiftExpression',
       subtype: 'Additive',
       additiveExpression: this.visit(ctx.additive_expression()) as CCSTAdditiveExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -856,6 +908,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       multiplicativeExpression: this.visit(
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -870,6 +923,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       multiplicativeExpression: this.visit(
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -882,6 +936,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       multiplicativeExpression: this.visit(
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -892,6 +947,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'MultiplicativeExpression',
       subtype: 'Cast',
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -906,6 +962,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -920,6 +977,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -934,6 +992,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         ctx.multiplicative_expression(),
       ) as CCSTMultiplicativeExpression,
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -943,6 +1002,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Cast',
       typeName: this.visitType_name(ctx.type_name()),
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -951,6 +1011,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'CastExpression',
       subtype: 'Unary',
       unaryExpression: this.visit(ctx.unary_expression()) as CCSTUnaryExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -965,6 +1026,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'TypeName',
       typeSpecifier: this.visitType_specifier(ctx.type_specifier()),
       abstractDeclarator: abstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -983,6 +1045,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
       ) as CCSTDirectAbstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -992,6 +1055,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'AbstractDeclarator',
       pointer: this.visitPointer(ctx.pointer()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1008,6 +1072,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DirectAbstractDeclarator',
       subtype: 'Array',
       constantExpression: constantExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1018,6 +1083,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DirectAbstractDeclarator',
       subtype: 'NestedAbstractDeclarator',
       abstractDeclarator: this.visit(ctx.abstract_declarator()) as CCSTAbstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1037,6 +1103,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
       ) as CCSTDirectAbstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1056,6 +1123,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       directAbstractDeclarator: this.visit(
         ctx.direct_abstract_declarator(),
       ) as CCSTDirectAbstractDeclarator,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1072,6 +1140,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DirectAbstractDeclarator',
       subtype: 'Parameters',
       parameterTypeList: parameterTypeList,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1081,6 +1150,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Increment',
       incrementType: 'Decrement',
       unaryExpression: this.visit(ctx.unary_expression()) as CCSTUnaryExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1090,6 +1160,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Increment',
       incrementType: 'Increment',
       unaryExpression: this.visit(ctx.unary_expression()) as CCSTUnaryExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1098,6 +1169,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'UnaryExpression',
       subtype: 'Postfix',
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1106,6 +1178,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'UnaryExpression',
       subtype: 'SizeOf',
       typeName: this.visitType_name(ctx.type_name()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1117,6 +1190,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'UnaryOperator',
       unaryOperator: this.visitUnary_operator(ctx.unary_operator()),
       castExpression: this.visit(ctx.cast_expression()) as CCSTCastExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1126,6 +1200,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Array',
       assignmentExpression: this.visit(ctx.assignment_expression()) as CCSTAssignmentExpression,
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1137,6 +1212,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Increment',
       incrementType: 'Decrement',
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1148,6 +1224,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'DerefMember',
       identifier: this.visitIdentifier(ctx.identifier()),
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1170,6 +1247,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Increment',
       incrementType: 'Increment',
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1179,6 +1257,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'Member',
       identifier: this.visitIdentifier(ctx.identifier()),
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1189,6 +1268,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'PostfixExpression',
       subtype: 'Primary',
       primaryExpression: this.visit(ctx.primary_expression()) as CCSTPrimaryExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1199,6 +1279,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'PrimaryExpression',
       subtype: 'Constant',
       constant: this.visit(ctx.constant()) as CCSTConstant,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1209,6 +1290,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'PrimaryExpression',
       subtype: 'Identifier',
       identifier: this.visitIdentifier(ctx.identifier()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1219,6 +1301,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'PrimaryExpression',
       subtype: 'NestedExpression',
       expression: this.visit(ctx.expression()) as CCSTExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1227,6 +1310,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Constant',
       subtype: 'Character',
       characterConstant: this.visitCharacter_constant(ctx.character_constant()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1235,6 +1319,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Constant',
       subtype: 'Float',
       floatConstant: this.visitFloat_constant(ctx.float_constant()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1243,6 +1328,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Constant',
       subtype: 'Integer',
       integerConstant: this.visitInteger_constant(ctx.integer_constant()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1250,6 +1336,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'CharacterConstant',
       value: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1257,6 +1344,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'FloatConstant',
       value: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1264,6 +1352,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'IntegerConstant',
       value: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1272,6 +1361,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'CompoundStatement',
       statements: statements,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1282,6 +1372,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       ifTrue: this.visit(ctx._if_true) as CCSTStatement,
       ifFalse:
         ctx._if_false !== undefined ? (this.visit(ctx._if_false) as CCSTStatement) : undefined,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1290,6 +1381,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'SwitchStatement',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       switchBody: this.visitSwitch_body(ctx.switch_body()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1302,6 +1394,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         switchDefaultBodyContext !== undefined
           ? this.visitSwitch_default_body(switchDefaultBodyContext)
           : undefined,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1310,6 +1403,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'SwitchCaseBody',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1317,6 +1411,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'SwitchDefaultBody',
       statements: ctx.statement().map(x => this.visit(x) as CCSTStatement),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1325,6 +1420,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'WhileStatement',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       statement: this.visit(ctx.statement()) as CCSTStatement,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1333,6 +1429,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'DoStatement',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       statement: this.visit(ctx.statement()) as CCSTStatement,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1355,6 +1452,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
           ? (this.visit(updateExpressionContext) as CCSTExpression)
           : undefined,
       statement: this.visit(ctx.statement()) as CCSTStatement,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1363,6 +1461,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ForInitDeclaration',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
       initDeclaratorList: this.visitInit_declarator_list(ctx.init_declarator_list()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1370,18 +1469,21 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'GotoStatement',
       identifier: this.visitIdentifier(ctx.identifier()),
+      loc: contextToLocation(ctx),
     }
   }
 
   visitContinue_statement(ctx: Continue_statementContext): CCSTContinueStatement {
     return {
       type: 'ContinueStatement',
+      loc: contextToLocation(ctx),
     }
   }
 
   visitBreak_statement(ctx: Break_statementContext): CCSTBreakStatement {
     return {
       type: 'BreakStatement',
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1395,6 +1497,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'ReturnStatement',
       expression: expression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1403,6 +1506,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Labeled',
       statement: this.visitLabeled_statement(ctx.labeled_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1411,6 +1515,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Declaration',
       statement: this.visitDeclaration_statement(ctx.declaration_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1419,6 +1524,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Expression',
       statement: this.visitExpression_statement(ctx.expression_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1427,6 +1533,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Compound',
       statement: this.visitCompound_statement(ctx.compound_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1435,6 +1542,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'If',
       statement: this.visitIf_statement(ctx.if_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1443,6 +1551,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Switch',
       statement: this.visitSwitch_statement(ctx.switch_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1451,6 +1560,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'While',
       statement: this.visitWhile_statement(ctx.while_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1459,6 +1569,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Do',
       statement: this.visitDo_statement(ctx.do_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1467,6 +1578,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'For',
       statement: this.visitFor_statement(ctx.for_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1475,6 +1587,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Goto',
       statement: this.visitGoto_statement(ctx.goto_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1483,6 +1596,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Continue',
       statement: this.visitContinue_statement(ctx.continue_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1491,6 +1605,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Break',
       statement: this.visitBreak_statement(ctx.break_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1499,6 +1614,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'Statement',
       subtype: 'Return',
       statement: this.visitReturn_statement(ctx.return_statement()),
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1506,6 +1622,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'Identifier',
       name: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1513,6 +1630,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'Pointer',
       text: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1520,6 +1638,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'TypeSpecifier',
       baseType: ctx.text,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1547,6 +1666,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         : ctx.SHIFT_RIGHT_EQUAL()
         ? 'ShiftRightEqual'
         : 'TimesEqual',
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1564,6 +1684,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
         : ctx.PLUS()
         ? 'Plus'
         : 'Tilda',
+      loc: contextToLocation(ctx),
     }
   }
 

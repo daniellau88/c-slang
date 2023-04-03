@@ -99,6 +99,7 @@ export function convertCSTProgramToAST(node: CCSTProgram): CASTProgram {
         ? visitCCSTDeclarationStatement(x)
         : visitCCSTFunctionDefinition(x)
     }),
+    loc: node.loc,
   }
 }
 
@@ -115,6 +116,7 @@ function visitCCSTDeclarator(node: CCSTDeclarator): TypedIdentifier {
       type: 'TypeModifier',
       subtype: 'Pointer',
       pointerDepth: pointer.text.length,
+      loc: node?.pointer?.loc,
     })
   }
   return directDeclarator
@@ -124,8 +126,8 @@ function visitCCSTDirectDeclarator(node: CCSTDirectDeclarator): TypedIdentifier 
   switch (node.subtype) {
     case 'Identifier':
       return {
-        type: { type: 'Type', typeModifiers: [] },
-        identifier: { type: 'Identifier', name: node.identifier.name },
+        type: { type: 'Type', typeModifiers: [], loc: node.loc },
+        identifier: { type: 'Identifier', name: node.identifier.name, loc: node.loc },
       }
     case 'NestedDeclarator':
       return visitCCSTDeclarator(node.declarator)
@@ -149,6 +151,7 @@ function visitCCSTDirectDeclarator(node: CCSTDirectDeclarator): TypedIdentifier 
             type: 'TypeModifier',
             subtype: 'Array',
             size: size,
+            loc: node.loc,
           })
         }
 
@@ -160,6 +163,7 @@ function visitCCSTDirectDeclarator(node: CCSTDirectDeclarator): TypedIdentifier 
             parameterTypeList: parameterTypeList
               ? visitCCSTParameterTypeList(parameterTypeList)
               : [],
+            loc: node.loc,
           })
         }
 
@@ -173,6 +177,7 @@ function visitCCSTDirectDeclarator(node: CCSTDirectDeclarator): TypedIdentifier 
         type: {
           type: 'Type',
           typeModifiers: modifiers,
+          loc: node.loc,
         },
       }
   }
@@ -205,6 +210,7 @@ function visitCCSTParameterDeclaration(node: CCSTParameterDeclaration): CASTFunc
         type: 'FunctionParameter',
         paramType: declarationSpecifier,
         isVarArg: false,
+        loc: node.loc,
       }
     case 'Declarator':
       const declarator = visitCCSTDeclarator(node.declarator)
@@ -214,6 +220,7 @@ function visitCCSTParameterDeclaration(node: CCSTParameterDeclaration): CASTFunc
         paramType: declarator.type,
         identifier: declarator.identifier,
         isVarArg: false,
+        loc: node.loc,
       }
     case 'AbstractDeclarator':
       const abstractDeclarator = visitCCSTAbstractDeclarator(node.abstractDeclarator)
@@ -222,6 +229,7 @@ function visitCCSTParameterDeclaration(node: CCSTParameterDeclaration): CASTFunc
         type: 'FunctionParameter',
         paramType: abstractDeclarator.type,
         isVarArg: false,
+        loc: node.loc,
       }
   }
 }
@@ -247,6 +255,7 @@ function visitCCSTFunctionDefinition(node: CCSTFunctionDefinition): CASTFunction
     parameters: declaratorParameters.parameterTypeList,
     returnType: { type: 'Type', typeModifiers: declaratorReturnType },
     body: visitCCSTCompoundStatement(node.compoundStatement),
+    loc: node.loc,
   }
 }
 
@@ -260,6 +269,7 @@ function visitCCSTTypeSpecifier(node: CCSTTypeSpecifier): CASTType {
     typeModifiers: [
       { type: 'TypeModifier', subtype: 'BaseType', baseType: node.baseType as CASTBaseType },
     ],
+    loc: node.loc,
   }
 }
 
@@ -307,6 +317,7 @@ function visitCCSTDeclarationStatement(node: CCSTDeclarationStatement): CASTDecl
       x.declarationType.typeModifiers.push(baseType.typeModifiers[0])
       return x
     }),
+    loc: node.loc,
   }
 }
 
@@ -326,6 +337,7 @@ function visitCCSTInitDeclarator(node: CCSTInitDeclarator): CASTDeclaration {
     identifier: declaratorTypedIdentifier.identifier,
     declarationType: declaratorTypedIdentifier.type,
     init: init,
+    loc: node.loc,
   }
 }
 
@@ -346,6 +358,7 @@ function visitCCSTInitializerList(node: CCSTInitializerList): CASTExpression {
   return {
     type: 'ArrayExpression',
     elements: arr,
+    loc: node.loc,
   }
 }
 
@@ -353,6 +366,7 @@ function visitCCSTCompoundStatement(node: CCSTCompoundStatement): CASTCompoundSt
   return {
     type: 'CompoundStatement',
     statements: node.statements.map(x => visitCCSTStatement(x)),
+    loc: node.loc,
   }
 }
 
@@ -362,6 +376,7 @@ function visitCCSTIfStatement(node: CCSTIfStatement): CASTIfStatement {
     condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
     ifTrue: visitCCSTStatement(node.ifTrue),
     ifFalse: node.ifFalse !== undefined ? visitCCSTStatement(node.ifFalse) : undefined,
+    loc: node.loc,
   }
 }
 
@@ -370,6 +385,7 @@ function visitCCSTSwitchStatement(node: CCSTSwitchStatement): CASTSwitchStatemen
     type: 'SwitchStatement',
     expression: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
     body: visitCCSTSwitchBody(node.switchBody),
+    loc: node.loc,
   }
 }
 
@@ -382,6 +398,7 @@ function visitCCSTSwitchBody(node: CCSTSwitchBody): CASTSwitchBody {
   return {
     type: 'SwitchBody',
     clauses: clauses,
+    loc: node.loc,
   }
 }
 
@@ -391,6 +408,7 @@ function visitCCSTSwitchCaseBody(node: CCSTSwitchCaseBody): CASTSwitchClauseBody
     subtype: 'Case',
     expression: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
     statements: node.statements.map(x => visitCCSTStatement(x)),
+    loc: node.loc,
   }
 }
 
@@ -399,6 +417,7 @@ function visitCCSTSwitchDefaultBody(node: CCSTSwitchDefaultBody): CASTSwitchClau
     type: 'SwitchClauseBody',
     subtype: 'Default',
     statements: node.statements.map(x => visitCCSTStatement(x)),
+    loc: node.loc,
   }
 }
 
@@ -407,6 +426,7 @@ function visitCCSTWhileStatement(node: CCSTWhileStatement): CASTWhileStatement {
     type: 'WhileStatement',
     condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
     statement: visitCCSTStatement(node.statement),
+    loc: node.loc,
   }
 }
 
@@ -415,6 +435,7 @@ function visitCCSTDoStatement(node: CCSTDoStatement): CASTDoStatement {
     type: 'DoStatement',
     condition: visitCCSTExpression(node.expression)[0], // TODO: Assume first expression
     statement: visitCCSTStatement(node.statement),
+    loc: node.loc,
   }
 }
 
@@ -432,6 +453,7 @@ function visitCCSTForStatement(node: CCSTForStatement): CASTForStatement {
       node.updateExpression !== undefined
         ? visitCCSTExpression(node.updateExpression)[0]
         : undefined, // TODO: Assume first expression
+    loc: node.loc,
   }
 }
 
@@ -445,18 +467,21 @@ function visitCCSTForInitDeclaration(node: CCSTForInitDeclaration): CASTDeclarat
       x.declarationType.typeModifiers.push(baseType.typeModifiers[0])
       return x
     }),
+    loc: node.loc,
   }
 }
 
 function visitCCSTContinueStatement(node: CCSTContinueStatement): CASTContinueStatement {
   return {
     type: 'ContinueStatement',
+    loc: node.loc,
   }
 }
 
 function visitCCSTBreakStatement(node: CCSTBreakStatement): CASTBreakStatement {
   return {
     type: 'BreakStatement',
+    loc: node.loc,
   }
 }
 
@@ -468,6 +493,7 @@ function visitCCSTReturnStatement(node: CCSTReturnStatement): CASTReturnStatemen
   return {
     type: 'ReturnStatement',
     expression: expression,
+    loc: node.loc,
   }
 }
 
@@ -475,6 +501,7 @@ function visitCCSTExpressionStatement(node: CCSTExpressionStatement): CASTExpres
   return {
     type: 'ExpressionStatement',
     expressions: visitCCSTExpression(node.expression),
+    loc: node.loc,
   }
 }
 
@@ -496,6 +523,7 @@ function visitCCSTAssignmentExpression(node: CCSTAssignmentExpression): CASTExpr
         operator: visitCCSTAssignmentOperator(node.assignmentOperator),
         left: visitCCSTUnaryExpression(node.unaryExpression),
         right: visitCCSTAssignmentExpression(node.assignmentExpression),
+        loc: node.loc,
       }
     : visitCCSTConditionalExpression(node.conditionalExpression)
 }
@@ -538,6 +566,7 @@ function visitCCSTConditionalExpression(node: CCSTConditionalExpression): CASTEx
         predicate: visitCCSTLogicalOrExpression(node.logicalOrExpression),
         ifTrue: visitCCSTExpression(node.expression)[0], // TODO: Assume only singular expression
         ifFalse: visitCCSTConditionalExpression(node.conditionalExpression),
+        loc: node.loc,
       }
     : visitCCSTLogicalOrExpression(node.logicalOrExpression)
 }
@@ -549,6 +578,7 @@ function visitCCSTLogicalOrExpression(node: CCSTLogicalOrExpression): CASTExpres
         operator: CASTBinaryOperator.LogicalOr,
         left: visitCCSTLogicalOrExpression(node.logicalOrExpression),
         right: visitCCSTLogicalAndExpression(node.logicalAndExpression),
+        loc: node.loc,
       }
     : visitCCSTLogicalAndExpression(node.logicalAndExpression)
 }
@@ -560,6 +590,7 @@ function visitCCSTLogicalAndExpression(node: CCSTLogicalAndExpression): CASTExpr
         operator: CASTBinaryOperator.LogicalAnd,
         left: visitCCSTLogicalAndExpression(node.logicalAndExpression),
         right: visitCCSTInclusiveOrExpression(node.inclusiveOrExpression),
+        loc: node.loc,
       }
     : visitCCSTInclusiveOrExpression(node.inclusiveOrExpression)
 }
@@ -571,6 +602,7 @@ function visitCCSTInclusiveOrExpression(node: CCSTInclusiveOrExpression): CASTEx
         operator: CASTBinaryOperator.InclusiveOr,
         left: visitCCSTInclusiveOrExpression(node.inclusiveOrExpression),
         right: visitCCSTExclusiveOrExpression(node.exclusiveOrExpression),
+        loc: node.loc,
       }
     : visitCCSTExclusiveOrExpression(node.exclusiveOrExpression)
 }
@@ -582,6 +614,7 @@ function visitCCSTExclusiveOrExpression(node: CCSTExclusiveOrExpression): CASTEx
         operator: CASTBinaryOperator.ExclusiveOr,
         left: visitCCSTExclusiveOrExpression(node.exclusiveOrExpression),
         right: visitCCSTAndExpression(node.andExpression),
+        loc: node.loc,
       }
     : visitCCSTAndExpression(node.andExpression)
 }
@@ -593,6 +626,7 @@ function visitCCSTAndExpression(node: CCSTAndExpression): CASTExpression {
         operator: CASTBinaryOperator.BitwiseAnd,
         left: visitCCSTAndExpression(node.andExpression),
         right: visitCCSTEqualityExpression(node.equalityExpression),
+        loc: node.loc,
       }
     : visitCCSTEqualityExpression(node.equalityExpression)
 }
@@ -607,6 +641,7 @@ function visitCCSTEqualityExpression(node: CCSTEqualityExpression): CASTExpressi
             : CASTBinaryOperator.EqualityNotEqual,
         left: visitCCSTEqualityExpression(node.equalityExpression),
         right: visitCCSTRelationalExpression(node.relationalExpression),
+        loc: node.loc,
       }
     : visitCCSTRelationalExpression(node.relationalExpression)
 }
@@ -625,6 +660,7 @@ function visitCCSTRelationalExpression(node: CCSTRelationalExpression): CASTExpr
             : CASTBinaryOperator.RelationalLessThanOrEqual,
         left: visitCCSTRelationalExpression(node.relationalExpression),
         right: visitCCSTShiftExpression(node.shiftExpression),
+        loc: node.loc,
       }
     : visitCCSTShiftExpression(node.shiftExpression)
 }
@@ -639,6 +675,7 @@ function visitCCSTShiftExpression(node: CCSTShiftExpression): CASTExpression {
             : CASTBinaryOperator.ShiftRight,
         left: visitCCSTShiftExpression(node.shiftExpression),
         right: visitCCSTAdditiveExpression(node.additiveExpression),
+        loc: node.loc,
       }
     : visitCCSTAdditiveExpression(node.additiveExpression)
 }
@@ -651,6 +688,7 @@ function visitCCSTAdditiveExpression(node: CCSTAdditiveExpression): CASTExpressi
           node.additiveOperator === 'Plus' ? CASTBinaryOperator.Plus : CASTBinaryOperator.Minus,
         left: visitCCSTAdditiveExpression(node.additiveExpression),
         right: visitCCSTMultiplicativeExpression(node.multiplicativeExpression),
+        loc: node.loc,
       }
     : visitCCSTMultiplicativeExpression(node.multiplicativeExpression)
 }
@@ -667,6 +705,7 @@ function visitCCSTMultiplicativeExpression(node: CCSTMultiplicativeExpression): 
             : CASTBinaryOperator.Modulo,
         left: visitCCSTMultiplicativeExpression(node.multiplicativeExpression),
         right: visitCCSTCastExpression(node.castExpression),
+        loc: node.loc,
       }
     : visitCCSTCastExpression(node.castExpression)
 }
@@ -677,6 +716,7 @@ function visitCCSTCastExpression(node: CCSTCastExpression): CASTExpression {
         type: 'CastExpression',
         castType: visitCCSTTypeName(node.typeName),
         expression: visitCCSTCastExpression(node.castExpression),
+        loc: node.loc,
       }
     : visitCCSTUnaryExpression(node.unaryExpression)
 }
@@ -697,17 +737,20 @@ function visitCCSTUnaryExpression(
             ? CASTUnaryOperator.PreIncrement
             : CASTUnaryOperator.PreDecrement,
         expression: visitCCSTUnaryExpression(node.unaryExpression),
+        loc: node.loc,
       }
     : node.subtype === 'UnaryOperator'
     ? {
         type: 'UnaryExpression',
         operator: visitCCSTUnaryOperator(node.unaryOperator),
         expression: visitCCSTCastExpression(node.castExpression),
+        loc: node.loc,
       }
     : node.subtype === 'SizeOf'
     ? {
         type: 'SizeOfExpression',
         typeArg: visitCCSTTypeName(node.typeName),
+        loc: node.loc,
       }
     : (visitCCSTPostfixExpression(node.postfixExpression) as CASTUnaryExpression | CASTIdentifier)
 }
@@ -741,18 +784,21 @@ function visitCCSTPostfixExpression(node: CCSTPostfixExpression): CASTExpression
             ? CASTUnaryOperator.PostIncrement
             : CASTUnaryOperator.PostDecrement,
         expression: visitCCSTPostfixExpression(node.postfixExpression),
+        loc: node.loc,
       }
     : node.subtype === 'Array'
     ? {
         type: 'ArrayAccessExpression',
         expression: visitCCSTPostfixExpression(node.postfixExpression),
         indexExpression: visitCCSTAssignmentExpression(node.assignmentExpression),
+        loc: node.loc,
       }
     : node.subtype === 'FunctionCall'
     ? {
         type: 'FunctionCallExpression',
         expression: visitCCSTPostfixExpression(node.postfixExpression),
         argumentExpression: visitCCSTExpression(node.expression),
+        loc: node.loc,
       }
     : visitCCSTPrimaryExpression(node.primaryExpression)
 }
@@ -769,6 +815,7 @@ function visitCCSTIdentifier(node: CCSTIdentifier): CASTIdentifier {
   return {
     type: 'Identifier',
     name: node.name,
+    loc: node.loc,
   }
 }
 
@@ -778,17 +825,20 @@ function visitCCSTConstant(node: CCSTConstant): CASTLiteral {
         type: 'Literal',
         subtype: 'Char',
         value: node.characterConstant.value,
+        loc: node.loc,
       }
     : node.subtype === 'Float'
     ? {
         type: 'Literal',
         subtype: 'Float',
         value: node.floatConstant.value,
+        loc: node.loc,
       }
     : {
         type: 'Literal',
         subtype: 'Int',
         value: node.integerConstant.value,
+        loc: node.loc,
       }
 }
 
@@ -805,6 +855,7 @@ function visitCCSTTypeName(node: CCSTTypeName): CASTType {
   return {
     type: 'Type',
     typeModifiers: typeModifiers,
+    loc: node.loc,
   }
 }
 
@@ -812,7 +863,7 @@ type OptionalTypedIdentifier = Omit<TypedIdentifier, 'identifier'>
 
 function visitCCSTAbstractDeclarator(node: CCSTAbstractDeclarator): OptionalTypedIdentifier {
   let directAbstractDeclarator: OptionalTypedIdentifier = {
-    type: { type: 'Type', typeModifiers: [] },
+    type: { type: 'Type', typeModifiers: [], loc: node.loc },
   }
   if (node.directAbstractDeclarator) {
     directAbstractDeclarator = visitCCSTDirectAbstractDeclarator(node.directAbstractDeclarator)
@@ -824,6 +875,7 @@ function visitCCSTAbstractDeclarator(node: CCSTAbstractDeclarator): OptionalType
       type: 'TypeModifier',
       subtype: 'Pointer',
       pointerDepth: pointer.text.length,
+      loc: node.loc,
     })
   }
   return directAbstractDeclarator
@@ -846,8 +898,10 @@ function visitCCSTDirectAbstractDeclarator(
               size: node.constantExpression
                 ? visitCCSTConstantExpression(node.constantExpression)
                 : undefined,
+              loc: node.loc,
             },
           ],
+          loc: node.loc,
         },
       }
     case 'Parameters':
@@ -861,8 +915,10 @@ function visitCCSTDirectAbstractDeclarator(
               parameterTypeList: node.parameterTypeList
                 ? visitCCSTParameterTypeList(node.parameterTypeList)
                 : [],
+              loc: node.loc,
             },
           ],
+          loc: node.loc,
         },
       }
     case 'RecursiveArray':
@@ -883,6 +939,7 @@ function visitCCSTDirectAbstractDeclarator(
             type: 'TypeModifier',
             subtype: 'Array',
             size: size,
+            loc: node.loc,
           })
         }
 
@@ -894,6 +951,7 @@ function visitCCSTDirectAbstractDeclarator(
             parameterTypeList: parameterTypeList
               ? visitCCSTParameterTypeList(parameterTypeList)
               : [],
+            loc: node.loc,
           })
         }
 
@@ -907,6 +965,7 @@ function visitCCSTDirectAbstractDeclarator(
         type: {
           type: 'Type',
           typeModifiers: modifiers,
+          loc: node.loc,
         },
       }
   }
