@@ -39,6 +39,7 @@ interface LoadVarMicroCode extends MicroCodeBase {
 interface FuncApplyMicroCode extends MicroCodeBase {
   tag: 'func_apply'
   arity: number
+  node: CASTNode
 }
 
 interface PopOSMicroCode extends MicroCodeBase {

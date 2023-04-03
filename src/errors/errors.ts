@@ -139,7 +139,7 @@ export class InvalidNumberOfArguments extends RuntimeSourceError {
     private hasVarArgs = false,
   ) {
     super(node)
-    this.calleeStr = generate(node as CASTFunctionCallExpression)
+    this.calleeStr = stringify(node)
   }
 
   public explain() {

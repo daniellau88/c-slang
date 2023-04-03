@@ -1,4 +1,9 @@
-import { CannotDereferenceTypeError, UndefinedVariable, VariableRedeclaration } from '../../errors/errors'
+import {
+  CannotDereferenceTypeError,
+  InvalidNumberOfArguments,
+  UndefinedVariable,
+  VariableRedeclaration,
+} from '../../errors/errors'
 import { LogicError, NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
@@ -110,7 +115,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
 
       if (functionToCall.arity !== -1 && functionToCall.arity !== args.length) {
-        throw new RuntimeError('Wrong number of arguments given for function')
+        throw new InvalidNumberOfArguments(node.node, functionToCall.arity, args.length)
       }
 
       if (functionToCall.subtype === 'builtin_func') {
@@ -233,7 +238,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
-          if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref', node: currentModifier.size })
+          if (shouldDerefExpression(currentModifier.size))
+            state.pushA({ tag: 'deref', node: currentModifier.size })
           state.pushA(currentModifier.size)
           return
         }
@@ -360,7 +366,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'conditional_op': {
       const predicate = state.popOS()
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
-      if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref', node: expressionToPush })
+      if (shouldDerefExpression(expressionToPush))
+        state.pushA({ tag: 'deref', node: expressionToPush })
       state.pushA(expressionToPush)
       return
     }
