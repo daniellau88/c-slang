@@ -215,7 +215,3 @@ export function* astToMicrocode(state: ProgramState, node: CASTNode) {
     }
   }
 }
-
-// right
-// left
-// binaryCheck
