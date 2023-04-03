@@ -31,7 +31,7 @@ describe('loop', () => {
             int main() {
                 int x = 0;
                 while (x < 20) {
-                    x = x + 2
+                    x = x + 2;
                 }
                 printfLog(x);
                 return 0;
@@ -91,7 +91,7 @@ describe('loop', () => {
             int main() {
                 int x = 0;
                 while (x < 20) {
-                    x = x + 2
+                    x = x + 2;
                     if (x == 10) {
                         break;
                     }
