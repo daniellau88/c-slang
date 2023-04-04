@@ -181,6 +181,18 @@ export type MicroCode =
   | ContinueMicrocode
   | ContinueMarker
   | SwitchBodyMicrocode
+  | MallocMicrocode
+  | FreeMicrocode
+
+interface FreeMicrocode extends MicroCodeBase {
+  tag: 'free_op'
+  address: BinaryWithType
+}
+
+interface MallocMicrocode extends MicroCodeBase {
+  tag: 'malloc_op'
+  size: BinaryWithType
+}
 
 interface ContinueMarker extends MicroCodeBase {
   tag: 'continue_marker'

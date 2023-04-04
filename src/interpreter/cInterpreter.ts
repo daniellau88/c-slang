@@ -3,7 +3,7 @@ import { ProgramState } from './programState'
 import { BinaryWithType, BuiltinFunctionDefinition, MicroCode } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
 import { executeMicrocode } from './utils/microcodeUtils'
-import { INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
+import { incrementPointerDepth, INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
 import { binaryToFormattedString, isMicrocode, parseStringToAST } from './utils/utils'
 
 // Builtin functions must always add a value onto the OS (whether directly or indirectly)
@@ -23,6 +23,20 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
     returnProgType: INT_BASE_TYPE,
     arity: 1,
   },
+  malloc: {
+    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
+      state.pushA({tag: 'malloc_op', size: arg[0]})
+    },
+    returnProgType: incrementPointerDepth(VOID_BASE_TYPE),
+    arity: 1,
+  },
+  free: {
+    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
+      state.pushA({tag: 'free_op', address: arg[0]})
+    },
+    returnProgType: VOID_BASE_TYPE,
+    arity: 1,
+  }
 }
 
 /* ****************

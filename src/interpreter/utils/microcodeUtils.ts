@@ -99,7 +99,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushOS(binary, newType)
         return
       }
-      state.pushOS(state.getRTSAtIndex(binaryToInt(binary)), newType)
+      state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
       return
     }
     case 'func_apply': {
@@ -288,7 +288,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         }
       }
 
-      state.setRTSAtIndex(binaryToInt(addr), newValue, newType)
+      state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
       return
     }
@@ -548,6 +548,26 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       } else {
         state.pushOS(intToBinary(0), INT_BASE_TYPE)
       }
+      return
+    }
+
+    case 'malloc_op': {
+      const { binary: size, type: typeSize } = node.size
+      if (binaryToInt(size) <= 0) {
+        throw new RuntimeError('cannot memory allocate of size 0 or below')
+      }
+      let allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
+      state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
+      return
+    }
+
+    case 'free_op': {
+      const { binary: address, type: typeAddress } = node.address
+      if(!isPointer(typeAddress)) {
+        throw new RuntimeError('Invalid free operation, not a pointer')
+      }
+      state.freeHeapMemory(binaryToInt(address))
+      state.pushOS(0, VOID_BASE_TYPE)
       return
     }
 
