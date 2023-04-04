@@ -449,7 +449,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: indexBinary, type: indexType } = state.popOS()
       const { binary: arrayAddressBinary, type: arrayAddressType } = state.popOS()
 
-      if(isArray(arrayAddressType)) {
+      if (isArray(arrayAddressType)) {
         const arrayItemsType = getArrayItemsType(arrayAddressType)
         state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
       } else {
