@@ -9,7 +9,7 @@ import {
   UnknownSize,
   VariableRedeclaration,
 } from '../../errors/errors'
-import { LogicError, NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
+import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
   CASTExpression,
@@ -385,7 +385,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const rightOpWithType = state.popOS()
       const leftOpWithType = state.popOS()
 
-      const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
+      const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator, node.node)
       state.pushOS(result.binary, result.type)
       return
     }
@@ -405,7 +405,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         let shouldBreak = false
         switch (typeModifier.subtype) {
           case 'Array': {
-            if (typeModifier.size === undefined) throw new RuntimeError('Array size is not defined')
+            if (typeModifier.size === undefined) throw new InvalidArraySize(node.node)
             expressions.push(typeModifier.size)
             break
           }

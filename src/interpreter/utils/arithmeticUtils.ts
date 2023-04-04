@@ -1,7 +1,9 @@
+import { CannotDivideByZero } from '../../errors/errors'
 import { LogicError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
+  CASTNode,
   CASTUnaryOperator,
   ProgramType,
 } from '../../typings/programAST'
@@ -157,6 +159,7 @@ export const doBinaryOperation = (
   operand1: BinaryWithType,
   operand2: BinaryWithType,
   operation: MicroCodeBinaryOperator,
+  node: CASTNode,
 ): BinaryWithType => {
   // By default, result follows operand 1's type
   // Casting and promotion should be handled in previous step
@@ -179,7 +182,7 @@ export const doBinaryOperation = (
     case MicroCodeBinaryOperator.IntDivision: {
       const op1 = getJSValueFromBinaryWithType(operand1)
       const op2 = getJSValueFromBinaryWithType(operand2)
-      if (op2 === 0) throw new RuntimeError('Cannot divide by 0')
+      if (op2 === 0) throw new CannotDivideByZero(node)
       return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
     }
     case MicroCodeBinaryOperator.IntModulo: {
@@ -205,7 +208,7 @@ export const doBinaryOperation = (
     case MicroCodeBinaryOperator.FloatDivision: {
       const op1 = getJSValueFromBinaryWithType(operand1)
       const op2 = getJSValueFromBinaryWithType(operand2)
-      if (op2 === 0) throw new RuntimeError('Cannot divide by 0')
+      if (op2 === 0) throw new CannotDivideByZero(node)
       return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
     }
     case MicroCodeBinaryOperator.LogicalOr: {

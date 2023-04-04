@@ -136,3 +136,9 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
+
+test(`
+  int main(int a) {
+    return a;
+  }
+`)

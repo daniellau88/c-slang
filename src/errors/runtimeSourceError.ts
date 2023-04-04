@@ -3,6 +3,7 @@ import * as es from 'estree'
 import { UNKNOWN_LOCATION } from '../constants'
 import { ErrorSeverity, ErrorType, SourceError } from '../types'
 import { CASTNode } from '../typings/programAST'
+import { stringify } from '../utils/stringify'
 
 export class RuntimeSourceError implements SourceError {
   public type = ErrorType.RUNTIME
@@ -23,15 +24,12 @@ export class RuntimeSourceError implements SourceError {
 }
 
 export class NotImplementedError extends RuntimeSourceError {
-  public msg: string
-
-  constructor(msg?: string, node?: CASTNode) {
+  constructor(private node?: CASTNode) {
     super(node)
-    this.msg = msg ? msg : ''
   }
 
   public explain() {
-    return 'Unimplemented error: ' + this.msg
+    return `Cannot handle ${stringify(this.node)}`
   }
 }
 

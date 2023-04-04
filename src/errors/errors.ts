@@ -281,15 +281,16 @@ export class ReturnNotCalled extends RuntimeSourceError {
 }
 
 export class InvalidArraySize extends RuntimeSourceError {
-  constructor(node: CASTNode, private binaryType: BinaryWithType) {
+  constructor(node: CASTNode, private binaryType?: BinaryWithType) {
     super(node)
   }
 
   public explain() {
-    return `Invalid array size of ${binaryToFormattedString(
+    const size = this.binaryType ? binaryToFormattedString(
       this.binaryType.binary,
       this.binaryType.type,
-    )}.`
+    ) : 'undefined'
+    return `Invalid array size of ${size}.`
   }
 
   public elaborate() {
@@ -335,7 +336,21 @@ export class UnknownSize extends RuntimeSourceError {
   }
 
   public explain() {
-    return `.`
+    return `Unknown size of ${stringify(this.node)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotDivideByZero extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot divide by zero.`
   }
 
   public elaborate() {
