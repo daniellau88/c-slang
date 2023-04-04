@@ -156,4 +156,3 @@ Test case: ` +
 //   printfLog(a, c);
 //   return 0;
 // }`)
-
