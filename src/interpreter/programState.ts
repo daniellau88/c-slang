@@ -7,7 +7,7 @@ import {
   MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
-import { RTS } from './utils/RTS'
+import { RTM } from './utils/RTM'
 import {
   LogicError,
   peek,
@@ -27,7 +27,7 @@ export class ProgramState {
   private A: Array<CASTNode | MicroCode>
   private OS: Array<number>
   private OSType: Record<number, ProgramType>
-  private RTS: RTS
+  private RTM: RTM
 
   private FD: Array<MicroCodeFunctionDefiniton>
 
@@ -43,7 +43,7 @@ export class ProgramState {
     this.A = []
     this.OS = []
     this.OSType = {}
-    this.RTS = new RTS(1000000)
+    this.RTM = new RTM(1000000)
     this.FD = []
     this.E = [{ record: {} }]
     this.LogOutput = []
@@ -74,6 +74,26 @@ export class ProgramState {
         funcIndex: newIndex,
       })
     })
+  }
+
+  getMemoryAtIndex(index: number): number {
+    if (this.RTM.isAtRTS(index)) {
+      return this.RTM.getRTSAtIndex(index)
+    } else if (this.RTM.isAtHeap(index)) {
+      return this.RTM.getHeapMemoryAtIndex(index)
+    } else {
+      throw new RuntimeError('Get Memory error, Memory is not allocated')
+    }
+  }
+
+  setMemoryAtIndex(index: number, binary: number, type?: ProgramType) {
+    if (this.RTM.isAtRTS(index)) {
+      this.RTM.setRTSAtIndex(index, binary, type)
+    } else if (this.RTM.isAtHeap(index)) {
+      this.RTM.setHeapMemoryAtIndex(index, binary, type)
+    } else {
+      throw new RuntimeError('Set Memory error, Memory is not allocated')
+    }
   }
 
   pushA(cmd: CASTNode | MicroCode) {
@@ -129,35 +149,27 @@ export class ProgramState {
   }
 
   pushRTS(binary: number, type?: ProgramType) {
-    this.RTS.push(binary, type)
+    this.RTM.pushRTS(binary, type)
   }
 
   popRTS(): number {
-    return this.RTS.pop()
+    return this.RTM.popRTS()
   }
 
   printRTS() {
-    this.RTS.print()
-  }
-
-  getRTSAtIndex(index: number): number {
-    return this.RTS.getAtIndex(index)
-  }
-
-  setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
-    return this.RTS.setAtIndex(index, binary, type)
+    this.RTM.printRTS()
   }
 
   getRTSLength(): number {
-    return this.RTS.getLength()
+    return this.RTM.getLengthRTS()
   }
 
   shrinkRTSToIndex(index: number) {
-    this.RTS.shrinkToIndex(index)
+    this.RTM.shrinkToIndexRTS(index)
   }
 
   allocateSizeOnRTS(size: number, type?: ProgramType) {
-    this.RTS.allocateSizeOn(size, type)
+    this.RTM.allocateSizeOnRTS(size, type)
   }
 
   pushFD(fd: MicroCodeFunctionDefiniton) {
@@ -253,15 +265,15 @@ export class ProgramState {
   }
 
   getRTSStart(): number {
-    return this.RTS.getStart()
+    return this.RTM.getStartRTS()
   }
 
   saveAndUpdateRTSStartOntoStack() {
-    this.RTS.saveAndUpdateStartOntoStack()
+    this.RTM.saveAndUpdateStartOntoStack()
   }
 
   popAndRestoreRTSStartOntoStack() {
-    this.RTS.popAndRestoreStartOntoStack()
+    this.RTM.popAndRestoreStartOntoStack()
   }
 
   getReturnRegister(): ReturnRegisterType {
@@ -278,5 +290,17 @@ export class ProgramState {
 
   getLogOutput(): Array<BinaryWithType> {
     return this.LogOutput
+  }
+
+  allocateHeap(size: number): number {
+    return this.RTM.allocateHeap(size)
+  }
+
+  freeHeapMemory(address: number) {
+    this.RTM.freeHeapMemory(address)
+  }
+
+  printHeap() {
+    this.RTM.printHeap()
   }
 }

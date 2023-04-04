@@ -160,7 +160,7 @@ describe('pointer', () => {
         }
       `,
       )
-    expectThrowError(program, RuntimeError, 'Invalid memory access')
+    expectThrowError(program, RuntimeError, `Get Memory error, Memory is not allocated`)
   })
 
   test('function pointer', () => {
