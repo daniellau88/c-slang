@@ -1,7 +1,6 @@
-import { LogicError, RuntimeError } from '../../errors/runtimeSourceError'
+import { LogicError } from '../../errors/runtimeSourceError'
 import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
-import { typeToString } from './utils'
 
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
@@ -65,10 +64,16 @@ export const incrementPointerDepth = (type: ProgramType): ProgramType => {
   return deepCopy
 }
 
+export class NonPointerError extends Error {
+  constructor(public type: ProgramType) {
+    super()
+  }
+}
+
 export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Pointer') {
-    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not a pointer')
+    throw new NonPointerError(deepCopy)
   }
 
   if (deepCopy[0].pointerDepth == 1) {
@@ -79,10 +84,16 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   return deepCopy
 }
 
+export class NonArrayError extends Error {
+  constructor(public type: ProgramType) {
+    super()
+  }
+}
+
 export const getArrayItemsType = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Array') {
-    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not an array')
+    throw new NonArrayError(deepCopy)
   }
 
   return deepCopy.splice(1)

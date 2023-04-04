@@ -46,17 +46,3 @@ export class LogicError extends RuntimeSourceError {
     return 'Logic error: ' + this.msg
   }
 }
-
-// Error that happens as a result of runtime issues
-export class RuntimeError extends RuntimeSourceError {
-  public msg: string
-
-  constructor(msg?: string, node?: CASTNode) {
-    super(node)
-    this.msg = msg ? msg : ''
-  }
-
-  public explain() {
-    return 'Runtime error: ' + this.msg
-  }
-}
