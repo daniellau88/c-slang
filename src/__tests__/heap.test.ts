@@ -34,7 +34,7 @@ describe('heap', () => {
 
   test('heap arithmetic', () => {
     const output = testProgram(
-    `
+      `
     int main() {
       int* x = malloc(8 * sizeof(int));
         *x = 10;
@@ -55,7 +55,6 @@ describe('heap', () => {
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
-
 
   test('malloc negative size', () => {
     const program = () =>

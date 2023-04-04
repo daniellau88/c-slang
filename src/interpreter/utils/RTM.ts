@@ -5,7 +5,7 @@ import { binaryToInt, intToBinary, pop, printBinariesWithTypes, push, RuntimeErr
 const WORD_SIZE = 8
 
 interface MemoryEntry {
-  Address: number,
+  Address: number
   Size: number
 }
 
@@ -31,7 +31,7 @@ export class RTM {
     this.NextHeap = size / 8
   }
 
-  allocateHeap(size: number) : number {
+  allocateHeap(size: number): number {
     let dummy: MemoryEntry | undefined = undefined
     for (let i = 0; i < this.FreeList.length; i++) {
       if (this.FreeList[i].Size >= size) {
@@ -57,37 +57,37 @@ export class RTM {
     if (!this.AllocatedMemory.has(address)) {
       throw new RuntimeError('Invalid free on non allocated heap memory')
     }
-    this.FreeList.push({Address: address, Size: this.AllocatedMemory.get(address)!})
+    this.FreeList.push({ Address: address, Size: this.AllocatedMemory.get(address)! })
     this.AllocatedMemory.delete(address)
   }
 
   setHeapMemoryAtIndex(address: number, binary: number, type?: ProgramType) {
-    if (!this.isAtHeap(address)) throw new RuntimeError("Invalid Set Heap on Non Allocated Memory")
-    this.Memory.setFloat64((address) * WORD_SIZE, binary)
+    if (!this.isAtHeap(address)) throw new RuntimeError('Invalid Set Heap on Non Allocated Memory')
+    this.Memory.setFloat64(address * WORD_SIZE, binary)
   }
 
   getHeapMemoryAtIndex(address: number): number {
-    if (!this.isAtHeap(address)) throw new RuntimeError("Invalid Get Heap on Non Allocated Memory")
-    return this.Memory.getFloat64((address) * WORD_SIZE)
+    if (!this.isAtHeap(address)) throw new RuntimeError('Invalid Get Heap on Non Allocated Memory')
+    return this.Memory.getFloat64(address * WORD_SIZE)
   }
 
   isAtHeap(index: number): Boolean {
-    for (let key of this.AllocatedMemory.keys()) {
-      if (key <= index && (key + this.AllocatedMemory.get(key)!) > index) return true
+    for (const key of this.AllocatedMemory.keys()) {
+      if (key <= index && key + this.AllocatedMemory.get(key)! > index) return true
     }
     return false
   }
 
   printHeap() {
-    console.log("--------------- HEAP --------------- ")
-    console.log("Next heap: ", this.NextHeap)
-    console.log("Allocated Memory: ")
-    for (let key of this.AllocatedMemory.keys()) {
-      console.log("    Address: ", key, " size: ", this.AllocatedMemory.get(key)!)
+    console.log('--------------- HEAP --------------- ')
+    console.log('Next heap: ', this.NextHeap)
+    console.log('Allocated Memory: ')
+    for (const key of this.AllocatedMemory.keys()) {
+      console.log('    Address: ', key, ' size: ', this.AllocatedMemory.get(key)!)
     }
-    console.log("Free list: ")
+    console.log('Free list: ')
     this.FreeList.forEach(x => {
-      console.log("    Address: ", x.Address, " size: ", x.Size)
+      console.log('    Address: ', x.Address, ' size: ', x.Size)
     })
   }
 

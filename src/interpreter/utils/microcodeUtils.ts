@@ -556,14 +556,14 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       if (binaryToInt(size) <= 0) {
         throw new RuntimeError('cannot memory allocate of size 0 or below')
       }
-      let allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
+      const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
       return
     }
 
     case 'free_op': {
       const { binary: address, type: typeAddress } = node.address
-      if(!isPointer(typeAddress)) {
+      if (!isPointer(typeAddress)) {
         throw new RuntimeError('Invalid free operation, not a pointer')
       }
       state.freeHeapMemory(binaryToInt(address))

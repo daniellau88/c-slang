@@ -95,7 +95,6 @@ export class ProgramState {
       throw new RuntimeError('Set Memory error, Memory is not allocated')
     }
   }
-  
 
   pushA(cmd: CASTNode | MicroCode) {
     push(this.A, cmd)

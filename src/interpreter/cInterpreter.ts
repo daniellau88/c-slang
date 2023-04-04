@@ -25,18 +25,18 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   },
   malloc: {
     func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushA({tag: 'malloc_op', size: arg[0]})
+      state.pushA({ tag: 'malloc_op', size: arg[0] })
     },
     returnProgType: incrementPointerDepth(VOID_BASE_TYPE),
     arity: 1,
   },
   free: {
     func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushA({tag: 'free_op', address: arg[0]})
+      state.pushA({ tag: 'free_op', address: arg[0] })
     },
     returnProgType: VOID_BASE_TYPE,
     arity: 1,
-  }
+  },
 }
 
 /* ****************
