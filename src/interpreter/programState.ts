@@ -57,13 +57,14 @@ export class ProgramState {
   defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
     const newIndex = this.FD.length
     if (this.E[0].record[key] !== undefined) {
-      throw new LogicError('Builtin function ' + key + ' has already been defined')
+      throw new LogicError(undefined, 'Builtin function ' + key + ' has already been defined')
     }
     push(this.FD, {
       subtype: 'builtin_func',
       func: builtinFunctionDefintion.func,
       returnProgType: builtinFunctionDefintion.returnProgType,
       arity: builtinFunctionDefintion.arity,
+      name: key,
     })
     this.addRecordToGlobalE(key, {
       subtype: 'func',
@@ -201,13 +202,13 @@ export class ProgramState {
   popScopeE() {
     const currentTopE = peek(this.E)
     if (!currentTopE || !currentTopE.parent) {
-      throw new LogicError('No more scope to pop')
+      throw new LogicError(undefined, 'No more scope to pop')
     }
     this.E[this.E.length - 1] = currentTopE.parent
   }
 
   popFunctionE() {
-    if (this.E.length === 1) throw new LogicError('Cannot remove global environment')
+    if (this.E.length === 1) throw new LogicError(undefined, 'Cannot remove global environment')
     pop(this.E)
   }
 

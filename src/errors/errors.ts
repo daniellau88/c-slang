@@ -3,12 +3,15 @@
 import { baseGenerator, generate } from 'astring'
 import * as es from 'estree'
 
+import { BinaryWithType, MicroCodeFunctionDefiniton } from '../interpreter/typings'
+import { binaryToFormattedString, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
 import {
   CASTDeclaration,
   CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTNode,
+  ProgramType,
 } from '../typings/programAST'
 import { stringify } from '../utils/stringify'
 import { RuntimeSourceError } from './runtimeSourceError'
@@ -136,6 +139,7 @@ export class InvalidNumberOfArguments extends RuntimeSourceError {
     node: CASTNode,
     private expected: number,
     private got: number,
+    private funcNode: MicroCodeFunctionDefiniton,
     private hasVarArgs = false,
   ) {
     super(node)
@@ -143,9 +147,15 @@ export class InvalidNumberOfArguments extends RuntimeSourceError {
   }
 
   public explain() {
+    let name: string | undefined = undefined
+    if (this.funcNode.subtype === 'builtin_func') {
+      name = this.funcNode.name
+    } else {
+      name = this.funcNode.identifier.name
+    }
     return `Expected ${this.expected} ${this.hasVarArgs ? 'or more ' : ''}arguments, but got ${
       this.got
-    }.`
+    } for ${name ? `function ${name}` : 'unknown function'}.`
   }
 
   public elaborate() {
@@ -251,12 +261,81 @@ export class CannotDereferenceTypeError extends RuntimeSourceError {
 }
 
 export class ReturnNotCalled extends RuntimeSourceError {
-  constructor(node: CASTNode, private name: string) {
+  constructor(node: CASTNode, private funcNode: MicroCodeFunctionDefiniton) {
     super(node)
   }
 
   public explain() {
-    return `Return statement not called for function ${this.name}.`
+    let name: string | undefined = undefined
+    if (this.funcNode.subtype === 'builtin_func') {
+      name = this.funcNode.name
+    } else {
+      name = this.funcNode.identifier.name
+    }
+    return `Return statement not called for ${name ? `function ${name}` : 'unknown function'}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidArraySize extends RuntimeSourceError {
+  constructor(node: CASTNode, private binaryType: BinaryWithType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Invalid array size of ${binaryToFormattedString(
+      this.binaryType.binary,
+      this.binaryType.type,
+    )}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotPerformLossyConversion extends RuntimeSourceError {
+  constructor(node: CASTNode, private fromType: ProgramType, private toType: ProgramType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot perform lossy conversion from ${typeToString(this.fromType)} to ${typeToString(
+      this.toType,
+    )}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotPerformOperation extends RuntimeSourceError {
+  constructor(node: CASTNode, private type1: ProgramType, private type2: ProgramType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot perform operation between ${typeToString(this.type1)} and ${typeToString(
+      this.type2,
+    )}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownSize extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `.`
   }
 
   public elaborate() {

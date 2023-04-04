@@ -120,7 +120,7 @@ export const getUnaryOperatorIncrementType = (operator: CASTUnaryOperator): Incr
     case CASTUnaryOperator.PostDecrement:
       return { incrementType: 'decrement', unaryType: 'post' }
     default:
-      throw new LogicError('Unary operator is not of increment type')
+      throw new LogicError(undefined, 'Unary operator is not of increment type')
   }
 }
 

@@ -157,7 +157,7 @@ export type CASTStatement =
 interface BaseExpression extends BaseNode {}
 
 export interface CASTExpressionMap {
-  AssignmentExpression: CASTAssignmentExprssion
+  AssignmentExpression: CASTAssignmentExpression
   BinaryExpression: CASTBinaryExpression
   ConditionalExpression: CASTConditionalExprssion
   Literal: CASTLiteral
@@ -177,7 +177,7 @@ export type CASTAssignableExpressions =
   | CASTSizeOfExpression
   | CASTIdentifier
 
-export interface CASTAssignmentExprssion extends BaseExpression {
+export interface CASTAssignmentExpression extends BaseExpression {
   type: 'AssignmentExpression'
   operator: CASTAssignmentOperator
   left: CASTAssignableExpressions

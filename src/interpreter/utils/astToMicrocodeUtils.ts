@@ -37,7 +37,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         })
         state.pushA(fdNode.identifier)
       }
-      state.pushA({ tag: 'load_func', function: fdNode })
+      state.pushA({ tag: 'load_func', function: fdNode, node: node })
       return
     case 'CompoundStatement': {
       const declarations: CASTDeclaration[] = []
@@ -47,39 +47,39 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         }
       })
 
-      state.pushA({ tag: 'exit_scope', declarations: declarations })
+      state.pushA({ tag: 'exit_scope', declarations: declarations, node: node })
       ;[...node.statements].reverse().forEach(x => {
         state.pushA(x)
         // Statements will pop OS upon ending
       })
-      state.pushA({ tag: 'enter_scope', declarations: declarations })
+      state.pushA({ tag: 'enter_scope', declarations: declarations, node: node })
       return
     }
     case 'ExpressionStatement': {
       ;[...node.expressions].reverse().forEach(x => {
-        state.pushA({ tag: 'pop_os' })
+        state.pushA({ tag: 'pop_os', node: node })
         state.pushA(x)
       })
       return
     }
     case 'DeclarationStatement': {
       ;[...node.declarations].reverse().forEach(x => {
-        state.pushA({ tag: 'pop_os' })
+        state.pushA({ tag: 'pop_os', node: node })
         state.pushA(x)
       })
       return
     }
     case 'Declaration': {
-      state.pushA({ tag: 'decl', declaration: node })
+      state.pushA({ tag: 'decl', declaration: node, node: node })
       return
     }
     case 'Literal': {
       switch (node.subtype) {
         case 'Int':
-          state.pushA({ tag: 'load_int', value: parseInt(node.value) })
+          state.pushA({ tag: 'load_int', value: parseInt(node.value), node: node })
           return
         case 'Float':
-          state.pushA({ tag: 'load_float', value: parseFloat(node.value) })
+          state.pushA({ tag: 'load_float', value: parseFloat(node.value), node: node })
           return
         default:
           throw new NotImplementedError()
@@ -87,26 +87,27 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'AssignmentExpression': {
-      state.pushA({ tag: 'assgn' })
+      state.pushA({ tag: 'assgn', node: node })
 
       const isBasicAssignment = node.operator === CASTAssignmentOperator.Equal
       if (!isBasicAssignment) {
         state.pushA({
           tag: 'bin_op_auto_promotion',
           operator: convertAssignmentOperatorToBinaryOperator(node.operator),
+          node: node,
         })
       }
       if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref', node: node.right })
       state.pushA(node.right)
       if (!isBasicAssignment) {
         if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
-        state.pushA({ tag: 'duplicate_top_os' })
+        state.pushA({ tag: 'duplicate_top_os', node: node })
       }
       state.pushA(node.left)
       return
     }
     case 'BinaryExpression': {
-      state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator })
+      state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator, node: node })
       if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref', node: node.right })
       state.pushA(node.right)
       if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
@@ -114,13 +115,13 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'ConditionalExpression': {
-      state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue })
+      state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue, node: node })
       if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref', node: node.predicate })
       state.pushA(node.predicate)
       return
     }
     case 'SizeOfExpression': {
-      state.pushA({ tag: 'size_of_op', typeModifiers: node.typeArg.typeModifiers })
+      state.pushA({ tag: 'size_of_op', typeModifiers: node.typeArg.typeModifiers, node: node })
       return
     }
     case 'UnaryExpression': {
@@ -133,13 +134,13 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
             : CASTBinaryOperator.Minus
 
         if (incrementType.unaryType === 'post') {
-          state.pushA({ tag: 'pop_os' })
+          state.pushA({ tag: 'pop_os', node: node })
         }
-        state.pushA({ tag: 'assgn' })
-        state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp })
-        state.pushA({ tag: 'load_int', value: 1 })
+        state.pushA({ tag: 'assgn', node: node })
+        state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp, node: node })
+        state.pushA({ tag: 'load_int', value: 1, node: node })
         state.pushA({ tag: 'deref', node: node.expression })
-        state.pushA({ tag: 'duplicate_top_os' })
+        state.pushA({ tag: 'duplicate_top_os', node: node })
         if (incrementType.unaryType === 'post') {
           state.pushA(node.expression) // Have to evaluate expression twice because the first needs to be derefed
           state.pushA({ tag: 'deref', node: node.expression })
@@ -148,7 +149,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         return
       }
 
-      state.pushA({ tag: 'unary_op', operator: node.operator })
+      state.pushA({ tag: 'unary_op', operator: node.operator, node: node })
       const shouldDeref = shouldDerefExpression(node.expression)
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
 
@@ -162,7 +163,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'ArrayAccessExpression': {
-      state.pushA({ tag: 'array_add_comp' })
+      state.pushA({ tag: 'array_add_comp', node: node })
       if (shouldDerefExpression(node.indexExpression))
         state.pushA({ tag: 'deref', node: node.indexExpression })
       state.pushA(node.indexExpression)
@@ -172,7 +173,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'Identifier': {
-      state.pushA({ tag: 'load_var', identifier: node })
+      state.pushA({ tag: 'load_var', identifier: node, node: node })
       return
     }
     case 'FunctionCallExpression': {
@@ -187,7 +188,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     case 'ReturnStatement': {
       const hasExpression = Boolean(node.expression)
-      state.pushA({ tag: 'return', withExpression: hasExpression })
+      state.pushA({ tag: 'return', withExpression: hasExpression, node: node })
 
       if (node.expression) {
         if (shouldDerefExpression(node.expression))
@@ -198,21 +199,36 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     // statements
     case 'IfStatement': {
-      state.pushA({ tag: 'conditional_statement_op', ifTrue: node.ifTrue, ifFalse: node.ifFalse })
+      state.pushA({
+        tag: 'conditional_statement_op',
+        ifTrue: node.ifTrue,
+        ifFalse: node.ifFalse,
+        node: node,
+      })
       state.pushA(node.condition)
       return
     }
 
     case 'WhileStatement': {
-      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA({
+        tag: 'while_op',
+        condition: node.condition,
+        statement: node.statement,
+        node: node,
+      })
       state.pushA(node.condition)
       return
     }
     case 'DoStatement': {
-      state.pushA({ tag: 'break_marker' })
-      state.pushA({ tag: 'while_op', condition: node.condition, statement: node.statement })
+      state.pushA({ tag: 'break_marker', node: node })
+      state.pushA({
+        tag: 'while_op',
+        condition: node.condition,
+        statement: node.statement,
+        node: node,
+      })
       state.pushA(node.condition)
-      state.pushA({ tag: 'continue_marker' })
+      state.pushA({ tag: 'continue_marker', node: node })
       state.pushA(node.statement)
       return
     }
@@ -224,44 +240,59 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           declarations.push(x)
         })
       }
-      state.pushA({ tag: 'exit_scope', declarations: declarations })
+      state.pushA({ tag: 'exit_scope', declarations: declarations, node: node })
       state.pushA({
         tag: 'for_op',
         statement: node.statement,
         testExpression: node.testExpression,
         updateExpression: node.updateExpression,
+        node: node,
       })
       if (node.testExpression) {
         state.pushA(node.testExpression)
       }
       if (node.initDeclaration) state.pushA(node.initDeclaration)
-      state.pushA({ tag: 'enter_scope', declarations: declarations })
+      state.pushA({ tag: 'enter_scope', declarations: declarations, node: node })
       return
     }
 
     case 'BreakStatement': {
-      state.pushA({ tag: 'break_op' })
+      state.pushA({ tag: 'break_op', node: node })
       return
     }
 
     case 'ContinueStatement': {
-      state.pushA({ tag: 'continue_op' })
+      state.pushA({ tag: 'continue_op', node: node })
       return
     }
 
     case 'SwitchStatement': {
       // cleaning up OS
-      state.pushA({ tag: 'pop_os' })
-      state.pushA({ tag: 'break_marker' })
+      state.pushA({ tag: 'pop_os', node: node })
+      state.pushA({ tag: 'break_marker', node: node })
       ;[...node.body.clauses].reverse().forEach(x => {
         if (x.subtype === 'Default') {
-          state.pushA({ tag: 'switch_body_op', subtype: 'Default', statements: x.statements })
+          state.pushA({
+            tag: 'switch_body_op',
+            subtype: 'Default',
+            statements: x.statements,
+            node: node,
+          })
           // no comparison should be done, default is automatic pass
-          state.pushA({ tag: 'load_int', value: 1 })
+          state.pushA({ tag: 'load_int', value: 1, node: node })
         } else {
-          state.pushA({ tag: 'switch_body_op', subtype: 'Case', statements: x.statements })
+          state.pushA({
+            tag: 'switch_body_op',
+            subtype: 'Case',
+            statements: x.statements,
+            node: node,
+          })
           // do the case comparison first
-          state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.EqualityEqual })
+          state.pushA({
+            tag: 'bin_op_auto_promotion',
+            operator: CASTBinaryOperator.EqualityEqual,
+            node: node,
+          })
           state.pushA(x.expression)
           if (shouldDerefExpression(node.expression))
             state.pushA({ tag: 'deref', node: node.expression })
@@ -270,7 +301,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       })
       // to know that there is already a case body that has passed the test, we need to add this
       // to track the status. Initial is false (no case has been passed)
-      state.pushA({ tag: 'load_int', value: 0 })
+      state.pushA({ tag: 'load_int', value: 0, node: node })
       return
     }
   }

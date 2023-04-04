@@ -39,7 +39,7 @@ export class NotImplementedError extends RuntimeSourceError {
 export class LogicError extends RuntimeSourceError {
   public msg: string
 
-  constructor(msg?: string, node?: CASTNode) {
+  constructor(node?: CASTNode, msg?: string) {
     super(node)
     this.msg = msg ? msg : ''
   }

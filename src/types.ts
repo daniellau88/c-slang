@@ -10,6 +10,7 @@ import * as es from 'estree'
 
 import { EnvTree } from './createContext'
 import { ProgramState } from './interpreter/programState'
+import { BinaryWithType } from './interpreter/typings'
 import { CASTFunctionCallExpression, CASTFunctionDefinition, CASTNode } from './typings/programAST'
 
 /**
@@ -17,7 +18,7 @@ import { CASTFunctionCallExpression, CASTFunctionDefinition, CASTNode } from './
  * different implementations. e.g display() in a web application.
  */
 export interface CustomBuiltIns {
-  printfLog: Function
+  printfLog: (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => void
 }
 
 export enum ErrorType {

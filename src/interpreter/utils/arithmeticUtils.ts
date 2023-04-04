@@ -125,7 +125,7 @@ export const convertAssignmentOperatorToBinaryOperator = (
     case CASTAssignmentOperator.TimesEqual:
       return CASTBinaryOperator.Multiply
     default:
-      throw new LogicError('Unsupported assignment operator')
+      throw new LogicError(undefined, 'Unsupported assignment operator')
   }
 }
 
@@ -287,7 +287,7 @@ export const doUnaryOperationWithoutDereference = (
       return operand
     }
     default:
-      throw new LogicError('Unary operation not supported')
+      throw new LogicError(undefined, 'Unary operation not supported')
   }
 }
 
@@ -323,6 +323,6 @@ export const doUnaryOperationWithDereference = (
       return operand
     }
     default:
-      throw new LogicError('Unary operation not supported')
+      throw new LogicError(undefined, 'Unary operation not supported')
   }
 }

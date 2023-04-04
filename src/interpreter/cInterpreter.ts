@@ -1,5 +1,5 @@
 import { Context, CustomBuiltIns } from '../types'
-import { CASTProgram } from '../typings/programAST'
+import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
 import { BinaryWithType, BuiltinFunctionDefinition } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
@@ -14,16 +14,16 @@ export const defaultExternalBuiltinFunctions: CustomBuiltIns = {
 
 export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   printfLog: {
-    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushLogOutput(...arg)
+    func: function (state: ProgramState, args: Array<BinaryWithType>) {
+      state.pushLogOutput(...args)
       state.pushOS(0, VOID_BASE_TYPE)
     },
     returnProgType: VOID_BASE_TYPE,
     arity: -1,
   },
   sizeof: {
-    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushA({ tag: 'size_of_op', typeModifiers: arg[0].type })
+    func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
+      state.pushA({ tag: 'size_of_op', typeModifiers: args[0].type, node: node })
     },
     returnProgType: INT_BASE_TYPE,
     arity: 1,
@@ -52,9 +52,9 @@ export const importBuiltins = (
   const newPrintfLog = {
     ...builtinFunctions.printfLog,
   }
-  newPrintfLog.func = (state: ProgramState, ...arg: Array<any>) => {
-    if (context) externalBuiltinFunctions.printfLog(context.externalContext, arg)
-    builtinFunctions.printfLog.func(state, ...arg)
+  newPrintfLog.func = (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => {
+    if (context) externalBuiltinFunctions.printfLog(context.externalContext, args, node)
+    builtinFunctions.printfLog.func(state, args, node)
   }
   programState.defineBuiltInFunction('printfLog', newPrintfLog)
 

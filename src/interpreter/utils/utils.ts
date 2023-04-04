@@ -16,7 +16,7 @@ export const peek = <T>(array: Array<T>): T | undefined => array.slice(-1)[0]
 
 export const pop = <T>(array: Array<T>): T => {
   if (array.length === 0) {
-    throw new LogicError('Cannot pop from empty stack')
+    throw new LogicError(undefined, 'Cannot pop from empty stack')
   }
   return array.pop() as T
 }
