@@ -1,7 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { CannotDereferenceTypeError } from '../errors/errors'
-import { RuntimeError } from '../errors/runtimeSourceError'
+import { CannotDereferenceTypeError, InvalidMemoryAccess } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   FLOAT_BASE_TYPE,
@@ -162,7 +161,7 @@ describe('pointer', () => {
         }
       `,
       )
-    expectThrowError(program, RuntimeError, `Get Memory error, Memory is not allocated`)
+    expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 5.`)
   })
 
   test('unary address dereference literal', () => {

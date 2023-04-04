@@ -3,13 +3,16 @@ import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
   InvalidArraySize,
+  InvalidMemoryAccess,
   InvalidNumberOfArguments,
+  MemoryFreeError,
+  MemoryMallocError,
   ReturnNotCalled,
   UndefinedVariable,
   UnknownSize,
   VariableRedeclaration,
 } from '../../errors/errors'
-import { LogicError, NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
+import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
   CASTExpression,
@@ -27,6 +30,7 @@ import {
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
 } from './arithmeticUtils'
+import { RTMInvalidFree, RTMInvalidMemoryAccess } from './RTM'
 import {
   CASTUnaryOperatorIncrement,
   decrementPointerDepth,
@@ -106,7 +110,14 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushOS(binary, newType)
         return
       }
-      state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
+      try {
+        state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
+      } catch (e: any) {
+        if (e instanceof RTMInvalidMemoryAccess) {
+          throw new InvalidMemoryAccess(node.node, e.index)
+        }
+        throw e
+      }
       return
     }
     case 'func_apply': {
@@ -308,7 +319,14 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         }
       }
 
-      state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
+      try {
+        state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
+      } catch (e: any) {
+        if (e instanceof RTMInvalidMemoryAccess) {
+          throw new InvalidMemoryAccess(node.node, e.index)
+        }
+        throw e
+      }
       state.pushOS(newValue, newType)
       return
     }
@@ -598,7 +616,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'malloc_op': {
       const { binary: size, type: typeSize } = node.size
       if (binaryToInt(size) <= 0) {
-        throw new RuntimeError('cannot memory allocate of size 0 or below')
+        throw new MemoryMallocError(node.node, binaryToInt(size))
       }
       const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
@@ -607,11 +625,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
     case 'free_op': {
       const { binary: address, type: typeAddress } = node.address
+      const addressIndex = binaryToInt(address)
       if (!isPointer(typeAddress)) {
-        throw new RuntimeError('Invalid free operation, not a pointer')
+        throw new MemoryFreeError(node.node, addressIndex)
       }
-      state.freeHeapMemory(binaryToInt(address))
-      state.pushOS(0, VOID_BASE_TYPE)
+      try {
+        state.freeHeapMemory(addressIndex)
+        state.pushOS(0, VOID_BASE_TYPE)
+      } catch (e) {
+        if (e instanceof RTMInvalidFree) {
+          throw new MemoryFreeError(node.node, addressIndex)
+        }
+        throw e
+      }
       return
     }
 

@@ -1,7 +1,7 @@
 import { LogicError, RuntimeError } from '../../errors/runtimeSourceError'
 import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
-import { intToBinary, typeToString } from './utils'
+import { typeToString } from './utils'
 
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },

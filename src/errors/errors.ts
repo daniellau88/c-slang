@@ -365,3 +365,59 @@ export class UnknownType extends RuntimeSourceError {
     return 'TODO'
   }
 }
+
+export class InvalidMemoryAccess extends RuntimeSourceError {
+  constructor(node: CASTNode, private address: number) {
+    super(node)
+  }
+
+  public explain() {
+    return `Invalid memory access to ${this.address}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class MemoryMallocError extends RuntimeSourceError {
+  constructor(node: CASTNode, private size: number) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot allocate memory of size ${this.size}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class MemoryFreeError extends RuntimeSourceError {
+  constructor(node: CASTNode, private address: number) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot free memory at ${this.address}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownError extends RuntimeSourceError {
+  constructor(node: CASTNode, private e: Error) {
+    super(node)
+  }
+
+  public explain() {
+    return `Unknown error. Please check with the developers.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}

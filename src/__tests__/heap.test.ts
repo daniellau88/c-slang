@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { RuntimeError } from '../errors/runtimeSourceError'
+import { InvalidMemoryAccess, MemoryFreeError, MemoryMallocError } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
@@ -40,8 +40,8 @@ describe('heap', () => {
       int* x = malloc(8 * sizeof(int));
         *x = 10;
         (*(x + 1)) = 20;
-        printfLog(*x)
-        printfLog(*(x + 1))
+        printfLog(*x);
+        printfLog(*(x + 1));
 
         return 0;
     }
@@ -142,7 +142,7 @@ describe('heap', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'cannot memory allocate of size 0 or below')
+    expectThrowError(program, MemoryMallocError, 'Cannot allocate memory of size -1.')
   })
 
   test('double free', () => {
@@ -150,14 +150,14 @@ describe('heap', () => {
       testProgram(
         `
       int main() {
-        int*a = malloc(sizeof(int));
+        int* a = malloc(sizeof(int));
         free(a);
         free(a);
         return 0;
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Invalid free on non allocated heap memory')
+    expectThrowError(program, MemoryFreeError, 'Cannot free memory at 124999.')
   })
 
   test('use after free', () => {
@@ -165,14 +165,14 @@ describe('heap', () => {
       testProgram(
         `
       int main() {
-        int*a = malloc(sizeof(int));
+        int* a = malloc(sizeof(int));
         free(a);
-        *a  = 10;
+        *a = 10;
         return 0;
       }
     `,
       )
-    expectThrowError(program, RuntimeError, `Set Memory error, Memory is not allocated`)
+    expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 124999.`)
   })
 
   test('invalid free', () => {
@@ -186,6 +186,6 @@ describe('heap', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Invalid free on non allocated heap memory')
+    expectThrowError(program, MemoryFreeError, 'Cannot free memory at 5.')
   })
 })

@@ -1,3 +1,5 @@
+import { UnknownError } from '../errors/errors'
+import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { Context, CustomBuiltIns } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
@@ -76,10 +78,19 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
     if (state.isAEmpty()) break
     const cmd = state.popA()
     if (withLog) console.log('cmd:', cmd)
-    if (isMicrocode(cmd)) {
-      yield executeMicrocode(state, cmd)
-    } else {
-      yield astToMicrocode(state, cmd)
+    try {
+      if (isMicrocode(cmd)) {
+        yield executeMicrocode(state, cmd)
+      } else {
+        yield astToMicrocode(state, cmd)
+      }
+    } catch (e) {
+      if (e instanceof RuntimeSourceError) {
+        throw e
+      }
+
+      const node = isMicrocode(cmd) ? cmd.node : cmd
+      throw new UnknownError(node, e)
     }
     if (withLog) state.printState()
     i++
@@ -111,7 +122,7 @@ export const testProgram = (program: string, withLog: boolean = false): ProgramS
       programStep = programGenerator.next()
     }
   } catch (e) {
-    if (withLog && e.explain) console.error(e.explain())
+    if (withLog && e instanceof RuntimeSourceError) console.error(e.explain())
     throw e
   }
   return programState
@@ -136,3 +147,13 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
+
+// test(`
+
+// int main() {
+//   int* a = 5;
+//   float c = *a;
+//   printfLog(a, c);
+//   return 0;
+// }`)
+

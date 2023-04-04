@@ -1,4 +1,4 @@
-import { LogicError, RuntimeError } from '../errors/runtimeSourceError'
+import { LogicError } from '../errors/runtimeSourceError'
 import { CASTNode, ProgramType } from '../typings/programAST'
 import {
   AgendaNode,
@@ -8,7 +8,7 @@ import {
   EScope,
   MicroCodeFunctionDefiniton,
 } from './typings'
-import { RTM } from './utils/RTM'
+import { RTM, RTMInvalidMemoryAccess } from './utils/RTM'
 import {
   peek,
   pop,
@@ -85,7 +85,7 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       return this.RTM.getHeapMemoryAtIndex(index)
     } else {
-      throw new RuntimeError('Get Memory error, Memory is not allocated')
+      throw new RTMInvalidMemoryAccess(index)
     }
   }
 
@@ -95,7 +95,7 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       this.RTM.setHeapMemoryAtIndex(index, binary, type)
     } else {
-      throw new RuntimeError('Set Memory error, Memory is not allocated')
+      throw new RTMInvalidMemoryAccess(index)
     }
   }
 
