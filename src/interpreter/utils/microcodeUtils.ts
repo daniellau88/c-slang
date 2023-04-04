@@ -22,6 +22,7 @@ import {
   getArrayItemsType,
   incrementPointerDepth,
   INT_BASE_TYPE,
+  isArray,
   isBaseType,
   isPointer,
   isTypeEquivalent,
@@ -448,8 +449,12 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: indexBinary, type: indexType } = state.popOS()
       const { binary: arrayAddressBinary, type: arrayAddressType } = state.popOS()
 
-      const arrayItemsType = getArrayItemsType(arrayAddressType)
-      state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
+      if(isArray(arrayAddressType)) {
+        const arrayItemsType = getArrayItemsType(arrayAddressType)
+        state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
+      } else {
+        state.pushOS(arrayAddressBinary, arrayAddressType)
+      }
       state.pushOS(indexBinary, indexType)
 
       state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })

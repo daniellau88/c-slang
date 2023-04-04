@@ -56,6 +56,81 @@ describe('heap', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('square bracket heap basic', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int size = 10;
+        int* a = malloc(size * sizeof(int));
+        for(int i = 0; i < size; i++) {
+          a[i] = i;
+        }
+        for(int i = 0; i < size; i++) {
+          printfLog(a[i]);
+        }
+        return 0;
+      }
+      `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+      { binary: intToBinary(7), type: INT_BASE_TYPE },
+      { binary: intToBinary(8), type: INT_BASE_TYPE },
+      { binary: intToBinary(9), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('pointer of pointers using malloc', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int row = 3;
+        int column = 3;
+        int** dummy = malloc(row * sizeof(int*));
+        for (int i = 0; i < row; i++) {
+          dummy[i] = malloc(column * sizeof(int));
+        }
+        for (int i = 0; i < row; i++) {
+          for(int j = 0; j < column; j++) {
+            dummy[i][j] = i * row + j;
+            printfLog(dummy[i][j]);
+          }
+        }
+        for (int i = 0; i < row; i++) {
+          free(dummy[i]);
+        }
+        free(dummy);
+        return 0;
+      }
+      `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+      { binary: intToBinary(7), type: INT_BASE_TYPE },
+      { binary: intToBinary(8), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('malloc negative size', () => {
     const program = () =>
       testProgram(
