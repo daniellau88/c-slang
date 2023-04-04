@@ -315,14 +315,22 @@ export class CannotPerformLossyConversion extends RuntimeSourceError {
 }
 
 export class CannotPerformOperation extends RuntimeSourceError {
-  constructor(node: CASTNode, private type1: ProgramType, private type2: ProgramType) {
+  private types: Array<ProgramType>
+  constructor(node: CASTNode, ...types: Array<ProgramType>) {
     super(node)
+    this.types = types
   }
 
   public explain() {
-    return `Cannot perform operation between ${typeToString(this.type1)} and ${typeToString(
-      this.type2,
-    )}.`
+    if (this.types.length === 0) {
+      return `Cannot perform operation.`
+    }
+    if (this.types.length === 1) {
+      return `Cannot perform operation on ${typeToString(this.types[0])}.`
+    }
+    const typeStrings = this.types.map(x => typeToString(x))
+    const typeCommas = typeStrings.slice(0, typeStrings.length - 1).join(',')
+    return `Cannot perform operation between ${typeCommas} and ${typeStrings[typeStrings.length - 1]}.`
   }
 
   public elaborate() {
@@ -351,6 +359,20 @@ export class CannotDivideByZero extends RuntimeSourceError {
 
   public explain() {
     return `Cannot divide by zero.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownType extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Unknown type ${stringify(this.node)}.`
   }
 
   public elaborate() {

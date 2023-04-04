@@ -1,5 +1,5 @@
-import { CannotDivideByZero } from '../../errors/errors'
-import { LogicError, RuntimeError } from '../../errors/runtimeSourceError'
+import { CannotDivideByZero, CannotPerformOperation, UnknownType } from '../../errors/errors'
+import { LogicError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -8,7 +8,7 @@ import {
   ProgramType,
 } from '../../typings/programAST'
 import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
-import { FALSE_BOOLEAN_BINARY_WITH_TYPE, TRUE_BOOLEAN_BINARY_WITH_TYPE } from './typeUtils'
+import { FALSE_BOOLEAN_BINARY_WITH_TYPE, FLOAT_BASE_TYPE, INT_BASE_TYPE, TRUE_BOOLEAN_BINARY_WITH_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary } from './utils'
 
 export enum ArithmeticType {
@@ -16,14 +16,14 @@ export enum ArithmeticType {
   Float = 1,
 }
 
-export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType => {
-  if (type.length === 0) throw new RuntimeError('Type is empty')
+export const getBaseTypePromotionPriority = (type: ProgramType, node: CASTNode): ArithmeticType => {
+  if (type.length === 0) throw new UnknownType(node)
 
   if (type[0].subtype === 'Pointer') {
     return ArithmeticType.Integer
   }
 
-  if (type[0].subtype !== 'BaseType') throw new RuntimeError('Type is not base type')
+  if (type[0].subtype !== 'BaseType') throw new UnknownType(node)
 
   switch (type[0].baseType) {
     case 'int':
@@ -38,6 +38,7 @@ export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType 
 export const convertBinaryOperatorToMicroCodeBinaryOperator = (
   maxPriority: ArithmeticType,
   binaryOperator: CASTBinaryOperator,
+  node: CASTNode
 ): MicroCodeBinaryOperator => {
   switch (binaryOperator) {
     case CASTBinaryOperator.EqualityEqual:
@@ -82,7 +83,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.ShiftRight:
           return MicroCodeBinaryOperator.ShiftRight
         default:
-          throw new RuntimeError('Operation not supported for integer')
+          throw new CannotPerformOperation(node, INT_BASE_TYPE)
       }
     }
     case ArithmeticType.Float: {
@@ -96,7 +97,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.Divide:
           return MicroCodeBinaryOperator.FloatDivision
         default:
-          throw new RuntimeError('Operation not supported for floating point numbers')
+          throw new CannotPerformOperation(node, FLOAT_BASE_TYPE)
       }
     }
   }
@@ -131,27 +132,27 @@ export const convertAssignmentOperatorToBinaryOperator = (
   }
 }
 
-const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType): number => {
-  const arithmeticType = getBaseTypePromotionPriority(binaryWithType.type)
+const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType, node: CASTNode): number => {
+  const arithmeticType = getBaseTypePromotionPriority(binaryWithType.type, node)
   switch (arithmeticType) {
     case ArithmeticType.Integer:
       return binaryToInt(binaryWithType.binary)
     case ArithmeticType.Float:
       return binaryWithType.binary
     default:
-      throw new RuntimeError('Type not supported')
+      throw new UnknownType(node)
   }
 }
 
-const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType): BinaryWithType => {
-  const arithmeticType = getBaseTypePromotionPriority(type)
+const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType, node: CASTNode): BinaryWithType => {
+  const arithmeticType = getBaseTypePromotionPriority(type, node)
   switch (arithmeticType) {
     case ArithmeticType.Integer:
       return { binary: intToBinary(jsValue), type }
     case ArithmeticType.Float:
       return { binary: jsValue, type }
     default:
-      throw new RuntimeError('Type not supported')
+      throw new UnknownType(node)
   }
 }
 
@@ -165,51 +166,51 @@ export const doBinaryOperation = (
   // Casting and promotion should be handled in previous step
   switch (operation) {
     case MicroCodeBinaryOperator.IntAddition: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 + op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 + op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.IntSubtraction: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 - op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 - op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.IntMultiply: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 * op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 * op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.IntDivision: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       if (op2 === 0) throw new CannotDivideByZero(node)
-      return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
+      return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.IntModulo: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 % op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 % op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.FloatAddition: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 + op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 + op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.FloatSubtraction: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 - op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 - op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.FloatMultiply: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 * op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 * op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.FloatDivision: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       if (op2 === 0) throw new CannotDivideByZero(node)
-      return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
+      return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.LogicalOr: {
       // Both integer and float representation of 0 are all 0s in binary
@@ -222,19 +223,19 @@ export const doBinaryOperation = (
       return FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.InclusiveOr: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 | op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 | op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.ExclusiveOr: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 ^ op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 ^ op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.BitwiseAnd: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 & op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 & op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.EqualityEqual: {
       if (operand1.binary === operand2.binary) return TRUE_BOOLEAN_BINARY_WITH_TYPE
@@ -245,34 +246,34 @@ export const doBinaryOperation = (
       return FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.RelationalGreaterThan: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       return op1 > op2 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.RelationalGreaterThanOrEqual: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       return op1 >= op2 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.RelationalLessThan: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       return op1 < op2 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.RelationalLessThanOrEqual: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
       return op1 <= op2 ? TRUE_BOOLEAN_BINARY_WITH_TYPE : FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.ShiftLeft: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 << op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 << op2, operand1.type, node)
     }
     case MicroCodeBinaryOperator.ShiftRight: {
-      const op1 = getJSValueFromBinaryWithType(operand1)
-      const op2 = getJSValueFromBinaryWithType(operand2)
-      return getBinaryValueFromJSValueWithType(op1 >> op2, operand1.type)
+      const op1 = getJSValueFromBinaryWithType(operand1, node)
+      const op2 = getJSValueFromBinaryWithType(operand2, node)
+      return getBinaryValueFromJSValueWithType(op1 >> op2, operand1.type, node)
     }
     default:
       throw new LogicError()
@@ -284,6 +285,7 @@ export const CASTUnaryOperatorWithoutDerefence = [CASTUnaryOperator.Address]
 export const doUnaryOperationWithoutDereference = (
   operand: BinaryWithType,
   operator: CASTUnaryOperator,
+  node: CASTNode,
 ): BinaryWithType => {
   switch (operator) {
     case CASTUnaryOperator.Address: {
@@ -297,24 +299,25 @@ export const doUnaryOperationWithoutDereference = (
 export const doUnaryOperationWithDereference = (
   operand: BinaryWithType,
   operator: CASTUnaryOperator,
+  node: CASTNode,
 ): BinaryWithType => {
   switch (operator) {
     case CASTUnaryOperator.Positive: {
-      const operandValue = getJSValueFromBinaryWithType(operand)
+      const operandValue = getJSValueFromBinaryWithType(operand, node)
       const resultValue = Math.abs(operandValue)
-      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type)
+      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type, node)
       return resultBinary
     }
     case CASTUnaryOperator.Negate: {
-      const operandValue = getJSValueFromBinaryWithType(operand)
+      const operandValue = getJSValueFromBinaryWithType(operand, node)
       const resultValue = -operandValue
-      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type)
+      const resultBinary = getBinaryValueFromJSValueWithType(resultValue, operand.type, node)
       return resultBinary
     }
     case CASTUnaryOperator.BitwiseNot: {
-      const arithmeticType = getBaseTypePromotionPriority(operand.type)
+      const arithmeticType = getBaseTypePromotionPriority(operand.type, node)
       if (arithmeticType !== ArithmeticType.Integer) {
-        throw new RuntimeError('Operation not supported for non integer')
+        throw new CannotPerformOperation(node, operand.type)
       }
       return { binary: intToBinary(~binaryToInt(operand.binary)), type: operand.type }
     }
