@@ -3,7 +3,7 @@ import { describe, test } from '@jest/globals'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, verifyProgramCompleted } from '../utils/testing'
 
 describe('size of', () => {
   test('sizeof type', () => {

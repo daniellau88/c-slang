@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { RuntimeError } from '../errors/runtimeSourceError'
+import { UndefinedVariable, VariableRedeclaration } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   FLOAT_BASE_TYPE,
@@ -8,7 +8,7 @@ import {
   INT_BASE_TYPE,
 } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('declaration', () => {
   test('single declaration', () => {
@@ -101,7 +101,7 @@ describe('declaration', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Variable z not declared')
+    expectThrowError(program, UndefinedVariable, 'Variable z not declared.')
   })
 
   test('redeclared variable', () => {
@@ -115,6 +115,6 @@ describe('declaration', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Invalid redeclaration of x')
+    expectThrowError(program, VariableRedeclaration, 'Redeclaration of name x.')
   })
 })

@@ -3,7 +3,7 @@ import { describe, test } from '@jest/globals'
 import { testProgram } from '../interpreter/cInterpreter'
 import { incrementPointerDepth, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, verifyProgramCompleted } from '../utils/testing'
 
 describe('assignment', () => {
   test('single assignment', () => {

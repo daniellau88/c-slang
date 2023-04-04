@@ -1,10 +1,10 @@
 import { describe, test } from '@jest/globals'
 
-import { RuntimeError } from '../errors/runtimeSourceError'
+import { InvalidArraySize } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('array', () => {
   test('array arithmetic', () => {
@@ -107,6 +107,6 @@ describe('array', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Array size cannot be negative')
+    expectThrowError(program, InvalidArraySize, 'Invalid array size of int -1.')
   })
 })

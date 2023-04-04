@@ -9,7 +9,7 @@ import {
   UnknownSize,
   VariableRedeclaration,
 } from '../../errors/errors'
-import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
+import { LogicError, NotImplementedError, RuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
   CASTExpression,

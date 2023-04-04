@@ -1,10 +1,10 @@
 import { describe, test } from '@jest/globals'
 
-import { RuntimeError } from '../errors/runtimeSourceError'
+import { CannotDivideByZero, CannotPerformOperation } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('arithmetic', () => {
   test('integer binary arithmetic', () => {
@@ -197,7 +197,7 @@ describe('arithmetic', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Cannot divide by 0')
+    expectThrowError(program, CannotDivideByZero, 'Cannot divide by zero.')
   })
 
   test('float arithmetic', () => {
@@ -271,7 +271,11 @@ describe('arithmetic', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Operation not supported for floating point numbers')
+    expectThrowError(
+      program,
+      CannotPerformOperation,
+      'Cannot perform operation between float and float.',
+    )
   })
 
   test('float division by 0', () => {
@@ -284,6 +288,6 @@ describe('arithmetic', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Cannot divide by 0')
+    expectThrowError(program, CannotDivideByZero, 'Cannot divide by zero.')
   })
 })

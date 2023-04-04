@@ -8,8 +8,13 @@ import {
   ProgramType,
 } from '../../typings/programAST'
 import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
-import { FALSE_BOOLEAN_BINARY_WITH_TYPE, FLOAT_BASE_TYPE, INT_BASE_TYPE, TRUE_BOOLEAN_BINARY_WITH_TYPE } from './typeUtils'
-import { binaryToInt, intToBinary } from './utils'
+import {
+  FALSE_BOOLEAN_BINARY_WITH_TYPE,
+  FLOAT_BASE_TYPE,
+  INT_BASE_TYPE,
+  TRUE_BOOLEAN_BINARY_WITH_TYPE,
+} from './typeUtils'
+import { binaryToInt, intToBinary, isTruthy } from './utils'
 
 export enum ArithmeticType {
   Integer = 0,
@@ -38,7 +43,7 @@ export const getBaseTypePromotionPriority = (type: ProgramType, node: CASTNode):
 export const convertBinaryOperatorToMicroCodeBinaryOperator = (
   maxPriority: ArithmeticType,
   binaryOperator: CASTBinaryOperator,
-  node: CASTNode
+  node: CASTNode,
 ): MicroCodeBinaryOperator => {
   switch (binaryOperator) {
     case CASTBinaryOperator.EqualityEqual:
@@ -83,7 +88,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.ShiftRight:
           return MicroCodeBinaryOperator.ShiftRight
         default:
-          throw new CannotPerformOperation(node, INT_BASE_TYPE)
+          throw new CannotPerformOperation(node, INT_BASE_TYPE, INT_BASE_TYPE)
       }
     }
     case ArithmeticType.Float: {
@@ -97,7 +102,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.Divide:
           return MicroCodeBinaryOperator.FloatDivision
         default:
-          throw new CannotPerformOperation(node, FLOAT_BASE_TYPE)
+          throw new CannotPerformOperation(node, FLOAT_BASE_TYPE, FLOAT_BASE_TYPE)
       }
     }
   }
@@ -144,7 +149,11 @@ const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType, node: CAST
   }
 }
 
-const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType, node: CASTNode): BinaryWithType => {
+const getBinaryValueFromJSValueWithType = (
+  jsValue: number,
+  type: ProgramType,
+  node: CASTNode,
+): BinaryWithType => {
   const arithmeticType = getBaseTypePromotionPriority(type, node)
   switch (arithmeticType) {
     case ArithmeticType.Integer:
@@ -214,12 +223,14 @@ export const doBinaryOperation = (
     }
     case MicroCodeBinaryOperator.LogicalOr: {
       // Both integer and float representation of 0 are all 0s in binary
-      if (operand1.binary === 0 && operand2.binary === 0) return FALSE_BOOLEAN_BINARY_WITH_TYPE
+      if (!isTruthy(operand1.binary) && !isTruthy(operand2.binary))
+        return FALSE_BOOLEAN_BINARY_WITH_TYPE
       return TRUE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.LogicalAnd: {
       // Both integer and float representation of 0 are all 0s in binary
-      if (operand1.binary !== 0 && operand2.binary !== 0) return TRUE_BOOLEAN_BINARY_WITH_TYPE
+      if (isTruthy(operand1.binary) && isTruthy(operand2.binary))
+        return TRUE_BOOLEAN_BINARY_WITH_TYPE
       return FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.InclusiveOr: {

@@ -89,11 +89,11 @@ export const getArrayItemsType = (type: ProgramType): ProgramType => {
 }
 
 export const FALSE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
-  binary: intToBinary(0),
+  binary: 0,
   type: INT_BASE_TYPE,
 }
 export const TRUE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
-  binary: intToBinary(1),
+  binary: 2.121995791e-314, // import of intToBinary causes issues during testing
   type: INT_BASE_TYPE,
 }
 

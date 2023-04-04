@@ -29,15 +29,15 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
     arity: 1,
   },
   malloc: {
-    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushA({ tag: 'malloc_op', size: arg[0] })
+    func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
+      state.pushA({ tag: 'malloc_op', size: args[0], node: node })
     },
     returnProgType: incrementPointerDepth(VOID_BASE_TYPE),
     arity: 1,
   },
   free: {
-    func: function (state: ProgramState, ...arg: Array<BinaryWithType>) {
-      state.pushA({ tag: 'free_op', address: arg[0] })
+    func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
+      state.pushA({ tag: 'free_op', address: args[0], node: node })
     },
     returnProgType: VOID_BASE_TYPE,
     arity: 1,
@@ -136,9 +136,3 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
-
-test(`
-  int main(int a) {
-    return a;
-  }
-`)

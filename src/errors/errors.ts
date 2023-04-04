@@ -4,7 +4,7 @@ import { baseGenerator, generate } from 'astring'
 import * as es from 'estree'
 
 import { BinaryWithType, MicroCodeFunctionDefiniton } from '../interpreter/typings'
-import { binaryToFormattedString, typeToString } from '../interpreter/utils/utils'
+import { binaryToFormattedString, stringify, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
 import {
   CASTDeclaration,
@@ -13,7 +13,6 @@ import {
   CASTNode,
   ProgramType,
 } from '../typings/programAST'
-import { stringify } from '../utils/stringify'
 import { RuntimeSourceError } from './runtimeSourceError'
 
 export class InterruptedError extends RuntimeSourceError {
@@ -110,25 +109,11 @@ export class UndefinedVariable extends RuntimeSourceError {
   }
 
   public explain() {
-    return `Name ${this.name} not declared.`
+    return `Variable ${this.name} not declared.`
   }
 
   public elaborate() {
     return `Before you can read the value of ${this.name}, you need to declare it as a variable or a constant. You can do this using the let or const keywords.`
-  }
-}
-
-export class UnassignedVariable extends RuntimeSourceError {
-  constructor(public name: string, node: CASTNode) {
-    super(node)
-  }
-
-  public explain() {
-    return `Name ${this.name} declared later in current scope but not yet assigned`
-  }
-
-  public elaborate() {
-    return `If you're trying to access the value of ${this.name} from an outer scope, please rename the inner ${this.name}. An easy way to avoid this issue in future would be to avoid declaring any variables or constants with the name ${this.name} in the same scope.`
   }
 }
 
@@ -286,10 +271,9 @@ export class InvalidArraySize extends RuntimeSourceError {
   }
 
   public explain() {
-    const size = this.binaryType ? binaryToFormattedString(
-      this.binaryType.binary,
-      this.binaryType.type,
-    ) : 'undefined'
+    const size = this.binaryType
+      ? binaryToFormattedString(this.binaryType.binary, this.binaryType.type)
+      : 'undefined'
     return `Invalid array size of ${size}.`
   }
 
@@ -330,7 +314,9 @@ export class CannotPerformOperation extends RuntimeSourceError {
     }
     const typeStrings = this.types.map(x => typeToString(x))
     const typeCommas = typeStrings.slice(0, typeStrings.length - 1).join(',')
-    return `Cannot perform operation between ${typeCommas} and ${typeStrings[typeStrings.length - 1]}.`
+    return `Cannot perform operation between ${typeCommas} and ${
+      typeStrings[typeStrings.length - 1]
+    }.`
   }
 
   public elaborate() {

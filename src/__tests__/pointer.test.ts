@@ -10,7 +10,7 @@ import {
 } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { ProgramType } from '../typings/programAST'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('pointer', () => {
   test('pointer arithmetic', () => {
