@@ -142,9 +142,17 @@ ALPHABET_AND_UNDERSCORE: [a-zA-Z_];
 fragment
 ZERO_DIGIT: [0];
 
+fragment
+S_CHAR
+   : ~["\\\r\n]
+   | '\\\n'
+   | '\\\r\n'
+   ;
+
 INTEGER: (NON_ZERO_DIGIT DIGIT* | ZERO_DIGIT);
 FLOAT: NON_ZERO_DIGIT DIGIT* FULLSTOP DIGIT*;
-CHAR: '\'' ALPHABET '\'';
+CHAR: '\'' S_CHAR '\'';
+STRING: '"' S_CHAR* '"';
 IDENTIFIER: ALPHABET_AND_UNDERSCORE (ALPHABET_AND_UNDERSCORE | DIGIT)*;
 
 identifier: IDENTIFIER | SIZE_OF;
@@ -407,8 +415,11 @@ postfix_expression
 primary_expression
    : identifier                                    # PrimaryExpressionTypeIdentifier
    | constant                                      # PrimaryExpressionTypeConstant
+   | string                                        # PrimaryExpressionTypeString
    | OPEN_PARENTHESES expression CLOSE_PARENTHESES # PrimaryExpressionTypeNestedExpression
    ;
+
+string: STRING;
 
 constant
    : integer_constant     # ConstantTypeInteger
