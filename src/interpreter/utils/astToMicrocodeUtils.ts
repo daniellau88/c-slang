@@ -89,8 +89,30 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       }
       return
     }
+    case 'ArrayExpression': {
+      state.pushA({ tag: 'load_int', value: node.elements.length, node: node })
+      const allNested = node.elements.every(x => x.type === 'ArrayExpression')
+      if (allNested) {
+        state.pushA({ tag: 'load_int', value: 1, node: node })
+      } else {
+        state.pushA({ tag: 'load_int', value: 0, node: node })
+      }
+      ;[...node.elements].reverse().forEach(x => {
+        let currentNode = x
+        while (!allNested && currentNode.type === 'ArrayExpression') {
+          currentNode = currentNode.elements[0] // Take only first element if not all are nested
+        }
+        if (shouldDerefExpression(currentNode)) state.pushA({ tag: 'deref', node: x })
+        state.pushA(currentNode)
+      })
+      return
+    }
     case 'AssignmentExpression': {
-      state.pushA({ tag: 'assgn', node: node })
+      if (node.right.type === 'ArrayExpression') {
+        state.pushA({ tag: 'assgn_list', node: node })
+      } else {
+        state.pushA({ tag: 'assgn', node: node })
+      }
 
       state.pushA(node.left)
 

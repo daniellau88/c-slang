@@ -97,6 +97,128 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('array literal flatten', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {1, 2, 3, 4, 5};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal within depth', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {{{2, 3}, {4, 5}}, {1}};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal exceed depth', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {{1}, {2, {4, {3}}}};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal evaluate left to right', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = 0;
+        int y[3] = {x++, x++, x++};
+        printfLog(x);
+        for (int i = 0; i < 3; i++) {
+          printfLog(y[i]);
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('array negative size', () => {
     const program = () =>
       testProgram(

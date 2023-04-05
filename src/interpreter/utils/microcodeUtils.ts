@@ -30,6 +30,7 @@ import {
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
 } from './arithmeticUtils'
+import { doAssignmentList } from './arrayUtils'
 import {
   CASTUnaryOperatorIncrement,
   convertCASTTypeModifierToProgramTypeModifier,
@@ -211,7 +212,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (init) {
-        state.pushA({ tag: 'assgn', node: node.declaration })
+        if (init.type === 'ArrayExpression') {
+          state.pushA({ tag: 'assgn_list', node: node.declaration })
+        } else {
+          state.pushA({ tag: 'assgn', node: node.declaration })
+        }
       }
 
       state.pushA({
@@ -325,6 +330,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
+      return
+    }
+    case 'assgn_list': {
+      const { binary: address, type: addressType } = state.popOS()
+      const addressInt = binaryToInt(address)
+      const currentType = decrementPointerDepth(addressType)
+
+      doAssignmentList(state, addressInt, currentType)
+      state.pushOS(address, addressType)
       return
     }
     case 'bin_op_auto_promotion': {

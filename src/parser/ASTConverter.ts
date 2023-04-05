@@ -351,7 +351,7 @@ function visitCCSTInitializerList(node: CCSTInitializerList): CASTExpression {
   let currentNode: CCSTInitializerList | undefined = node
   const arr: Array<CASTExpression> = []
   while (currentNode) {
-    arr.push(visitCCSTInitializer(currentNode.initializer))
+    arr.unshift(visitCCSTInitializer(currentNode.initializer))
     currentNode =
       currentNode.subtype === 'RecursiveInitializer' ? currentNode.initializerList : undefined
   }
