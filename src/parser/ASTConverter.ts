@@ -24,6 +24,7 @@ import {
   CASTReturnStatement,
   CASTSizeOfExpression,
   CASTStatement,
+  CASTStringLiteral,
   CASTSwitchBody,
   CASTSwitchClauseBody,
   CASTSwitchStatement,
@@ -80,6 +81,7 @@ import {
   CCSTReturnStatement,
   CCSTShiftExpression,
   CCSTStatement,
+  CCSTString,
   CCSTSwitchBody,
   CCSTSwitchCaseBody,
   CCSTSwitchDefaultBody,
@@ -808,6 +810,8 @@ function visitCCSTPrimaryExpression(node: CCSTPrimaryExpression): CASTExpression
     ? visitCCSTIdentifier(node.identifier)
     : node.subtype === 'Constant'
     ? visitCCSTConstant(node.constant)
+    : node.subtype === 'String'
+    ? visitCCSTString(node.stringNode)
     : visitCCSTExpression(node.expression)[0] // TODO: Assume only first element
 }
 
@@ -840,6 +844,10 @@ function visitCCSTConstant(node: CCSTConstant): CASTLiteral {
         value: node.integerConstant.value,
         loc: node.loc,
       }
+}
+
+function visitCCSTString(node: CCSTString): CASTStringLiteral {
+  return { type: 'StringLiteral', value: node.value }
 }
 
 function visitCCSTTypeName(node: CCSTTypeName): CASTType {

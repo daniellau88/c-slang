@@ -161,6 +161,7 @@ export interface CASTExpressionMap {
   BinaryExpression: CASTBinaryExpression
   ConditionalExpression: CASTConditionalExprssion
   Literal: CASTLiteral
+  StringLiteral: CASTStringLiteral
   UnaryExpression: CASTUnaryExpression
   CastExpression: CASTCastExpression
   Identifier: CASTIdentifier
@@ -295,6 +296,11 @@ export interface CASTFloatLiteralExpression extends BaseNode, BaseExpression {
 export interface CASTCharLiteralExpression extends BaseNode, BaseExpression {
   type: 'Literal'
   subtype: 'Char'
+  value: string
+}
+
+export interface CASTStringLiteral extends BaseNode, BaseExpression {
+  type: 'StringLiteral'
   value: string
 }
 

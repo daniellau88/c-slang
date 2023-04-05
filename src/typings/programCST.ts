@@ -587,6 +587,11 @@ interface CCSTPrimaryExpressionTypeConstant extends CCSTPrimaryExpressionBase {
   constant: CCSTConstant
 }
 
+interface CCSTPrimaryExpressionTypeString extends CCSTPrimaryExpressionBase {
+  subtype: 'String'
+  stringNode: CCSTString
+}
+
 interface CCSTPrimaryExpressionTypeNestedExpression extends CCSTPrimaryExpressionBase {
   subtype: 'NestedExpression'
   expression: CCSTExpression
@@ -595,6 +600,7 @@ interface CCSTPrimaryExpressionTypeNestedExpression extends CCSTPrimaryExpressio
 export type CCSTPrimaryExpression =
   | CCSTPrimaryExpressionTypeIdentifier
   | CCSTPrimaryExpressionTypeConstant
+  | CCSTPrimaryExpressionTypeString
   | CCSTPrimaryExpressionTypeNestedExpression
 
 interface CCSTConstantBase extends CCSTNodeBase {
@@ -633,6 +639,11 @@ export interface CCSTFloatConstant extends CCSTNodeBase {
 
 export interface CCSTCharacterConstant extends CCSTNodeBase {
   type: 'CharacterConstant'
+  value: string
+}
+
+export interface CCSTString extends CCSTNodeBase {
+  type: 'String'
   value: string
 }
 
@@ -878,6 +889,7 @@ export type CCSTNode =
   | CCSTCharacterConstant
   | CCSTFloatConstant
   | CCSTIntegerConstant
+  | CCSTString
   | CCSTAssignmentExpression
   | CCSTAssignmentOperator
   | CCSTUnaryOperator

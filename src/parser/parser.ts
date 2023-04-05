@@ -94,6 +94,7 @@ import {
   PrimaryExpressionTypeConstantContext,
   PrimaryExpressionTypeIdentifierContext,
   PrimaryExpressionTypeNestedExpressionContext,
+  PrimaryExpressionTypeStringContext,
   ProgramContext,
   RelationalExpressionTypeRelationalGTContext,
   RelationalExpressionTypeRelationalGTOEContext,
@@ -117,6 +118,7 @@ import {
   StatementTypeReturnContext,
   StatementTypeSwitchContext,
   StatementTypeWhileContext,
+  StringContext,
   Switch_bodyContext,
   Switch_case_bodyContext,
   Switch_default_bodyContext,
@@ -186,6 +188,7 @@ import {
   CCSTReturnStatement,
   CCSTShiftExpression,
   CCSTStatement,
+  CCSTString,
   CCSTSwitchBody,
   CCSTSwitchCaseBody,
   CCSTSwitchDefaultBody,
@@ -1294,6 +1297,15 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
+  visitPrimaryExpressionTypeString(ctx: PrimaryExpressionTypeStringContext): CCSTPrimaryExpression {
+    return {
+      type: 'PrimaryExpression',
+      subtype: 'String',
+      stringNode: this.visitString(ctx.string()),
+      loc: contextToLocation(ctx),
+    }
+  }
+
   visitPrimaryExpressionTypeNestedExpression(
     ctx: PrimaryExpressionTypeNestedExpressionContext,
   ): CCSTPrimaryExpression {
@@ -1302,6 +1314,13 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'NestedExpression',
       expression: this.visit(ctx.expression()) as CCSTExpression,
       loc: contextToLocation(ctx),
+    }
+  }
+
+  visitString(ctx: StringContext): CCSTString {
+    return {
+      type: 'String',
+      value: ctx.text.substring(1, ctx.text.length - 1),
     }
   }
 
@@ -1335,7 +1354,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitCharacter_constant(ctx: Character_constantContext): CCSTCharacterConstant {
     return {
       type: 'CharacterConstant',
-      value: ctx.text,
+      value: ctx.text.substring(1, ctx.text.length - 1),
       loc: contextToLocation(ctx),
     }
   }
