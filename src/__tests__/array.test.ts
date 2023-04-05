@@ -2,7 +2,7 @@ import { describe, test } from '@jest/globals'
 
 import { InvalidArraySize } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
-import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { CHAR_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
@@ -215,6 +215,29 @@ describe('array', () => {
       { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(1), type: INT_BASE_TYPE },
       { binary: intToBinary(2), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('string literal', () => {
+    const output = testProgram(
+      `
+      int main() {
+        char a[5] = "abcd";
+        printfLog(a[0], a[1], a[2], a[3], a[4]);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

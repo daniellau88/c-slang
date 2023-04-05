@@ -33,6 +33,7 @@ import {
 import { doAssignmentList } from './arrayUtils'
 import {
   CASTUnaryOperatorIncrement,
+  CHAR_BASE_TYPE,
   convertCASTTypeModifierToProgramTypeModifier,
   decrementPointerDepth,
   FLOAT_BASE_TYPE,
@@ -46,7 +47,14 @@ import {
   isTypeEquivalent,
   VOID_BASE_TYPE,
 } from './typeUtils'
-import { binaryToInt, intToBinary, isMicrocode, isTruthy, shouldDerefExpression } from './utils'
+import {
+  binaryToInt,
+  intToBinary,
+  isExpressionList,
+  isMicrocode,
+  isTruthy,
+  shouldDerefExpression,
+} from './utils'
 
 export const wordSize = 8
 
@@ -81,6 +89,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'load_float': {
       state.pushOS(node.value, FLOAT_BASE_TYPE)
+      return
+    }
+    case 'load_char': {
+      state.pushOS(intToBinary(node.value.charCodeAt(0)), CHAR_BASE_TYPE)
+      return
+    }
+    case 'load_string': {
+      for (let i = 0; i < node.value.length; i++) {
+        state.pushOS(intToBinary(node.value.charCodeAt(i)), CHAR_BASE_TYPE)
+      }
+      state.pushOS(0, CHAR_BASE_TYPE) // C strings end with \0
+      state.pushOS(0, INT_BASE_TYPE)
+      state.pushOS(intToBinary(node.value.length + 1), INT_BASE_TYPE)
       return
     }
     case 'load_var': {
@@ -212,7 +233,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (init) {
-        if (init.type === 'ArrayExpression') {
+        if (isExpressionList(init)) {
           state.pushA({ tag: 'assgn_list', node: node.declaration })
         } else {
           state.pushA({ tag: 'assgn', node: node.declaration })

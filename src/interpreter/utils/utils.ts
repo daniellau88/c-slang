@@ -158,6 +158,10 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   }
 }
 
+export const isExpressionList = (expression: CASTExpression): boolean => {
+  return expression.type === 'ArrayExpression' || expression.type === 'StringLiteral'
+}
+
 export const isTruthy = (binary: number): boolean => {
   return binary !== 0
 }

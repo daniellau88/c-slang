@@ -9,6 +9,7 @@ import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
   CASTDeclaration,
+  CASTExpression,
   CASTNode,
 } from '../../typings/programAST'
 import { ProgramState } from '../programState'
@@ -17,7 +18,7 @@ import {
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
 import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
-import { shouldDerefExpression } from './utils'
+import { isExpressionList, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
 export function astToMicrocode(state: ProgramState, node: CASTNode) {
@@ -84,23 +85,36 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         case 'Float':
           state.pushA({ tag: 'load_float', value: parseFloat(node.value), node: node })
           return
+        case 'Char':
+          state.pushA({ tag: 'load_char', value: node.value, node: node })
+          return
         default:
           throw new NotImplementedRuntimeError(node)
       }
       return
     }
+    case 'StringLiteral': {
+      state.pushA({ tag: 'load_string', value: node.value, node: node })
+      return
+    }
     case 'ArrayExpression': {
       state.pushA({ tag: 'load_int', value: node.elements.length, node: node })
-      const allNested = node.elements.every(x => x.type === 'ArrayExpression')
+      const allNested = node.elements.every(isExpressionList)
       if (allNested) {
         state.pushA({ tag: 'load_int', value: 1, node: node })
       } else {
         state.pushA({ tag: 'load_int', value: 0, node: node })
       }
       ;[...node.elements].reverse().forEach(x => {
-        let currentNode = x
-        while (!allNested && currentNode.type === 'ArrayExpression') {
-          currentNode = currentNode.elements[0] // Take only first element if not all are nested
+        let currentNode: CASTExpression = x
+        while (!allNested && isExpressionList(currentNode)) {
+          if (currentNode.type === 'ArrayExpression') {
+            currentNode = currentNode.elements[0] // Take only first element if not all are nested
+          } else if (currentNode.type === 'StringLiteral') {
+            currentNode = { type: 'Literal', subtype: 'Char', value: currentNode.value.charAt(0) }
+          } else {
+            break
+          }
         }
         if (shouldDerefExpression(currentNode)) state.pushA({ tag: 'deref', node: x })
         state.pushA(currentNode)
@@ -108,7 +122,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       return
     }
     case 'AssignmentExpression': {
-      if (node.right.type === 'ArrayExpression') {
+      if (isExpressionList(node.right)) {
         state.pushA({ tag: 'assgn_list', node: node })
       } else {
         state.pushA({ tag: 'assgn', node: node })

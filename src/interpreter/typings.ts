@@ -33,6 +33,16 @@ interface LoadFloatMicroCode extends MicroCodeBase {
   value: number
 }
 
+interface LoadCharMicroCode extends MicroCodeBase {
+  tag: 'load_char'
+  value: string
+}
+
+interface LoadStringMicroCode extends MicroCodeBase {
+  tag: 'load_string'
+  value: string
+}
+
 interface LoadVarMicroCode extends MicroCodeBase {
   tag: 'load_var'
   identifier: CASTIdentifier
@@ -162,6 +172,8 @@ export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
   | LoadFloatMicroCode
+  | LoadCharMicroCode
+  | LoadStringMicroCode
   | LoadVarMicroCode
   | FuncApplyMicroCode
   | PopOSMicroCode
