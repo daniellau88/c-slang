@@ -12,14 +12,15 @@ import {
   VariableRedeclaration,
 } from '../../errors/errors'
 import { InternalUnreachableRuntimeError } from '../../errors/runtimeSourceError'
-import {
-  CASTBinaryOperator,
-  CASTExpression,
-  CASTTypeModifier,
-  ProgramType,
-} from '../../typings/programAST'
+import { CASTBinaryOperator, CASTExpression } from '../../typings/programAST'
 import { ProgramState } from '../programState'
-import { BinaryWithType, MicroCode, MicroCodeBinaryOperator } from '../typings'
+import {
+  BinaryWithType,
+  MicroCode,
+  MicroCodeBinaryOperator,
+  ProgramType,
+  ProgramTypeModifier,
+} from '../typings'
 import {
   ArithmeticType,
   CASTUnaryOperatorWithoutDerefence,
@@ -31,9 +32,11 @@ import {
 } from './arithmeticUtils'
 import {
   CASTUnaryOperatorIncrement,
+  convertCASTTypeModifierToProgramTypeModifier,
   decrementPointerDepth,
   FLOAT_BASE_TYPE,
   getArrayItemsType,
+  getStaticSizeFromProgramType,
   incrementPointerDepth,
   INT_BASE_TYPE,
   isArray,
@@ -61,7 +64,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         identifier: node.function.identifier,
         parameters: node.function.parameters,
         body: node.function.body,
-        returnProgType: node.function.returnType.typeModifiers,
+        returnProgType: node.function.returnType.typeModifiers.map(
+          convertCASTTypeModifierToProgramTypeModifier,
+        ),
       })
       state.addRecordToGlobalE(funcName, {
         subtype: 'func',
@@ -149,7 +154,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
-            variableType: parameter.paramType.typeModifiers,
+            variableType: parameter.paramType.typeModifiers.map(
+              convertCASTTypeModifierToProgramTypeModifier,
+            ), // TODO: Allow variable in function parameters
           })
         state.pushRTS(args[i].binary, args[i].type)
       }
@@ -242,16 +249,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           throw new InvalidArraySize(node.node, { binary, type })
         }
 
-        const currentModifierCopy: CASTTypeModifier = {
-          ...currentModifier,
-          size: { type: 'Literal', subtype: 'Int', value: intValue.toString() },
+        const currentModifierCopy: ProgramTypeModifier = {
+          subtype: 'Array',
+          size: intValue,
         }
         newTypeModifiers.push(currentModifierCopy)
       }
 
       for (let i = curIndex + 1; i < oldTypeModifiers.length; i++) {
         const currentModifier = oldTypeModifiers[i]
-        currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
           if (shouldDerefExpression(currentModifier.size))
@@ -259,7 +265,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           state.pushA(currentModifier.size)
           return
         }
-        newTypeModifiers.push(currentModifier)
+        newTypeModifiers.push(convertCASTTypeModifierToProgramTypeModifier(currentModifier))
       }
 
       state.pushA({
@@ -268,7 +274,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         name: node.name,
         node: node.node,
       })
-      state.pushA({ tag: 'size_of_op', typeModifiers: newTypeModifiers, node: node.node })
+      state.pushA({
+        tag: 'load_int',
+        value: getStaticSizeFromProgramType(newTypeModifiers),
+        node: node.node,
+      })
       return
     }
     case 'decl_alloc_mem': {
@@ -376,11 +386,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           operator: MicroCodeBinaryOperator.IntMultiply,
           node: node.node,
         })
-        state.pushA({
-          tag: 'size_of_op',
-          typeModifiers: decrementPointerDepth(leftOpType),
-          node: node.node,
-        })
+        const leftOpSize = getStaticSizeFromProgramType(decrementPointerDepth(leftOpType))
+        state.pushA({ tag: 'load_int', value: leftOpSize, node: node.node })
         return
       }
 

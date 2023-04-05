@@ -342,9 +342,9 @@ export type CASTTypeModifier =
   | CASTTypeModifierPointer
   | CASTTypeModifierParameters
 
-export type ProgramType = Array<CASTTypeModifier>
+export type CASTTypeModifiers = Array<CASTTypeModifier>
 
 export interface CASTType extends BaseNode {
   type: 'Type'
-  typeModifiers: ProgramType
+  typeModifiers: CASTTypeModifiers
 }

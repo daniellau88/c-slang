@@ -29,10 +29,10 @@ import {
   CASTSwitchStatement,
   CASTType,
   CASTTypeModifier,
+  CASTTypeModifiers,
   CASTUnaryExpression,
   CASTUnaryOperator,
   CASTWhileStatement,
-  ProgramType,
 } from '../typings/programAST'
 import {
   CCSTAbstractDeclarator,
@@ -843,7 +843,7 @@ function visitCCSTConstant(node: CCSTConstant): CASTLiteral {
 }
 
 function visitCCSTTypeName(node: CCSTTypeName): CASTType {
-  let typeModifiers: ProgramType = []
+  let typeModifiers: CASTTypeModifiers = []
   if (node.abstractDeclarator) {
     typeModifiers = visitCCSTAbstractDeclarator(node.abstractDeclarator).type.typeModifiers
   }

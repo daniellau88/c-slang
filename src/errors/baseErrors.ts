@@ -1,6 +1,6 @@
 // Base errors are called when the node information is unknown (i.e. the offending line)
 
-import { ProgramType } from '../typings/programAST'
+import { ProgramType } from "../interpreter/typings"
 
 // An error handler will be added to convert it to the correct runtimeSourceError
 export class BaseError extends Error {}

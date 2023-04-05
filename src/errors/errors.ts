@@ -3,15 +3,10 @@
 import { baseGenerator, generate } from 'astring'
 import * as es from 'estree'
 
-import { BinaryWithType, MicroCodeFunctionDefiniton } from '../interpreter/typings'
+import { BinaryWithType, MicroCodeFunctionDefiniton, ProgramType } from '../interpreter/typings'
 import { binaryToFormattedString, stringify, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
-import {
-  CASTDeclaration,
-  CASTFunctionDefinition,
-  CASTNode,
-  ProgramType,
-} from '../typings/programAST'
+import { CASTDeclaration, CASTFunctionDefinition, CASTNode } from '../typings/programAST'
 import { BaseError } from './baseErrors'
 import { RuntimeSourceError } from './runtimeSourceError'
 

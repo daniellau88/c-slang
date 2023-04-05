@@ -8,8 +8,8 @@ import {
   CASTIdentifier,
   CASTNode,
   CASTStatement,
+  CASTTypeModifiers,
   CASTUnaryOperator,
-  ProgramType,
 } from '../typings/programAST'
 import { ProgramState } from './programState'
 
@@ -132,13 +132,13 @@ interface ConditionalOperationMicroCode extends MicroCodeBase {
 
 interface SizeOfOperationMicroCode extends MicroCodeBase {
   tag: 'size_of_op'
-  typeModifiers: ProgramType
+  typeModifiers: CASTTypeModifiers
 }
 
 // Evaluates expressions in array
 interface DeclarationEvaluateTypeModifierIterativeMicroCode extends MicroCodeBase {
   tag: 'decl_eval_type_modifier_i'
-  oldTypeModifiers: ProgramType
+  oldTypeModifiers: CASTTypeModifiers
   newTypeModifiers: ProgramType
   currentIndex: number
   name: string
@@ -263,6 +263,36 @@ export interface EScope {
 
 export type Env = Array<EScope>
 
+type ProgramBaseType = 'int' | 'float' | 'char' | 'void'
+
+interface ProgramTypeModifierBaseType {
+  subtype: 'BaseType'
+  baseType: ProgramBaseType
+}
+
+interface ProgramTypeModifierArray {
+  subtype: 'Array'
+  size?: number
+}
+
+interface ProgramTypeModifierPointer {
+  subtype: 'Pointer'
+  pointerDepth: number
+}
+
+interface ProgramTypeModifierParameters {
+  subtype: 'Parameters'
+  parameterTypeList: Array<CASTFunctionParameter>
+}
+
+export type ProgramTypeModifier =
+  | ProgramTypeModifierBaseType
+  | ProgramTypeModifierArray
+  | ProgramTypeModifierPointer
+  | ProgramTypeModifierParameters
+
+export type ProgramType = Array<ProgramTypeModifier>
+
 interface MicroCodeFunctionBase {
   subtype: string
 }
@@ -278,7 +308,7 @@ export interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
 export interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
   subtype: 'func'
   arity: number
-  returnProgType: ProgramType
+  returnProgType: ProgramType // function declaration cannot have variably modified type
 
   identifier: CASTIdentifier
   parameters: Array<CASTFunctionParameter>

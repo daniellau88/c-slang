@@ -2,7 +2,7 @@ import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
 } from '../../errors/baseErrors'
-import { ProgramType } from '../../typings/programAST'
+import { ProgramType } from '../typings'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 

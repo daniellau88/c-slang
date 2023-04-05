@@ -1,5 +1,5 @@
 import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '../errors/baseErrors'
-import { CASTNode, ProgramType } from '../typings/programAST'
+import { CASTNode } from '../typings/programAST'
 import {
   AgendaNode,
   BinaryWithType,
@@ -7,6 +7,7 @@ import {
   ERecord,
   EScope,
   MicroCodeFunctionDefiniton,
+  ProgramType,
 } from './typings'
 import { RTM } from './utils/RTM'
 import {

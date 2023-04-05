@@ -3,36 +3,22 @@ import {
   NonArrayBaseError,
   NonPointerBaseError,
 } from '../../errors/baseErrors'
-import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
-import { BinaryWithType } from '../typings'
+import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
+import { BinaryWithType, ProgramType, ProgramTypeModifier } from '../typings'
 
 const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
 
-export const INT_BASE_TYPE: ProgramType = [
-  { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
-]
+export const INT_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'int' }]
 
-export const FLOAT_BASE_TYPE: ProgramType = [
-  { type: 'TypeModifier', subtype: 'BaseType', baseType: 'float' },
-]
+export const FLOAT_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'float' }]
 
-export const CHAR_BASE_TYPE: ProgramType = [
-  { type: 'TypeModifier', subtype: 'BaseType', baseType: 'char' },
-]
+export const CHAR_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'char' }]
 
-export const VOID_BASE_TYPE: ProgramType = [
-  { type: 'TypeModifier', subtype: 'BaseType', baseType: 'void' },
-]
+export const VOID_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'void' }]
 
-export const POINTER_BASE_TYPE: ProgramType = [
-  { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
-]
+export const POINTER_BASE_TYPE: ProgramType = [{ subtype: 'Pointer', pointerDepth: 1 }]
 
-const POINTER_TYPE_MODIFIER: CASTTypeModifier = {
-  type: 'TypeModifier',
-  subtype: 'Pointer',
-  pointerDepth: 1,
-}
+const POINTER_TYPE_MODIFIER: ProgramTypeModifier = { subtype: 'Pointer', pointerDepth: 1 }
 
 export const isBaseType = (type: ProgramType): boolean => {
   if (type.length === 0) return false
@@ -47,6 +33,82 @@ export const isPointer = (type: ProgramType): boolean => {
 export const isArray = (type: ProgramType): boolean => {
   if (type.length === 0) return false
   return type[0].subtype === 'Array'
+}
+
+export class TypeConversionError extends Error {
+  constructor(public type: CASTTypeModifier) {
+    super()
+  }
+}
+
+export const convertCASTTypeModifierToProgramTypeModifier = (
+  castTypeModifier: CASTTypeModifier,
+): ProgramTypeModifier => {
+  switch (castTypeModifier.subtype) {
+    case 'Array': {
+      if (castTypeModifier.size && castTypeModifier.size.type !== 'Literal') {
+        throw new TypeConversionError(castTypeModifier)
+      }
+      const size = castTypeModifier.size ? parseInt(castTypeModifier.size.value) : undefined
+      return { subtype: 'Array', size: size }
+    }
+    case 'BaseType': {
+      return { subtype: 'BaseType', baseType: castTypeModifier.baseType }
+    }
+    case 'Parameters': {
+      return { subtype: 'Parameters', parameterTypeList: castTypeModifier.parameterTypeList }
+    }
+    case 'Pointer': {
+      return { subtype: 'Pointer', pointerDepth: castTypeModifier.pointerDepth }
+    }
+  }
+}
+
+enum StaticSizeErrorType {
+  InvalidType,
+  InvalidArraySize,
+  UnknownSize,
+}
+
+export class StaticSizeError extends Error {
+  constructor(public type: StaticSizeErrorType, public programType: ProgramType) {
+    super()
+  }
+}
+
+export const getStaticSizeFromProgramType = (programType: ProgramType): number => {
+  if (programType.length === 0)
+    throw new StaticSizeError(StaticSizeErrorType.InvalidType, programType)
+  const sizes = []
+
+  for (let i = 0; i < programType.length; i++) {
+    const typeModifier = programType[i]
+    let shouldBreak = false
+    switch (typeModifier.subtype) {
+      case 'Array': {
+        if (typeModifier.size === undefined)
+          throw new StaticSizeError(StaticSizeErrorType.InvalidArraySize, programType)
+        sizes.push(typeModifier.size)
+        break
+      }
+      case 'BaseType': {
+        sizes.push(8)
+        shouldBreak = true
+        break
+      }
+      case 'Pointer': {
+        sizes.push(8)
+        shouldBreak = true
+        break
+      }
+      case 'Parameters': {
+        throw new StaticSizeError(StaticSizeErrorType.UnknownSize, programType)
+      }
+    }
+    if (shouldBreak) break
+  }
+
+  return sizes.reduce((x, y) => x * y, 1)
 }
 
 const makeDeepCopy = (type: ProgramType) => {

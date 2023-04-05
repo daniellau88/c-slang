@@ -2,8 +2,8 @@ import createContext from '../../createContext'
 import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
-import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
-import { BinaryWithType, MicroCode } from '../typings'
+import { CASTExpression, CASTNode, CASTUnaryOperator } from '../../typings/programAST'
+import { BinaryWithType, MicroCode, ProgramType } from '../typings'
 
 export const stringify = (x: any) => JSON.stringify(x)
 
