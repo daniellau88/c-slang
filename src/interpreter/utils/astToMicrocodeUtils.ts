@@ -92,6 +92,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     case 'AssignmentExpression': {
       state.pushA({ tag: 'assgn', node: node })
 
+      state.pushA(node.left)
+
       const isBasicAssignment = node.operator === CASTAssignmentOperator.Equal
       if (!isBasicAssignment) {
         state.pushA({
@@ -104,9 +106,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA(node.right)
       if (!isBasicAssignment) {
         if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
-        state.pushA({ tag: 'duplicate_top_os', node: node })
+        state.pushA(node.left)
       }
-      state.pushA(node.left)
       return
     }
     case 'BinaryExpression': {
@@ -140,15 +141,15 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           state.pushA({ tag: 'pop_os', node: node })
         }
         state.pushA({ tag: 'assgn', node: node })
+        state.pushA(node.expression)
         state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp, node: node })
         state.pushA({ tag: 'load_int', value: 1, node: node })
         state.pushA({ tag: 'deref', node: node.expression })
-        state.pushA({ tag: 'duplicate_top_os', node: node })
+        state.pushA(node.expression) // Have to evaluate expression twice (if is post) because the first needs to be derefed
         if (incrementType.unaryType === 'post') {
-          state.pushA(node.expression) // Have to evaluate expression twice because the first needs to be derefed
           state.pushA({ tag: 'deref', node: node.expression })
+          state.pushA(node.expression)
         }
-        state.pushA(node.expression)
         return
       }
 

@@ -205,8 +205,6 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       if (init) {
         state.pushA({ tag: 'assgn', node: node.declaration })
-        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
-        state.pushA(init)
       }
 
       state.pushA({
@@ -217,6 +215,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         name: name,
         node: node.declaration,
       })
+
+      if (init) {
+        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
+        state.pushA(init)
+      }
       return
     }
     case 'decl_eval_type_modifier_i': {
@@ -284,8 +287,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
     case 'assgn': {
-      const { binary: val, type: valType } = state.popOS()
       const { binary: addr, type: addrType } = state.popOS()
+      const { binary: val, type: valType } = state.popOS()
       const newType = decrementPointerDepth(addrType)
 
       let newValue = val // TODO: type checking
