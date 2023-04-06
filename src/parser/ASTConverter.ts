@@ -519,6 +519,7 @@ function visitCCSTGotoStatement(node: CCSTGotoStatement): CASTGotoStatement {
   return {
     type: 'GotoStatement',
     identifier: node.identifier,
+    loc: node.loc,
   }
 }
 
