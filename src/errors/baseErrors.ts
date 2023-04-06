@@ -40,3 +40,23 @@ export class ParseBaseError extends BaseError {
     super()
   }
 }
+
+export class UnknownTypeBaseError extends BaseError {
+  constructor(public type: ProgramType) {
+    super()
+  }
+}
+
+export class CannotPerformOperationBaseError extends BaseError {
+  public types: Array<ProgramType>
+  constructor(...types: Array<ProgramType>) {
+    super()
+    this.types = types
+  }
+}
+
+export class CannotDivideByZeroBaseError extends BaseError {
+  constructor() {
+    super()
+  }
+}

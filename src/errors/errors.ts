@@ -271,8 +271,8 @@ export class CannotPerformLossyConversion extends RuntimeSourceError {
 
 export class CannotPerformOperation extends RuntimeSourceError {
   private types: Array<ProgramType>
-  constructor(node: CASTNode, ...types: Array<ProgramType>) {
-    super(node)
+  constructor(node: CASTNode, types: Array<ProgramType>, stackTrace?: BaseError) {
+    super(node, stackTrace)
     this.types = types
   }
 
@@ -310,8 +310,8 @@ export class UnknownSize extends RuntimeSourceError {
 }
 
 export class CannotDivideByZero extends RuntimeSourceError {
-  constructor(node: CASTNode) {
-    super(node)
+  constructor(node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -324,12 +324,12 @@ export class CannotDivideByZero extends RuntimeSourceError {
 }
 
 export class UnknownType extends RuntimeSourceError {
-  constructor(private node: CASTNode) {
-    super(node)
+  constructor(node: CASTNode, private progType: ProgramType, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {
-    return `Unknown type ${stringify(this.node)}.`
+    return `Unknown type ${stringify(this.progType)}.`
   }
 
   public elaborate() {

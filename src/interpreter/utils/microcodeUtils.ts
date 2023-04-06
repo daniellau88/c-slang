@@ -294,8 +294,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         } // If value's type is unknown, use address's type
         else {
           if (isBaseType(newType) && isBaseType(valType)) {
-            const newArithmeticType = getBaseTypePromotionPriority(newType, node.node)
-            const valArithmeticType = getBaseTypePromotionPriority(valType, node.node)
+            const newArithmeticType = getBaseTypePromotionPriority(newType)
+            const valArithmeticType = getBaseTypePromotionPriority(valType)
             const maxPriority = Math.max(newArithmeticType, valArithmeticType)
 
             if (valArithmeticType < maxPriority) {
@@ -322,8 +322,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         let newLeftOp = leftOp
         let newRightOp = rightOp
 
-        const leftBaseTypePriority = getBaseTypePromotionPriority(leftOpType, node.node)
-        const rightBaseTypePriority = getBaseTypePromotionPriority(rightOpType, node.node)
+        const leftBaseTypePriority = getBaseTypePromotionPriority(leftOpType)
+        const rightBaseTypePriority = getBaseTypePromotionPriority(rightOpType)
         const maxPriority = Math.max(leftBaseTypePriority, rightBaseTypePriority)
         const newType: ProgramType =
           maxPriority === ArithmeticType.Float ? FLOAT_BASE_TYPE : INT_BASE_TYPE
@@ -331,7 +331,6 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const newOperator = convertBinaryOperatorToMicroCodeBinaryOperator(
           maxPriority,
           node.operator,
-          node.node,
         )
 
         if (leftBaseTypePriority < maxPriority) {
@@ -348,7 +347,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       } else if (
         isPointer(leftOpType) &&
         isBaseType(rightOpType) &&
-        getBaseTypePromotionPriority(rightOpType, node.node) === ArithmeticType.Integer
+        getBaseTypePromotionPriority(rightOpType) === ArithmeticType.Integer
       ) {
         state.pushOS(leftOp, leftOpType)
         state.pushOS(rightOp, rightOpType)
@@ -359,7 +358,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             case CASTBinaryOperator.Minus:
               return MicroCodeBinaryOperator.IntSubtraction
             default:
-              throw new CannotPerformOperation(node.node, leftOpType, rightOpType)
+              throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
           }
         })()
         state.pushA({ tag: 'bin_op', operator: microcodeOperator, node: node.node })
@@ -382,13 +381,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         return
       }
 
-      throw new CannotPerformOperation(node.node, leftOpType, rightOpType)
+      throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
     }
     case 'bin_op': {
       const rightOpWithType = state.popOS()
       const leftOpWithType = state.popOS()
 
-      const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator, node.node)
+      const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
       state.pushOS(result.binary, result.type)
       return
     }
@@ -450,9 +449,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       let result: BinaryWithType
       if (isSkipDerefenceOperator) {
-        result = doUnaryOperationWithoutDereference(operand, node.operator, node.node)
+        result = doUnaryOperationWithoutDereference(operand, node.operator)
       } else {
-        result = doUnaryOperationWithDereference(operand, node.operator, node.node)
+        result = doUnaryOperationWithDereference(operand, node.operator)
       }
       state.pushOS(result.binary, result.type)
       return
