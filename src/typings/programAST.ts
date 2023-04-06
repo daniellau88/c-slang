@@ -42,6 +42,12 @@ export interface CASTFunctionParameter extends BaseNode {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseStatement extends BaseNode {}
 
+export interface CASTLabeledStatement extends BaseStatement {
+  type: 'LabeledStatement'
+  identifier: CASTIdentifier
+  statement: CASTStatement
+}
+
 export interface CASTDeclarationStatement extends BaseStatement {
   type: 'DeclarationStatement'
   declarations: Array<CASTDeclaration>
@@ -140,6 +146,7 @@ export interface CASTReturnStatement extends BaseStatement {
 }
 
 export type CASTStatement =
+  | CASTLabeledStatement
   | CASTDeclarationStatement
   | CASTExpressionStatement
   | CASTCompoundStatement

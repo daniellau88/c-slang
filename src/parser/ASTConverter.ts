@@ -17,8 +17,10 @@ import {
   CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTFunctionParameter,
+  CASTGotoStatement,
   CASTIdentifier,
   CASTIfStatement,
+  CASTLabeledStatement,
   CASTLiteral,
   CASTProgram,
   CASTReturnStatement,
@@ -61,6 +63,7 @@ import {
   CCSTForInitDeclaration,
   CCSTForStatement,
   CCSTFunctionDefinition,
+  CCSTGotoStatement,
   CCSTIdentifier,
   CCSTIfStatement,
   CCSTInclusiveOrExpression,
@@ -68,6 +71,7 @@ import {
   CCSTInitDeclaratorList,
   CCSTInitializer,
   CCSTInitializerList,
+  CCSTLabeledStatement,
   CCSTLogicalAndExpression,
   CCSTLogicalOrExpression,
   CCSTMultiplicativeExpression,
@@ -285,7 +289,7 @@ function visitCCSTStatement(node: CCSTStatement): CASTStatement {
   const statementType = statement.type
   switch (statementType) {
     case 'LabeledStatement':
-      throw new Error('Not supported')
+      throw visitCCSTLabeledStatement(statement)
     case 'DeclarationStatement':
       return visitCCSTDeclarationStatement(statement)
     case 'ExpressionStatement':
@@ -307,11 +311,20 @@ function visitCCSTStatement(node: CCSTStatement): CASTStatement {
     case 'BreakStatement':
       return visitCCSTBreakStatement(statement)
     case 'GotoStatement':
-      throw new Error('Not supported')
+      throw visitCCSTGotoStatement(statement)
     case 'ReturnStatement':
       return visitCCSTReturnStatement(statement)
     default:
       throw new Error('Not supported')
+  }
+}
+
+function visitCCSTLabeledStatement(node: CCSTLabeledStatement): CASTLabeledStatement {
+  return {
+    type: 'LabeledStatement',
+    identifier: node.identifier,
+    statement: visitCCSTStatement(node.statement),
+    loc: node.loc,
   }
 }
 
@@ -499,6 +512,13 @@ function visitCCSTBreakStatement(node: CCSTBreakStatement): CASTBreakStatement {
   return {
     type: 'BreakStatement',
     loc: node.loc,
+  }
+}
+
+function visitCCSTGotoStatement(node: CCSTGotoStatement): CASTGotoStatement {
+  return {
+    type: 'GotoStatement',
+    identifier: node.identifier,
   }
 }
 
