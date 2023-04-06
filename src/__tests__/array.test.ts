@@ -289,6 +289,47 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('array and string literal unknown length', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[][2] = {{1, 2}, {2, 3}, {3, 4}};
+        for (int i = 0; i < 3; i++) {
+          printfLog(a[i][0], a[i][1]);
+        }
+        printfLog(sizeof(a));
+
+        char b[] = "abcde";
+        for (int i = 0; i < 6; i++) {
+          printfLog(b[i]);
+        }
+        printfLog(sizeof(b));
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('array negative size', () => {
     const program = () =>
       testProgram(

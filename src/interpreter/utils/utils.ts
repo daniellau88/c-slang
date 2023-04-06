@@ -2,7 +2,13 @@ import createContext from '../../createContext'
 import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
-import { CASTExpression, CASTNode, CASTUnaryOperator } from '../../typings/programAST'
+import {
+  CASTArrayExpression,
+  CASTExpression,
+  CASTNode,
+  CASTStringLiteral,
+  CASTUnaryOperator,
+} from '../../typings/programAST'
 import { BinaryWithType, MicroCode, ProgramType } from '../typings'
 
 export const stringify = (x: any) => JSON.stringify(x)
@@ -158,8 +164,18 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   }
 }
 
-export const isExpressionList = (expression: CASTExpression): boolean => {
+export const isExpressionList = (
+  expression: CASTExpression,
+): expression is CASTArrayExpression | CASTStringLiteral => {
   return expression.type === 'ArrayExpression' || expression.type === 'StringLiteral'
+}
+
+export const getExpressionLength = (
+  expression: CASTArrayExpression | CASTStringLiteral,
+): number => {
+  return expression.type === 'ArrayExpression'
+    ? expression.elements.length
+    : expression.value.length + 1 // +1 for null character
 }
 
 export const isTruthy = (binary: number): boolean => {

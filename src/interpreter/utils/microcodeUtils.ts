@@ -49,6 +49,7 @@ import {
 } from './typeUtils'
 import {
   binaryToInt,
+  getExpressionLength,
   intToBinary,
   isExpressionList,
   isMicrocode,
@@ -232,9 +233,23 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         throw new VariableRedeclaration(node.declaration, name)
       }
 
+      const typeModifiers = node.declaration.declarationType.typeModifiers.map(x => {
+        return { ...x }
+      })
+
       if (init) {
         if (isExpressionList(init)) {
           state.pushA({ tag: 'assgn_list', node: node.declaration })
+
+          const expressionLength = getExpressionLength(init)
+          // Modify the size of incomplete element (e.g. int a[][5]), so that interpreter knows how much space to allocate
+          if (typeModifiers[0].subtype === 'Array' && typeModifiers[0].size === undefined) {
+            typeModifiers[0].size = {
+              type: 'Literal',
+              subtype: 'Int',
+              value: expressionLength.toString(),
+            }
+          }
         } else {
           state.pushA({ tag: 'assgn', node: node.declaration })
         }
@@ -242,7 +257,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       state.pushA({
         tag: 'decl_eval_type_modifier_i',
-        oldTypeModifiers: node.declaration.declarationType.typeModifiers,
+        oldTypeModifiers: typeModifiers,
         newTypeModifiers: [],
         currentIndex: -1,
         name: name,
