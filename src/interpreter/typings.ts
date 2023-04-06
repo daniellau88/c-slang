@@ -287,9 +287,9 @@ interface ProgramTypeModifierBaseType {
   baseType: ProgramBaseType
 }
 
-interface ProgramTypeModifierArray {
+export interface ProgramTypeModifierArray {
   subtype: 'Array'
-  size?: number
+  size: number
 }
 
 interface ProgramTypeModifierPointer {

@@ -43,10 +43,13 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
 ): ProgramTypeModifier => {
   switch (castTypeModifier.subtype) {
     case 'Array': {
-      if (castTypeModifier.size && castTypeModifier.size.type !== 'Literal') {
+      if (castTypeModifier.size !== undefined && castTypeModifier.size.type !== 'Literal') {
         throw new TypeConversionBaseError(castTypeModifier)
       }
-      const size = castTypeModifier.size ? parseInt(castTypeModifier.size.value) : undefined
+      if (castTypeModifier.size === undefined) {
+        throw new TypeConversionBaseError(castTypeModifier)
+      }
+      const size = parseInt(castTypeModifier.size.value)
       return { subtype: 'Array', size: size }
     }
     case 'BaseType': {

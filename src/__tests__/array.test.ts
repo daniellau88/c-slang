@@ -237,6 +237,18 @@ describe('array', () => {
           printfLog(a[i]);
         }
         printfLog(sizeof(a));
+
+        char b[3] = "abcd";
+        for (int i = 0; i < 3; i++) {
+          printfLog(b[i]);
+        }
+        printfLog(sizeof(b));
+
+        char c[6] = "abcd";
+        for (int i = 0; i < 6; i++) {
+          printfLog(c[i]);
+        }
+        printfLog(sizeof(c));
         return 0;
       }
     `,
@@ -251,6 +263,17 @@ describe('array', () => {
       { binary: intToBinary(100), type: CHAR_BASE_TYPE },
       { binary: intToBinary(0), type: CHAR_BASE_TYPE },
       { binary: intToBinary(40), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(24), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -268,6 +291,14 @@ describe('array', () => {
           }
         }
         printfLog(sizeof(a));
+
+        char b[3][3] = {"abcdef", "gh", "efgh"};
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++) {
+            printfLog(b[i][j]);
+          }
+        }
+        printfLog(sizeof(b));
         return 0;
       }
     `,
@@ -285,6 +316,16 @@ describe('array', () => {
       { binary: intToBinary(103), type: CHAR_BASE_TYPE },
       { binary: intToBinary(104), type: CHAR_BASE_TYPE },
       { binary: intToBinary(24), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(104), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(102), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(72), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -293,7 +334,7 @@ describe('array', () => {
     const output = testProgram(
       `
       int main() {
-        int a[][2] = {{1, 2}, {2, 3}, {3, 4}};
+        int a[][2] = {{1, 2}, {2, 3}, {3}};
         for (int i = 0; i < 3; i++) {
           printfLog(a[i][0], a[i][1]);
         }
@@ -317,7 +358,7 @@ describe('array', () => {
       { binary: intToBinary(2), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: INT_BASE_TYPE },
       { binary: intToBinary(3), type: INT_BASE_TYPE },
-      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(48), type: INT_BASE_TYPE },
       { binary: intToBinary(97), type: CHAR_BASE_TYPE },
       { binary: intToBinary(98), type: CHAR_BASE_TYPE },

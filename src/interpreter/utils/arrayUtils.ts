@@ -1,5 +1,5 @@
 import { ProgramState } from '../programState'
-import { ProgramType } from '../typings'
+import { ProgramType, ProgramTypeModifierArray } from '../typings'
 import { wordSize } from './microcodeUtils'
 import {
   decrementPointerDepth,
@@ -38,6 +38,8 @@ export const doAssignmentList = (
 
     let addressToAssgn: number = addressInt
     let iterateType: ProgramType = currentType
+    // Prevents overwriting into other spaces
+    let limit = values.length
     if (isCharPointer) {
       // Only allocate memory if it is a char pointer
       const nestedType = decrementPointerDepth(currentType)
@@ -45,9 +47,13 @@ export const doAssignmentList = (
       addressToAssgn = state.allocateSizeOnRTS((staticSize * lengthInt) / wordSize)
       iterateType = nestedType
     } else if (isArray(iterateType)) {
+      // If it is an array, flatten the array
+      let totalElems = 1
       while (isArray(iterateType)) {
+        totalElems *= (iterateType[0] as ProgramTypeModifierArray).size as number
         iterateType = getArrayItemsType(iterateType)
       }
+      limit = Math.min(totalElems, limit)
     } else {
       state.setMemoryAtIndex(addressToAssgn, values[0], iterateType) // Assign only first character if it is not a pointer or array
       return
@@ -55,7 +61,7 @@ export const doAssignmentList = (
 
     const staticSize = getStaticSizeFromProgramType(iterateType)
 
-    for (let i = values.length - 1; i >= 0; i--) {
+    for (let i = limit - 1; i >= 0; i--) {
       state.setMemoryAtIndex(addressToAssgn + (i * staticSize) / wordSize, values[i], iterateType)
     }
 
