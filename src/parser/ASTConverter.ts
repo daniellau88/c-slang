@@ -118,7 +118,7 @@ function visitCCSTDeclarator(node: CCSTDeclarator): TypedIdentifier {
       type: 'TypeModifier',
       subtype: 'Pointer',
       pointerDepth: pointer.text.length,
-      loc: node?.pointer?.loc,
+      loc: pointer.loc,
     })
   }
   return directDeclarator
@@ -255,7 +255,7 @@ function visitCCSTFunctionDefinition(node: CCSTFunctionDefinition): CASTFunction
     type: 'FunctionDefinition',
     identifier: declaratorIdentifier,
     parameters: declaratorParameters.parameterTypeList,
-    returnType: { type: 'Type', typeModifiers: declaratorReturnType },
+    returnType: { type: 'Type', typeModifiers: declaratorReturnType, loc: node.loc },
     body: visitCCSTCompoundStatement(node.compoundStatement),
     loc: node.loc,
   }
@@ -269,7 +269,12 @@ function visitCCSTTypeSpecifier(node: CCSTTypeSpecifier): CASTType {
   return {
     type: 'Type',
     typeModifiers: [
-      { type: 'TypeModifier', subtype: 'BaseType', baseType: node.baseType as CASTBaseType },
+      {
+        type: 'TypeModifier',
+        subtype: 'BaseType',
+        baseType: node.baseType as CASTBaseType,
+        loc: node.loc,
+      },
     ],
     loc: node.loc,
   }
@@ -847,7 +852,7 @@ function visitCCSTConstant(node: CCSTConstant): CASTLiteral {
 }
 
 function visitCCSTString(node: CCSTString): CASTStringLiteral {
-  return { type: 'StringLiteral', value: node.value }
+  return { type: 'StringLiteral', value: node.value, loc: node.loc }
 }
 
 function visitCCSTTypeName(node: CCSTTypeName): CASTType {

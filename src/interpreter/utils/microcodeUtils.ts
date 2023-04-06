@@ -287,6 +287,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
               type: 'Literal',
               subtype: 'Int',
               value: expressionLength.toString(),
+              loc: init.loc,
             }
           }
         } else {

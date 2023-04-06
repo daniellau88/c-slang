@@ -12,7 +12,7 @@ export type CASTNode =
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseNode {
   type: string
-  loc?: es.SourceLocation
+  loc: es.SourceLocation
 }
 
 export interface CASTDummyNode extends BaseNode {

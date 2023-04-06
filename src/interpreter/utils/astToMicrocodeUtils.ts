@@ -12,6 +12,7 @@ import {
   CASTExpression,
   CASTNode,
 } from '../../typings/programAST'
+import { dummyLocation } from '../../utils/dummyAstCreator'
 import { ProgramState } from '../programState'
 import {
   CASTUnaryOperatorWithoutDerefence,
@@ -35,8 +36,9 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           arity: 0,
           node: {
             type: 'FunctionCallExpression',
-            expression: { type: 'Identifier', name: 'main' },
+            expression: { type: 'Identifier', name: 'main', loc: dummyLocation() },
             argumentExpression: [],
+            loc: dummyLocation(),
           },
         })
         state.pushA(fdNode.identifier)
@@ -111,7 +113,12 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           if (currentNode.type === 'ArrayExpression') {
             currentNode = currentNode.elements[0] // Take only first element if not all are nested
           } else if (currentNode.type === 'StringLiteral') {
-            currentNode = { type: 'Literal', subtype: 'Char', value: currentNode.value.charAt(0) }
+            currentNode = {
+              type: 'Literal',
+              subtype: 'Char',
+              value: currentNode.value.charAt(0),
+              loc: currentNode.loc,
+            }
           } else {
             break
           }
