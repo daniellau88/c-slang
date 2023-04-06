@@ -1,13 +1,10 @@
-/* tslint:disable: max-classes-per-file */
-import * as es from 'estree'
-
 import { CASTNode } from '../typings/programAST'
 import { RuntimeSourceError } from './runtimeSourceError'
 
 export class ModuleConnectionError extends RuntimeSourceError {
   private static message: string = `Unable to get modules.`
   private static elaboration: string = `You should check your Internet connection, and ensure you have used the correct module path.`
-  constructor(node?: CASTNode) {
+  constructor(node: CASTNode) {
     super(node)
   }
 
@@ -21,7 +18,7 @@ export class ModuleConnectionError extends RuntimeSourceError {
 }
 
 export class ModuleNotFoundError extends RuntimeSourceError {
-  constructor(public moduleName: string, node?: CASTNode) {
+  constructor(public moduleName: string, node: CASTNode) {
     super(node)
   }
 
@@ -37,7 +34,7 @@ export class ModuleNotFoundError extends RuntimeSourceError {
 }
 
 export class ModuleInternalError extends RuntimeSourceError {
-  constructor(public moduleName: string, node?: CASTNode) {
+  constructor(public moduleName: string, node: CASTNode) {
     super(node)
   }
 

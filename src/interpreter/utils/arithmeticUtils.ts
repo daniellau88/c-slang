@@ -1,5 +1,5 @@
+import { InternalUnreachableBaseError } from '../../errors/baseErrors'
 import { CannotDivideByZero, CannotPerformOperation, UnknownType } from '../../errors/errors'
-import { LogicError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -133,7 +133,7 @@ export const convertAssignmentOperatorToBinaryOperator = (
     case CASTAssignmentOperator.TimesEqual:
       return CASTBinaryOperator.Multiply
     default:
-      throw new LogicError(undefined, 'Unsupported assignment operator')
+      throw new InternalUnreachableBaseError('Unsupported assignment operator')
   }
 }
 
@@ -287,7 +287,7 @@ export const doBinaryOperation = (
       return getBinaryValueFromJSValueWithType(op1 >> op2, operand1.type, node)
     }
     default:
-      throw new LogicError()
+      throw new InternalUnreachableBaseError('Binary operation not supported')
   }
 }
 
@@ -303,7 +303,7 @@ export const doUnaryOperationWithoutDereference = (
       return operand
     }
     default:
-      throw new LogicError(undefined, 'Unary operation not supported')
+      throw new InternalUnreachableBaseError('Unary operation not supported')
   }
 }
 
@@ -340,6 +340,6 @@ export const doUnaryOperationWithDereference = (
       return operand
     }
     default:
-      throw new LogicError(undefined, 'Unary operation not supported')
+      throw new InternalUnreachableBaseError('Unary operation not supported')
   }
 }

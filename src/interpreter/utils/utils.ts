@@ -1,5 +1,5 @@
 import createContext from '../../createContext'
-import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
+import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
@@ -16,7 +16,7 @@ export const peek = <T>(array: Array<T>): T | undefined => array.slice(-1)[0]
 
 export const pop = <T>(array: Array<T>): T => {
   if (array.length === 0) {
-    throw new LogicError(undefined, 'Cannot pop from empty stack')
+    throw new InternalUnreachableBaseError('Cannot pop from empty stack')
   }
   return array.pop() as T
 }
@@ -94,7 +94,7 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
     case 'Parameters':
       return 'parameters ' + binary
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableBaseError('Unknown type')
   }
 }
 
@@ -120,7 +120,7 @@ export const typeToString = (type: ProgramType): string => {
     case 'Parameters':
       return 'function'
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableBaseError('Unknown type')
   }
 }
 
@@ -128,7 +128,7 @@ export const parseStringToAST = (program: string): CASTNode => {
   const context = createContext()
   const parsedProgram = parse(program, context)
   if (!parsedProgram) {
-    throw new Error('Cannot parse program')
+    throw new ParseBaseError()
   }
 
   const ast = convertCSTProgramToAST(parsedProgram)

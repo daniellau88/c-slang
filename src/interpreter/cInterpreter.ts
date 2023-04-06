@@ -1,10 +1,10 @@
-import { UnknownError } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { Context, CustomBuiltIns } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
 import { BinaryWithType, BuiltinFunctionDefinition } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
+import { errorHandler } from './utils/errorHandlerUtils'
 import { executeMicrocode } from './utils/microcodeUtils'
 import { incrementPointerDepth, INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
 import { binaryToFormattedString, isMicrocode, parseStringToAST } from './utils/utils'
@@ -85,12 +85,8 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
         yield astToMicrocode(state, cmd)
       }
     } catch (e) {
-      if (e instanceof RuntimeSourceError) {
-        throw e
-      }
-
       const node = isMicrocode(cmd) ? cmd.node : cmd
-      throw new UnknownError(node, e)
+      errorHandler(e, node)
     }
     if (withLog) state.printState()
     i++

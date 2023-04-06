@@ -1,4 +1,8 @@
-import { LogicError } from '../../errors/runtimeSourceError'
+import {
+  InternalUnreachableBaseError,
+  NonArrayBaseError,
+  NonPointerBaseError,
+} from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
 
@@ -64,16 +68,10 @@ export const incrementPointerDepth = (type: ProgramType): ProgramType => {
   return deepCopy
 }
 
-export class NonPointerError extends Error {
-  constructor(public type: ProgramType) {
-    super()
-  }
-}
-
 export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Pointer') {
-    throw new NonPointerError(deepCopy)
+    throw new NonPointerBaseError(deepCopy)
   }
 
   if (deepCopy[0].pointerDepth == 1) {
@@ -84,16 +82,10 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   return deepCopy
 }
 
-export class NonArrayError extends Error {
-  constructor(public type: ProgramType) {
-    super()
-  }
-}
-
 export const getArrayItemsType = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Array') {
-    throw new NonArrayError(deepCopy)
+    throw new NonArrayBaseError(deepCopy)
   }
 
   return deepCopy.splice(1)
@@ -131,7 +123,7 @@ export const getUnaryOperatorIncrementType = (operator: CASTUnaryOperator): Incr
     case CASTUnaryOperator.PostDecrement:
       return { incrementType: 'decrement', unaryType: 'post' }
     default:
-      throw new LogicError(undefined, 'Unary operator is not of increment type')
+      throw new InternalUnreachableBaseError('Should be only increment unary operators', [operator])
   }
 }
 

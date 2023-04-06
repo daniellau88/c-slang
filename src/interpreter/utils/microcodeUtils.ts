@@ -3,7 +3,6 @@ import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
   InvalidArraySize,
-  InvalidMemoryAccess,
   InvalidNumberOfArguments,
   MemoryFreeError,
   MemoryMallocError,
@@ -12,7 +11,7 @@ import {
   UnknownSize,
   VariableRedeclaration,
 } from '../../errors/errors'
-import { LogicError, NotImplementedError } from '../../errors/runtimeSourceError'
+import { InternalUnreachableRuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTBinaryOperator,
   CASTExpression,
@@ -30,7 +29,6 @@ import {
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
 } from './arithmeticUtils'
-import { RTMInvalidFree, RTMInvalidMemoryAccess } from './RTM'
 import {
   CASTUnaryOperatorIncrement,
   decrementPointerDepth,
@@ -42,8 +40,6 @@ import {
   isBaseType,
   isPointer,
   isTypeEquivalent,
-  NonArrayError,
-  NonPointerError,
   VOID_BASE_TYPE,
 } from './typeUtils'
 import { binaryToInt, intToBinary, isMicrocode, isTruthy, shouldDerefExpression } from './utils'
@@ -85,7 +81,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const name = node.identifier.name
       const record = state.lookupE(name)
       if (!record) {
-        throw new UndefinedVariable(name, node.identifier)
+        throw new UndefinedVariable(node.identifier, name)
       }
 
       switch (record.subtype) {
@@ -107,22 +103,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (type[0].subtype !== 'Pointer') {
         throw new CannotDereferenceTypeError(node.node)
       }
-      try {
-        const newType = decrementPointerDepth(type)
-        if (newType[0].subtype === 'Array') {
-          state.pushOS(binary, newType)
-          return
-        }
-        state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
-      } catch (e) {
-        if (e instanceof NonPointerError) {
-          throw new CannotDereferenceTypeError(node.node)
-        }
-        if (e instanceof RTMInvalidMemoryAccess) {
-          throw new InvalidMemoryAccess(node.node, e.index)
-        }
-        throw e
+      const newType = decrementPointerDepth(type)
+      if (newType[0].subtype === 'Array') {
+        state.pushOS(binary, newType)
+        return
       }
+      state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
       return
     }
     case 'func_apply': {
@@ -240,7 +226,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (curIndex !== -1) {
         const currentModifier = node.oldTypeModifiers[curIndex]
         if (currentModifier.subtype !== 'Array') {
-          throw new LogicError(node.node, 'Subtype should be array')
+          throw new InternalUnreachableRuntimeError(node.node)
         }
 
         const { binary, type } = state.popOS() // Assert type should be int
@@ -300,42 +286,32 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'assgn': {
       const { binary: val, type: valType } = state.popOS()
       const { binary: addr, type: addrType } = state.popOS()
-      try {
-        const newType = decrementPointerDepth(addrType)
+      const newType = decrementPointerDepth(addrType)
 
-        let newValue = val // TODO: type checking
-        if (!isTypeEquivalent(valType, newType)) {
-          if (valType.length === 0) {
-          } // If value's type is unknown, use address's type
-          else {
-            if (isBaseType(newType) && isBaseType(valType)) {
-              const newArithmeticType = getBaseTypePromotionPriority(newType, node.node)
-              const valArithmeticType = getBaseTypePromotionPriority(valType, node.node)
-              const maxPriority = Math.max(newArithmeticType, valArithmeticType)
+      let newValue = val // TODO: type checking
+      if (!isTypeEquivalent(valType, newType)) {
+        if (valType.length === 0) {
+        } // If value's type is unknown, use address's type
+        else {
+          if (isBaseType(newType) && isBaseType(valType)) {
+            const newArithmeticType = getBaseTypePromotionPriority(newType, node.node)
+            const valArithmeticType = getBaseTypePromotionPriority(valType, node.node)
+            const maxPriority = Math.max(newArithmeticType, valArithmeticType)
 
-              if (valArithmeticType < maxPriority) {
-                // Promote value if smaller
-                newValue = binaryToInt(val)
-              }
+            if (valArithmeticType < maxPriority) {
+              // Promote value if smaller
+              newValue = binaryToInt(val)
+            }
 
-              if (newArithmeticType < maxPriority) {
-                throw new CannotPerformLossyConversion(node.node, valType, newType)
-              }
+            if (newArithmeticType < maxPriority) {
+              throw new CannotPerformLossyConversion(node.node, valType, newType)
             }
           }
         }
-
-        state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
-        state.pushOS(newValue, newType)
-      } catch (e: any) {
-        if (e instanceof NonPointerError) {
-          throw new CannotDereferenceTypeError(node.node)
-        }
-        if (e instanceof RTMInvalidMemoryAccess) {
-          throw new InvalidMemoryAccess(node.node, e.index)
-        }
-        throw e
       }
+
+      state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
+      state.pushOS(newValue, newType)
       return
     }
     case 'bin_op_auto_promotion': {
@@ -398,18 +374,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           operator: MicroCodeBinaryOperator.IntMultiply,
           node: node.node,
         })
-        try {
-          state.pushA({
-            tag: 'size_of_op',
-            typeModifiers: decrementPointerDepth(leftOpType),
-            node: node.node,
-          })
-        } catch (e) {
-          if (e instanceof NonPointerError) {
-            throw new CannotDereferenceTypeError(node.node)
-          }
-          throw e
-        }
+        state.pushA({
+          tag: 'size_of_op',
+          typeModifiers: decrementPointerDepth(leftOpType),
+          node: node.node,
+        })
         return
       }
 
@@ -476,7 +445,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
       const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
       if (isIncrementOperator) {
-        throw new LogicError(undefined, 'Unary expression is handled earlier')
+        throw new InternalUnreachableRuntimeError(node.node)
       }
 
       let result: BinaryWithType
@@ -509,7 +478,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         nextInstruction = state.peekA()
       }
       if (nextInstruction === undefined) {
-        throw new LogicError(undefined, 'Microcode exit function not found')
+        throw new InternalUnreachableRuntimeError(node.node)
       }
       return
     }
@@ -517,26 +486,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: indexBinary, type: indexType } = state.popOS()
       const { binary: arrayAddressBinary, type: arrayAddressType } = state.popOS()
 
-      try {
-        if (isArray(arrayAddressType)) {
-          const arrayItemsType = getArrayItemsType(arrayAddressType)
-          state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
-        } else {
-          state.pushOS(arrayAddressBinary, arrayAddressType)
-        }
-        state.pushOS(indexBinary, indexType)
-
-        state.pushA({
-          tag: 'bin_op_auto_promotion',
-          operator: CASTBinaryOperator.Plus,
-          node: node.node,
-        })
-      } catch (e) {
-        if (e instanceof NonArrayError) {
-          throw new CannotDereferenceTypeError(node.node)
-        }
-        throw e
+      if (isArray(arrayAddressType)) {
+        const arrayItemsType = getArrayItemsType(arrayAddressType)
+        state.pushOS(arrayAddressBinary, incrementPointerDepth(arrayItemsType))
+      } else {
+        state.pushOS(arrayAddressBinary, arrayAddressType)
       }
+      state.pushOS(indexBinary, indexType)
+
+      state.pushA({
+        tag: 'bin_op_auto_promotion',
+        operator: CASTBinaryOperator.Plus,
+        node: node.node,
+      })
       return
     }
     case 'conditional_statement_op': {
@@ -651,19 +613,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (!isPointer(typeAddress)) {
         throw new MemoryFreeError(node.node, addressIndex)
       }
-      try {
-        state.freeHeapMemory(addressIndex)
-        state.pushOS(0, VOID_BASE_TYPE)
-      } catch (e) {
-        if (e instanceof RTMInvalidFree) {
-          throw new MemoryFreeError(node.node, addressIndex)
-        }
-        throw e
-      }
+      state.freeHeapMemory(addressIndex)
+      state.pushOS(0, VOID_BASE_TYPE)
       return
     }
 
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableRuntimeError((node as MicroCode).node)
   }
 }

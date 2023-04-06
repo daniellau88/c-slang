@@ -1,7 +1,7 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
 import { CannotDereferenceTypeError } from '../../errors/errors'
-import { NotImplementedError } from '../../errors/runtimeSourceError'
+import { NotImplementedRuntimeError } from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -82,7 +82,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           state.pushA({ tag: 'load_float', value: parseFloat(node.value), node: node })
           return
         default:
-          throw new NotImplementedError()
+          throw new NotImplementedRuntimeError(node)
       }
       return
     }

@@ -1,4 +1,4 @@
-import { LogicError } from '../errors/runtimeSourceError'
+import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '../errors/baseErrors'
 import { CASTNode, ProgramType } from '../typings/programAST'
 import {
   AgendaNode,
@@ -8,7 +8,7 @@ import {
   EScope,
   MicroCodeFunctionDefiniton,
 } from './typings'
-import { RTM, RTMInvalidMemoryAccess } from './utils/RTM'
+import { RTM } from './utils/RTM'
 import {
   peek,
   pop,
@@ -57,7 +57,9 @@ export class ProgramState {
   defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
     const newIndex = this.FD.length
     if (this.E[0].record[key] !== undefined) {
-      throw new LogicError(undefined, 'Builtin function ' + key + ' has already been defined')
+      throw new InternalUnreachableBaseError(
+        'Builtin function ' + key + ' has already been defined',
+      )
     }
     push(this.FD, {
       subtype: 'builtin_func',
@@ -85,7 +87,7 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       return this.RTM.getHeapMemoryAtIndex(index)
     } else {
-      throw new RTMInvalidMemoryAccess(index)
+      throw new RTMInvalidMemoryAccessBaseError(index)
     }
   }
 
@@ -95,7 +97,7 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       this.RTM.setHeapMemoryAtIndex(index, binary, type)
     } else {
-      throw new RTMInvalidMemoryAccess(index)
+      throw new RTMInvalidMemoryAccessBaseError(index)
     }
   }
 
@@ -202,13 +204,14 @@ export class ProgramState {
   popScopeE() {
     const currentTopE = peek(this.E)
     if (!currentTopE || !currentTopE.parent) {
-      throw new LogicError(undefined, 'No more scope to pop')
+      throw new InternalUnreachableBaseError('No more scope to pop')
     }
     this.E[this.E.length - 1] = currentTopE.parent
   }
 
   popFunctionE() {
-    if (this.E.length === 1) throw new LogicError(undefined, 'Cannot remove global environment')
+    if (this.E.length === 1)
+      throw new InternalUnreachableBaseError('Cannot remove global environment')
     pop(this.E)
   }
 

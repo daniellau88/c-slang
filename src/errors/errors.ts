@@ -8,15 +8,15 @@ import { binaryToFormattedString, stringify, typeToString } from '../interpreter
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
 import {
   CASTDeclaration,
-  CASTFunctionCallExpression,
   CASTFunctionDefinition,
   CASTNode,
   ProgramType,
 } from '../typings/programAST'
+import { BaseError } from './baseErrors'
 import { RuntimeSourceError } from './runtimeSourceError'
 
 export class InterruptedError extends RuntimeSourceError {
-  constructor(node?: CASTNode) {
+  constructor(node: CASTNode) {
     super(node)
   }
 
@@ -74,37 +74,8 @@ export class MaximumStackLimitExceeded extends RuntimeSourceError {
   }
 }
 
-export class CallingNonFunctionValue extends RuntimeSourceError {
-  constructor(private callee: Value, private node: CASTNode) {
-    super(node)
-  }
-
-  public explain() {
-    return `Calling non-function value ${stringify(this.callee)}.`
-  }
-
-  public elaborate() {
-    const calleeVal = this.callee
-    const calleeStr = stringify(calleeVal)
-    let argStr = ''
-
-    const callArgs = (this.node as CASTFunctionCallExpression).argumentExpression
-
-    argStr = callArgs.map(x => stringify(x)).join(', ')
-
-    const elabStr = `Because ${calleeStr} is not a function, you cannot run ${calleeStr}(${argStr}).`
-    const multStr = `If you were planning to perform multiplication by ${calleeStr}, you need to use the * operator.`
-
-    if (Number.isFinite(calleeVal)) {
-      return `${elabStr} ${multStr}`
-    } else {
-      return elabStr
-    }
-  }
-}
-
 export class UndefinedVariable extends RuntimeSourceError {
-  constructor(public name: string, node: CASTNode) {
+  constructor(node: CASTNode, public name: string) {
     super(node)
   }
 
@@ -232,8 +203,8 @@ export class SetPropertyError extends RuntimeSourceError {
 }
 
 export class CannotDereferenceTypeError extends RuntimeSourceError {
-  constructor(private node: CASTNode) {
-    super(node)
+  constructor(private node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -367,8 +338,8 @@ export class UnknownType extends RuntimeSourceError {
 }
 
 export class InvalidMemoryAccess extends RuntimeSourceError {
-  constructor(node: CASTNode, private address: number) {
-    super(node)
+  constructor(node: CASTNode, private address: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -381,8 +352,8 @@ export class InvalidMemoryAccess extends RuntimeSourceError {
 }
 
 export class MemoryMallocError extends RuntimeSourceError {
-  constructor(node: CASTNode, private size: number) {
-    super(node)
+  constructor(node: CASTNode, private size: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -395,8 +366,8 @@ export class MemoryMallocError extends RuntimeSourceError {
 }
 
 export class MemoryFreeError extends RuntimeSourceError {
-  constructor(node: CASTNode, private address: number) {
-    super(node)
+  constructor(node: CASTNode, private address: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
   }
 
   public explain() {

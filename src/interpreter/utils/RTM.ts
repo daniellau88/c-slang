@@ -1,20 +1,9 @@
+import { RTMInvalidFreeBaseError, RTMInvalidMemoryAccessBaseError } from '../../errors/baseErrors'
 import { ProgramType } from '../../typings/programAST'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
 const WORD_SIZE = 8
-
-export class RTMInvalidMemoryAccess extends Error {
-  constructor(public index: number) {
-    super()
-  }
-}
-
-export class RTMInvalidFree extends Error {
-  constructor(public address: number) {
-    super()
-  }
-}
 
 interface MemoryEntry {
   Address: number
@@ -67,19 +56,19 @@ export class RTM {
 
   freeHeapMemory(address: number) {
     if (!this.AllocatedMemory.has(address)) {
-      throw new RTMInvalidFree(address)
+      throw new RTMInvalidFreeBaseError(address)
     }
     this.FreeList.push({ Address: address, Size: this.AllocatedMemory.get(address)! })
     this.AllocatedMemory.delete(address)
   }
 
   setHeapMemoryAtIndex(address: number, binary: number, type?: ProgramType) {
-    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccess(address)
+    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
     this.Memory.setFloat64(address * WORD_SIZE, binary)
   }
 
   getHeapMemoryAtIndex(address: number): number {
-    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccess(address)
+    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
     return this.Memory.getFloat64(address * WORD_SIZE)
   }
 
@@ -125,12 +114,12 @@ export class RTM {
   }
 
   getRTSAtIndex(index: number): number {
-    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccess(index)
+    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     return this.Memory.getFloat64(index * WORD_SIZE)
   }
 
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
-    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccess(index)
+    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     this.Memory.setFloat64(index * WORD_SIZE, binary)
     if (type) this.TypeAdditionalInfoStack[index] = type
   }
