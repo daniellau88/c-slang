@@ -1,8 +1,9 @@
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
+import { TimeoutError } from '../errors/timeoutErrors'
 import { Context, CustomBuiltIns } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
 import { ProgramState } from './programState'
-import { BinaryWithType, BuiltinFunctionDefinition } from './typings'
+import { AgendaNode, BinaryWithType, BuiltinFunctionDefinition } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
 import { errorHandler } from './utils/errorHandlerUtils'
 import { executeMicrocode } from './utils/microcodeUtils'
@@ -69,11 +70,12 @@ export const importBuiltins = (
  * interpreter loop
  * ****************/
 
-const step_limit = 1000000
+const step_limit = 1e8 // About 1 minute of execution time
 
 export function* execute(state: ProgramState, withLog: boolean = false) {
   let i = 0
   if (withLog) state.printState()
+  let lastCmd: AgendaNode | undefined
   while (i < step_limit) {
     if (state.isAEmpty()) break
     const cmd = state.popA()
@@ -89,11 +91,12 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
       errorHandler(e, node)
     }
     if (withLog) state.printState()
+    lastCmd = cmd
     i++
   }
 
-  if (i === step_limit) {
-    throw new Error('step limit ' + step_limit + ' exceeded')
+  if (i === step_limit && lastCmd !== undefined) {
+    throw new TimeoutError(isMicrocode(lastCmd) ? lastCmd.node : lastCmd)
   }
 
   return state

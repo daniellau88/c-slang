@@ -1,6 +1,3 @@
-/* tslint:disable:max-classes-per-file */
-import * as es from 'estree'
-
 import { JSSLANG_PROPERTIES } from '../constants'
 import { ErrorSeverity, ErrorType } from '../types'
 import { CASTNode } from '../typings/programAST'
@@ -16,7 +13,18 @@ function getWarningMessage(maxExecTime: number) {
       This page may be unresponsive for up to ${to} seconds if you do so.`
 }
 
-export class TimeoutError extends RuntimeSourceError {}
+export class TimeoutError extends RuntimeSourceError {
+  public type = ErrorType.RUNTIME
+  public severity = ErrorSeverity.ERROR
+
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return stripIndent`${'Step limit exceeded.'}`
+  }
+}
 
 export class PotentialInfiniteLoopError extends TimeoutError {
   public type = ErrorType.RUNTIME
