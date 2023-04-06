@@ -168,6 +168,11 @@ interface ArrayAddressComputeMicroCode extends MicroCodeBase {
   tag: 'array_add_comp'
 }
 
+interface CastValueMicroCode extends MicroCodeBase {
+  tag: 'cast_value'
+  castType: ProgramType
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
@@ -204,6 +209,7 @@ export type MicroCode =
   | SwitchBodyMicrocode
   | MallocMicrocode
   | FreeMicrocode
+  | CastValueMicroCode
 
 interface FreeMicrocode extends MicroCodeBase {
   tag: 'free_op'

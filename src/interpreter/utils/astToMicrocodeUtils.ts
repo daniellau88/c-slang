@@ -18,7 +18,11 @@ import {
   CASTUnaryOperatorWithoutDerefence,
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
-import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
+import {
+  CASTUnaryOperatorIncrement,
+  convertCASTTypeModifierToProgramTypeModifier,
+  getUnaryOperatorIncrementType,
+} from './typeUtils'
 import { isExpressionList, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
@@ -165,6 +169,17 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue, node: node })
       if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref', node: node.predicate })
       state.pushA(node.predicate)
+      return
+    }
+    case 'CastExpression': {
+      state.pushA({
+        tag: 'cast_value',
+        castType: node.castType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier),
+        node: node,
+      })
+      if (shouldDerefExpression(node.expression))
+        state.pushA({ tag: 'deref', node: node.expression })
+      state.pushA(node.expression)
       return
     }
     case 'SizeOfExpression': {
@@ -357,7 +372,6 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       throw new InternalUnreachableRuntimeError(node)
     }
 
-    case 'CastExpression':
     case 'GotoStatement': {
       throw new NotImplementedRuntimeError(node)
     }
