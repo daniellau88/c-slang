@@ -140,10 +140,12 @@ export class RTM {
   }
 
   allocateSizeOnRTS(size: number, type?: ProgramType) {
+    const startOfRTS = this.NextStack
     for (let i = 0; i < size; i++) {
       if (type) this.TypeAdditionalInfoStack[this.NextStack] = type
       this.NextStack++
     }
+    return startOfRTS
   }
 
   getStartRTS(): number {

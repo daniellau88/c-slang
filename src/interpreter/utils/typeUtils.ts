@@ -2,6 +2,9 @@ import {
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
+  StaticSizeInvalidTypeBaseError,
+  StaticSizeUnknownSizeBaseError,
+  TypeConversionBaseError,
 } from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
 import { BinaryWithType, ProgramType, ProgramTypeModifier } from '../typings'
@@ -35,19 +38,13 @@ export const isArray = (type: ProgramType): boolean => {
   return type[0].subtype === 'Array'
 }
 
-export class TypeConversionError extends Error {
-  constructor(public type: CASTTypeModifier) {
-    super()
-  }
-}
-
 export const convertCASTTypeModifierToProgramTypeModifier = (
   castTypeModifier: CASTTypeModifier,
 ): ProgramTypeModifier => {
   switch (castTypeModifier.subtype) {
     case 'Array': {
       if (castTypeModifier.size && castTypeModifier.size.type !== 'Literal') {
-        throw new TypeConversionError(castTypeModifier)
+        throw new TypeConversionBaseError(castTypeModifier)
       }
       const size = castTypeModifier.size ? parseInt(castTypeModifier.size.value) : undefined
       return { subtype: 'Array', size: size }
@@ -64,21 +61,8 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
   }
 }
 
-enum StaticSizeErrorType {
-  InvalidType,
-  InvalidArraySize,
-  UnknownSize,
-}
-
-export class StaticSizeError extends Error {
-  constructor(public type: StaticSizeErrorType, public programType: ProgramType) {
-    super()
-  }
-}
-
 export const getStaticSizeFromProgramType = (programType: ProgramType): number => {
-  if (programType.length === 0)
-    throw new StaticSizeError(StaticSizeErrorType.InvalidType, programType)
+  if (programType.length === 0) throw new StaticSizeInvalidTypeBaseError(programType)
   const sizes = []
 
   for (let i = 0; i < programType.length; i++) {
@@ -86,8 +70,7 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
     let shouldBreak = false
     switch (typeModifier.subtype) {
       case 'Array': {
-        if (typeModifier.size === undefined)
-          throw new StaticSizeError(StaticSizeErrorType.InvalidArraySize, programType)
+        if (typeModifier.size === undefined) throw new StaticSizeUnknownSizeBaseError(programType)
         sizes.push(typeModifier.size)
         break
       }
@@ -102,7 +85,7 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
         break
       }
       case 'Parameters': {
-        throw new StaticSizeError(StaticSizeErrorType.UnknownSize, programType)
+        throw new StaticSizeUnknownSizeBaseError(programType)
       }
     }
     if (shouldBreak) break

@@ -2,7 +2,11 @@ import { describe, test } from '@jest/globals'
 
 import { InvalidArraySize } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
-import { CHAR_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import {
+  CHAR_BASE_TYPE,
+  incrementPointerDepth,
+  INT_BASE_TYPE,
+} from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
@@ -109,6 +113,10 @@ describe('array', () => {
             }
           }
         }
+
+        int* y = {1, 2, 3};
+        printfLog(y);
+
         return 0;
       }
     `,
@@ -125,6 +133,7 @@ describe('array', () => {
       { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(0), type: INT_BASE_TYPE },
       { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: incrementPointerDepth(INT_BASE_TYPE) },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -224,7 +233,10 @@ describe('array', () => {
       `
       int main() {
         char a[5] = "abcd";
-        printfLog(a[0], a[1], a[2], a[3], a[4]);
+        for (int i = 0; i < 5; i++) {
+          printfLog(a[i]);
+        }
+        printfLog(sizeof(a));
         return 0;
       }
     `,
@@ -238,6 +250,41 @@ describe('array', () => {
       { binary: intToBinary(99), type: CHAR_BASE_TYPE },
       { binary: intToBinary(100), type: CHAR_BASE_TYPE },
       { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(40), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array of string literal', () => {
+    const output = testProgram(
+      `
+      int main() {
+        char* a[3] = {"ab", "cd", "efgh"};
+        for (int i = 0; i < 3; i++) {
+          int cur_index = 0;
+          while (a[i][cur_index] != 0) {
+            printfLog(a[i][cur_index]);
+            cur_index++;
+          }
+        }
+        printfLog(sizeof(a));
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(102), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(104), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(24), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

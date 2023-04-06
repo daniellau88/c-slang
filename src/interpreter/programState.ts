@@ -175,7 +175,7 @@ export class ProgramState {
   }
 
   allocateSizeOnRTS(size: number, type?: ProgramType) {
-    this.RTM.allocateSizeOnRTS(size, type)
+    return this.RTM.allocateSizeOnRTS(size, type)
   }
 
   pushFD(fd: MicroCodeFunctionDefiniton) {
