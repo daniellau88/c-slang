@@ -119,7 +119,7 @@ export async function toSourceError(error: Error, sourceMap?: RawSourceMap): Pro
     possibleMessages.some(possibleMessage => errorMessage.includes(possibleMessage))
 
   if (errorMessageContains(UNDEFINED_VARIABLE_MESSAGES)) {
-    return new UndefinedVariable(identifier, locationDummyNode(line, column))
+    return new UndefinedVariable(locationDummyNode(line, column), identifier)
   } else {
     const location =
       line === -1 || column === -1
