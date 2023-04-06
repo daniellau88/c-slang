@@ -33,7 +33,7 @@ export class NotImplementedRuntimeError extends RuntimeSourceError {
   }
 
   public explain() {
-    return `Cannot handle ${stringify(this.node)}`
+    return `Cannot handle ${this.node.type}. Handler not implemented.`
   }
 }
 

@@ -1,7 +1,10 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
 import { CannotDereferenceTypeError } from '../../errors/errors'
-import { NotImplementedRuntimeError } from '../../errors/runtimeSourceError'
+import {
+  InternalUnreachableRuntimeError,
+  NotImplementedRuntimeError,
+} from '../../errors/runtimeSourceError'
 import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
@@ -303,6 +306,17 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       // to track the status. Initial is false (no case has been passed)
       state.pushA({ tag: 'load_int', value: 0, node: node })
       return
+    }
+
+    case 'Dummy':
+    case 'FunctionParameter': {
+      throw new InternalUnreachableRuntimeError(node)
+    }
+
+    case 'ArrayExpression':
+    case 'CastExpression':
+    case 'GotoStatement': {
+      throw new NotImplementedRuntimeError(node)
     }
   }
 }
