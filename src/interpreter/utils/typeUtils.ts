@@ -141,6 +141,14 @@ export const getArrayItemsType = (type: ProgramType): ProgramType => {
   return deepCopy.splice(1)
 }
 
+export const makeArray = (type: ProgramType, size: number): ProgramType => {
+  const deepCopy = makeDeepCopy(type)
+  const newArrayModifier: ProgramTypeModifier = { subtype: 'Array', size: size }
+
+  deepCopy.unshift(newArrayModifier)
+  return deepCopy
+}
+
 export const FALSE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
   binary: 0,
   type: INT_BASE_TYPE,

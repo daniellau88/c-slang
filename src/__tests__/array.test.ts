@@ -6,6 +6,7 @@ import {
   CHAR_BASE_TYPE,
   incrementPointerDepth,
   INT_BASE_TYPE,
+  makeArray,
 } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
@@ -367,6 +368,40 @@ describe('array', () => {
       { binary: intToBinary(101), type: CHAR_BASE_TYPE },
       { binary: intToBinary(0), type: CHAR_BASE_TYPE },
       { binary: intToBinary(48), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('arrays as function parameter', () => {
+    const output = testProgram(
+      `
+      int a(int x[], int y) {
+        printfLog(x, y);
+        int sum = 0;
+        for (int i = 0; i < 6; i++) {
+          sum = sum + x[i];
+        }
+        printfLog(sum);
+        return sum;
+      }
+      
+      int main() {
+        int b[] = {1, 2, 3, 4, 5, 6};
+        int sum = a(b, 2);
+        printfLog(b, sum);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: makeArray(INT_BASE_TYPE, 6) },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(21), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: makeArray(INT_BASE_TYPE, 6) },
+      { binary: intToBinary(21), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

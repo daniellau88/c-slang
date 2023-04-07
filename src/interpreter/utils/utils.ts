@@ -1,5 +1,9 @@
 import createContext from '../../createContext'
-import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
+import {
+  InternalUnreachableBaseError,
+  NonPointerBaseError,
+  ParseBaseError,
+} from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import {
@@ -9,7 +13,9 @@ import {
   CASTStringLiteral,
   CASTUnaryOperator,
 } from '../../typings/programAST'
+import { ProgramState } from '../programState'
 import { BinaryWithType, MicroCode, ProgramType } from '../typings'
+import { decrementPointerDepth, isArray, isPointer } from './typeUtils'
 
 export const stringify = (x: any) => JSON.stringify(x)
 
@@ -180,4 +186,23 @@ export const getExpressionLength = (
 
 export const isTruthy = (binary: number): boolean => {
   return binary !== 0
+}
+
+export const derefBinary = (
+  state: ProgramState,
+  binaryWithType: BinaryWithType,
+): BinaryWithType => {
+  const binary = binaryWithType.binary
+  const type = binaryWithType.type
+  if (!isPointer(type)) {
+    throw new NonPointerBaseError(type)
+  }
+
+  const newType = decrementPointerDepth(type)
+  if (isArray(newType)) {
+    return { binary, type: newType }
+  }
+
+  const newBinary = state.getMemoryAtIndex(binaryToInt(binary))
+  return { binary: newBinary, type: newType }
 }

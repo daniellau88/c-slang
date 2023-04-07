@@ -49,6 +49,7 @@ import {
 } from './typeUtils'
 import {
   binaryToInt,
+  derefBinary,
   getExpressionLength,
   intToBinary,
   isExpressionList,
@@ -128,23 +129,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'deref': {
       const { binary, type } = state.popOS()
-      if (type[0].subtype !== 'Pointer') {
-        throw new CannotDereferenceTypeError(node.node)
-      }
-      const newType = decrementPointerDepth(type)
-      if (newType[0].subtype === 'Array') {
-        state.pushOS(binary, newType)
-        return
-      }
-      state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
+      const { binary: newBinary, type: newType } = derefBinary(state, { binary, type })
+      state.pushOS(newBinary, newType)
       return
     }
     case 'func_apply': {
       const args: Array<BinaryWithType> = []
+      const needDerefs: Array<BinaryWithType> = []
       for (let i = 0; i < node.arity; i++) {
+        needDerefs.push(state.popOS())
         args.push(state.popOS())
       }
       args.reverse()
+      needDerefs.reverse()
 
       const { binary: funcId } = state.popOS()
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
@@ -159,7 +156,16 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        functionToCall.func(state, args, node.node)
+        const derefedArgs = args.map((x, i) => {
+          const needDeref = needDerefs[i]
+          // console.log(binaryToFormattedString(needDeref.binary, needDeref.type))
+          // console.log(binaryToFormattedString(x.binary, x.type))
+          if (isTruthy(needDeref.binary)) {
+            return derefBinary(state, x)
+          }
+          return x
+        })
+        functionToCall.func(state, derefedArgs, node.node)
         return
       }
 
@@ -172,16 +178,38 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
+        const arg = args[i]
+        const needDerefItem = isTruthy(needDerefs[i].binary)
         const identifierName = parameter.identifier?.name
-        if (identifierName)
+        if (identifierName) {
+          if (parameter.paramType.typeModifiers[0].subtype === 'Array') {
+            // If it is array, set variable pointer directly to location of array
+            if (!needDerefItem) {
+              throw new CannotDereferenceTypeError(node.node)
+            }
+            state.addRecordToE(identifierName, {
+              subtype: 'variable',
+              address: binaryToInt(arg.binary),
+              variableType: decrementPointerDepth(arg.type), // TODO: Check that type is compatible
+            })
+            state.pushRTS(arg.binary, arg.type)
+            continue
+          }
+
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
             variableType: parameter.paramType.typeModifiers.map(
               convertCASTTypeModifierToProgramTypeModifier,
-            ), // TODO: Allow variable in function parameters
+            ),
           })
-        state.pushRTS(args[i].binary, args[i].type)
+
+          if (needDerefItem) {
+            const { binary, type } = derefBinary(state, arg)
+            state.pushRTS(binary, type)
+          }
+          state.pushRTS(arg.binary, arg.type)
+        }
       }
 
       state.pushA({ tag: 'exit_func', node: node.node, funcNode: functionToCall })
