@@ -799,7 +799,7 @@ function visitCCSTPostfixExpression(node: CCSTPostfixExpression): CASTExpression
     ? {
         type: 'FunctionCallExpression',
         expression: visitCCSTPostfixExpression(node.postfixExpression),
-        argumentExpression: visitCCSTExpression(node.expression),
+        argumentExpression: node.expression ? visitCCSTExpression(node.expression) : [],
         loc: node.loc,
       }
     : visitCCSTPrimaryExpression(node.primaryExpression)

@@ -544,7 +544,7 @@ interface CCSTPostfixExpressionTypeArray extends CCSTPostfixExpressionBase {
 interface CCSTPostfixExpressionTypeFunctionCall extends CCSTPostfixExpressionBase {
   subtype: 'FunctionCall'
   postfixExpression: CCSTPostfixExpression
-  expression: CCSTExpression
+  expression?: CCSTExpression
 }
 
 interface CCSTPostfixExpressionTypeMember extends CCSTPostfixExpressionBase {

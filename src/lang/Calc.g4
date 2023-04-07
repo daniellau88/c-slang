@@ -405,7 +405,7 @@ unary_expression
 postfix_expression
    : primary_expression                                                                # PostfixExpressionTypePrimary
    | postfix_expression OPEN_SQUARE_BRACKET assignment_expression CLOSE_SQUARE_BRACKET # PostfixExpressionTypeArray // array
-   | postfix_expression OPEN_PARENTHESES expression CLOSE_PARENTHESES                  # PostfixExpressionTypeFunctionCall // function call
+   | postfix_expression OPEN_PARENTHESES expression? CLOSE_PARENTHESES                 # PostfixExpressionTypeFunctionCall // function call
    | postfix_expression FULLSTOP identifier                                            # PostfixExpressionTypeMember
    | postfix_expression RIGHT_ARROW identifier                                         # PostfixExpressionTypeDerefMember
    | postfix_expression INCREMENT                                                      # PostfixExpressionTypeIncrement

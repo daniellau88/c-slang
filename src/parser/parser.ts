@@ -1234,10 +1234,11 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitPostfixExpressionTypeFunctionCall(
     ctx: PostfixExpressionTypeFunctionCallContext,
   ): CCSTPostfixExpression {
+    const expressionContext = ctx.expression()
     return {
       type: 'PostfixExpression',
       subtype: 'FunctionCall',
-      expression: this.visit(ctx.expression()) as CCSTExpression,
+      expression: expressionContext ? (this.visit(expressionContext) as CCSTExpression) : undefined,
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
     }
   }

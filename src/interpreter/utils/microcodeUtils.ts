@@ -2,6 +2,7 @@ import {
   CannotDereferenceTypeError,
   CannotPerformLossyConversion,
   CannotPerformOperation,
+  FunctionCannotReturnArray,
   InvalidArraySize,
   InvalidFreeMemoryValue,
   InvalidMallocSize,
@@ -69,6 +70,16 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (state.hasKeyGlobalE(funcName)) {
         throw new VariableRedeclaration(node.function, funcName)
       }
+
+      const functionReturnType = node.function.returnType.typeModifiers.map(
+        convertCASTTypeModifierToProgramTypeModifier,
+      )
+
+      // Disallow return of arrays from functions: https://stackoverflow.com/a/32622114
+      if (isArray(functionReturnType)) {
+        throw new FunctionCannotReturnArray(node.node)
+      }
+
       state.pushFD({
         subtype: 'func',
         arity: node.function.parameters.length,

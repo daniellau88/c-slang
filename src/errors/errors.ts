@@ -231,6 +231,24 @@ export class ReturnNotCalled extends RuntimeSourceError {
   }
 }
 
+export class FunctionCannotReturnArray extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    let name: string | undefined = undefined
+    if (this.node.type === 'FunctionDefinition') {
+      name = this.node.identifier.name
+    }
+    return `Function ${name} cannot return an array.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
 export class InvalidArraySize extends RuntimeSourceError {
   constructor(node: CASTNode, private binaryType?: BinaryWithType) {
     super(node)

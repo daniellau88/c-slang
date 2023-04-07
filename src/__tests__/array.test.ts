@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { InvalidArraySize } from '../errors/errors'
+import { FunctionCannotReturnArray, InvalidArraySize } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   CHAR_BASE_TYPE,
@@ -417,5 +417,23 @@ describe('array', () => {
     `,
       )
     expectThrowError(program, InvalidArraySize, 'Invalid array size of int -1.')
+  })
+
+  test('return array from function', () => {
+    const program = () =>
+      testProgram(
+        `
+      int a()[5] {
+        int b[] = {1, 2, 3, 4};
+        return b;
+      }
+
+      int main() {
+        int x[4] = a();
+        return 0;
+      }
+    `,
+      )
+    expectThrowError(program, FunctionCannotReturnArray, 'Function a cannot return an array.')
   })
 })
