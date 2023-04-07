@@ -55,6 +55,8 @@ import { InitializerListTypeInitializerContext } from './CalcParser'
 import { InitializerListTypeRecursiveInitializerContext } from './CalcParser'
 import { InclusiveOrExpressionTypeExclusiveOrContext } from './CalcParser'
 import { InclusiveOrExpressionTypeInclusiveOrContext } from './CalcParser'
+import { ForInitDeclarationTypeDeclarationContext } from './CalcParser'
+import { ForInitDeclarationTypeExpressionContext } from './CalcParser'
 import { ConditionalExpressionTypeLogicalOrContext } from './CalcParser'
 import { ConditionalExpressionTypeConditionalContext } from './CalcParser'
 import { StatementTypeLabeledContext } from './CalcParser'
@@ -634,6 +636,22 @@ export interface CalcVisitor<Result> extends ParseTreeVisitor<Result> {
   visitInclusiveOrExpressionTypeInclusiveOr?: (
     ctx: InclusiveOrExpressionTypeInclusiveOrContext,
   ) => Result
+
+  /**
+   * Visit a parse tree produced by the `ForInitDeclarationTypeDeclaration`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitForInitDeclarationTypeDeclaration?: (ctx: ForInitDeclarationTypeDeclarationContext) => Result
+
+  /**
+   * Visit a parse tree produced by the `ForInitDeclarationTypeExpression`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitForInitDeclarationTypeExpression?: (ctx: ForInitDeclarationTypeExpressionContext) => Result
 
   /**
    * Visit a parse tree produced by the `ConditionalExpressionTypeLogicalOr`

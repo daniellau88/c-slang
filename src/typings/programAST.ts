@@ -116,7 +116,7 @@ export interface CASTDoStatement extends BaseStatement {
 export interface CASTForStatement extends BaseStatement {
   type: 'ForStatement'
   statement: CASTStatement
-  initDeclaration?: CASTDeclarationStatement
+  initDeclaration?: CASTDeclarationStatement | CASTExpressionStatement
   testExpression?: CASTExpression
   updateExpression?: CASTExpression
 }

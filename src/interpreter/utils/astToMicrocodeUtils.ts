@@ -297,7 +297,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
 
     case 'ForStatement': {
       const declarations: CASTDeclaration[] = []
-      if (node.initDeclaration) {
+      if (node.initDeclaration && node.initDeclaration.type === 'DeclarationStatement') {
         node.initDeclaration.declarations.forEach(x => {
           declarations.push(x)
         })

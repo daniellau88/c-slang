@@ -482,7 +482,8 @@ for_statement
    ;
 
 for_init_declaration
-   : declaration_specifiers init_declarator_list
+   : declaration_specifiers init_declarator_list   # ForInitDeclarationTypeDeclaration
+   | expression                                    # ForInitDeclarationTypeExpression
    ;
 
 // Goto Statement
