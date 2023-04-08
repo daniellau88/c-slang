@@ -18,7 +18,7 @@ describe('assignment', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -43,7 +43,7 @@ describe('assignment', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -70,7 +70,7 @@ describe('assignment', () => {
         printfLog(x, y, z, a);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -114,7 +114,7 @@ describe('assignment', () => {
         printfLog(y);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -143,7 +143,7 @@ describe('assignment', () => {
         printfLog(y, x[0], x[1], x[2]);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()

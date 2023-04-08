@@ -19,7 +19,7 @@ describe('declaration', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -38,7 +38,7 @@ describe('declaration', () => {
         printfLog(z);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -62,7 +62,7 @@ describe('declaration', () => {
         printfLog(x, y, z);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -82,7 +82,7 @@ describe('declaration', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -94,12 +94,12 @@ describe('declaration', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x = 1 + 4;
-        z;
-        return 0;
-      }
-    `,
+        int main() {
+          int x = 1 + 4;
+          z;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, UndefinedVariable, 'Variable z not declared.')
   })
@@ -108,12 +108,12 @@ describe('declaration', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x = 1 + 4;
-        int x = 2 + 3;
-        return 0;
-      }
-    `,
+        int main() {
+          int x = 1 + 4;
+          int x = 2 + 3;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, VariableRedeclaration, 'Redeclaration of name x.')
   })

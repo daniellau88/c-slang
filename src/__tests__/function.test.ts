@@ -20,7 +20,7 @@ describe('function', () => {
         printfLog(c);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -39,7 +39,7 @@ describe('function', () => {
         printfLog(c, 4.0);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -63,7 +63,7 @@ describe('function', () => {
         printfLog(c);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -93,7 +93,7 @@ describe('function', () => {
         printfLog(c);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -108,16 +108,16 @@ describe('function', () => {
     const program = () =>
       testProgram(
         `
-      int a(int b, int c) {
-        printfLog(b);
-      }
+        int a(int b, int c) {
+          printfLog(b);
+        }
 
-      int main() {
-        int c = a(a(1, 3), a(2, 0));
-        printfLog(c);
-        return 0;
-      }
-    `,
+        int main() {
+          int c = a(a(1, 3), a(2, 0));
+          printfLog(c);
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, ReturnNotCalled, 'Return statement not called for function a.')
   })

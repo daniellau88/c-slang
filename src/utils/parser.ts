@@ -13,6 +13,13 @@ const unescapeMap = {
   '\\0': '\0',
 }
 
+export const rawCode = (
+  template: { raw: readonly string[] | ArrayLike<string> },
+  ...substitutions: any[]
+): string => {
+  return String.raw(template, ...substitutions)
+}
+
 export const unescapeString = (text: string) => {
   return text.replace(/\\(.)/g, c => unescapeMap[c])
 }

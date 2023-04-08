@@ -24,7 +24,7 @@ describe('pointer', () => {
         printfLog(a, b, c, d, e, f);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -50,7 +50,7 @@ describe('pointer', () => {
         printfLog(f, g);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -77,7 +77,7 @@ describe('pointer', () => {
         printfLog(a, *b, **c, ***d, ****e);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -108,7 +108,7 @@ describe('pointer', () => {
         printfLog(x, a, b, c);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -132,7 +132,7 @@ describe('pointer', () => {
         printfLog(a, b, c);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -155,7 +155,7 @@ describe('pointer', () => {
           printfLog(a, c);
           return 0;
         }
-      `,
+        `,
       )
     expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 5.`)
   })
@@ -169,7 +169,7 @@ describe('pointer', () => {
           printfLog(a);
           return 0;
         }
-      `,
+        `,
       )
     expectThrowError(
       program,
@@ -191,7 +191,7 @@ describe('pointer', () => {
         (*a)(10);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
