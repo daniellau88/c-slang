@@ -7,8 +7,13 @@ import { AgendaNode, BinaryWithType, BuiltinFunctionDefinition } from './typings
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
 import { errorHandler } from './utils/errorHandlerUtils'
 import { executeMicrocode } from './utils/microcodeUtils'
-import { incrementPointerDepth, INT_BASE_TYPE, VOID_BASE_TYPE } from './utils/typeUtils'
-import { binaryToFormattedString, isMicrocode, parseStringToAST } from './utils/utils'
+import {
+  getStaticSizeFromProgramType,
+  incrementPointerDepth,
+  INT_BASE_TYPE,
+  VOID_BASE_TYPE,
+} from './utils/typeUtils'
+import { binaryToFormattedString, intToBinary, isMicrocode, parseStringToAST } from './utils/utils'
 
 // Builtin functions must always add a value onto the OS (whether directly or indirectly)
 export const defaultExternalBuiltinFunctions: CustomBuiltIns = {
@@ -26,7 +31,8 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   },
   sizeof: {
     func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
-      state.pushA({ tag: 'size_of_op', typeModifiers: args[0].type, node: node })
+      const size = getStaticSizeFromProgramType(args[0].type)
+      state.pushOS(intToBinary(size), INT_BASE_TYPE)
     },
     returnProgType: INT_BASE_TYPE,
     arity: 1,

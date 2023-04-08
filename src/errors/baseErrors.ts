@@ -1,6 +1,7 @@
 // Base errors are called when the node information is unknown (i.e. the offending line)
 
-import { ProgramType } from '../typings/programAST'
+import { ProgramType } from '../interpreter/typings'
+import { CASTTypeModifier } from '../typings/programAST'
 
 // An error handler will be added to convert it to the correct runtimeSourceError
 export class BaseError extends Error {}
@@ -57,6 +58,24 @@ export class CannotPerformOperationBaseError extends BaseError {
 
 export class CannotDivideByZeroBaseError extends BaseError {
   constructor() {
+    super()
+  }
+}
+
+export class TypeConversionBaseError extends BaseError {
+  constructor(public type: CASTTypeModifier) {
+    super()
+  }
+}
+
+export class StaticSizeInvalidTypeBaseError extends BaseError {
+  constructor(public programType: ProgramType) {
+    super()
+  }
+}
+
+export class StaticSizeUnknownSizeBaseError extends BaseError {
+  constructor(public programType: ProgramType) {
     super()
   }
 }

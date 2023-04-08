@@ -1,9 +1,21 @@
 import createContext from '../../createContext'
-import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
+import {
+  InternalUnreachableBaseError,
+  NonPointerBaseError,
+  ParseBaseError,
+} from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
-import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
-import { BinaryWithType, MicroCode } from '../typings'
+import {
+  CASTArrayExpression,
+  CASTExpression,
+  CASTNode,
+  CASTStringLiteral,
+  CASTUnaryOperator,
+} from '../../typings/programAST'
+import { ProgramState } from '../programState'
+import { BinaryWithType, MicroCode, ProgramType } from '../typings'
+import { decrementPointerDepth, isArray, isPointer } from './typeUtils'
 
 export const stringify = (x: any) => JSON.stringify(x)
 
@@ -158,6 +170,39 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   }
 }
 
+export const isExpressionList = (
+  expression: CASTExpression,
+): expression is CASTArrayExpression | CASTStringLiteral => {
+  return expression.type === 'ArrayExpression' || expression.type === 'StringLiteral'
+}
+
+export const getExpressionLength = (
+  expression: CASTArrayExpression | CASTStringLiteral,
+): number => {
+  return expression.type === 'ArrayExpression'
+    ? expression.elements.length
+    : expression.value.length + 1 // +1 for null character
+}
+
 export const isTruthy = (binary: number): boolean => {
   return binary !== 0
+}
+
+export const derefBinary = (
+  state: ProgramState,
+  binaryWithType: BinaryWithType,
+): BinaryWithType => {
+  const binary = binaryWithType.binary
+  const type = binaryWithType.type
+  if (!isPointer(type)) {
+    throw new NonPointerBaseError(type)
+  }
+
+  const newType = decrementPointerDepth(type)
+  if (isArray(newType)) {
+    return { binary, type: newType }
+  }
+
+  const newBinary = state.getMemoryAtIndex(binaryToInt(binary))
+  return { binary: newBinary, type: newType }
 }

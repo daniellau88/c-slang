@@ -24,15 +24,16 @@ import {
   CASTReturnStatement,
   CASTSizeOfExpression,
   CASTStatement,
+  CASTStringLiteral,
   CASTSwitchBody,
   CASTSwitchClauseBody,
   CASTSwitchStatement,
   CASTType,
   CASTTypeModifier,
+  CASTTypeModifiers,
   CASTUnaryExpression,
   CASTUnaryOperator,
   CASTWhileStatement,
-  ProgramType,
 } from '../typings/programAST'
 import {
   CCSTAbstractDeclarator,
@@ -80,6 +81,7 @@ import {
   CCSTReturnStatement,
   CCSTShiftExpression,
   CCSTStatement,
+  CCSTString,
   CCSTSwitchBody,
   CCSTSwitchCaseBody,
   CCSTSwitchDefaultBody,
@@ -351,7 +353,7 @@ function visitCCSTInitializerList(node: CCSTInitializerList): CASTExpression {
   let currentNode: CCSTInitializerList | undefined = node
   const arr: Array<CASTExpression> = []
   while (currentNode) {
-    arr.push(visitCCSTInitializer(currentNode.initializer))
+    arr.unshift(visitCCSTInitializer(currentNode.initializer))
     currentNode =
       currentNode.subtype === 'RecursiveInitializer' ? currentNode.initializerList : undefined
   }
@@ -797,7 +799,7 @@ function visitCCSTPostfixExpression(node: CCSTPostfixExpression): CASTExpression
     ? {
         type: 'FunctionCallExpression',
         expression: visitCCSTPostfixExpression(node.postfixExpression),
-        argumentExpression: visitCCSTExpression(node.expression),
+        argumentExpression: node.expression ? visitCCSTExpression(node.expression) : [],
         loc: node.loc,
       }
     : visitCCSTPrimaryExpression(node.primaryExpression)
@@ -808,6 +810,8 @@ function visitCCSTPrimaryExpression(node: CCSTPrimaryExpression): CASTExpression
     ? visitCCSTIdentifier(node.identifier)
     : node.subtype === 'Constant'
     ? visitCCSTConstant(node.constant)
+    : node.subtype === 'String'
+    ? visitCCSTString(node.stringNode)
     : visitCCSTExpression(node.expression)[0] // TODO: Assume only first element
 }
 
@@ -842,8 +846,12 @@ function visitCCSTConstant(node: CCSTConstant): CASTLiteral {
       }
 }
 
+function visitCCSTString(node: CCSTString): CASTStringLiteral {
+  return { type: 'StringLiteral', value: node.value }
+}
+
 function visitCCSTTypeName(node: CCSTTypeName): CASTType {
-  let typeModifiers: ProgramType = []
+  let typeModifiers: CASTTypeModifiers = []
   if (node.abstractDeclarator) {
     typeModifiers = visitCCSTAbstractDeclarator(node.abstractDeclarator).type.typeModifiers
   }

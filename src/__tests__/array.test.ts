@@ -1,8 +1,13 @@
 import { describe, test } from '@jest/globals'
 
-import { InvalidArraySize } from '../errors/errors'
+import { FunctionCannotReturnArray, InvalidArraySize } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
-import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import {
+  CHAR_BASE_TYPE,
+  incrementPointerDepth,
+  INT_BASE_TYPE,
+  makeArray,
+} from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
@@ -97,6 +102,310 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('array literal flatten', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {1, 2, 3, 4, 5};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+
+        int* y = {1, 2, 3};
+        printfLog(y);
+
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: incrementPointerDepth(INT_BASE_TYPE) },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal within depth', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {{{2, 3}, {4, 5}}, {1}};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal exceed depth', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[2][2][2] = {{1}, {2, {4, {3}}}};
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+              printfLog(x[i][j][k]);
+            }
+          }
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(4), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array literal evaluate left to right', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = 0;
+        int y[3] = {x++, x++, x++};
+        printfLog(x);
+        for (int i = 0; i < 3; i++) {
+          printfLog(y[i]);
+        }
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('string literal', () => {
+    const output = testProgram(
+      `
+      int main() {
+        char a[5] = "abcd";
+        for (int i = 0; i < 5; i++) {
+          printfLog(a[i]);
+        }
+        printfLog(sizeof(a));
+
+        char b[3] = "abcd";
+        for (int i = 0; i < 3; i++) {
+          printfLog(b[i]);
+        }
+        printfLog(sizeof(b));
+
+        char c[6] = "abcd";
+        for (int i = 0; i < 6; i++) {
+          printfLog(c[i]);
+        }
+        printfLog(sizeof(c));
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(40), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(24), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array of string literal', () => {
+    const output = testProgram(
+      `
+      int main() {
+        char* a[3] = {"ab", "cd", "efgh"};
+        for (int i = 0; i < 3; i++) {
+          int cur_index = 0;
+          while (a[i][cur_index] != 0) {
+            printfLog(a[i][cur_index]);
+            cur_index++;
+          }
+        }
+        printfLog(sizeof(a));
+
+        char b[3][3] = {"abcdef", "gh", "efgh"};
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++) {
+            printfLog(b[i][j]);
+          }
+        }
+        printfLog(sizeof(b));
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(102), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(104), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(24), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(104), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(102), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(103), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(72), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array and string literal unknown length', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int a[][2] = {{1, 2}, {2, 3}, {3}};
+        for (int i = 0; i < 3; i++) {
+          printfLog(a[i][0], a[i][1]);
+        }
+        printfLog(sizeof(a));
+
+        char b[] = "abcde";
+        for (int i = 0; i < 6; i++) {
+          printfLog(b[i]);
+        }
+        printfLog(sizeof(b));
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(99), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(100), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(101), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(0), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(48), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('arrays as function parameter', () => {
+    const output = testProgram(
+      `
+      int a(int x[], int y) {
+        printfLog(x, y);
+        int sum = 0;
+        for (int i = 0; i < 6; i++) {
+          sum = sum + x[i];
+        }
+        printfLog(sum);
+        return sum;
+      }
+      
+      int main() {
+        int b[] = {1, 2, 3, 4, 5, 6};
+        int sum = a(b, 2);
+        printfLog(b, sum);
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: makeArray(INT_BASE_TYPE, 6) },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(21), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: makeArray(INT_BASE_TYPE, 6) },
+      { binary: intToBinary(21), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('array negative size', () => {
     const program = () =>
       testProgram(
@@ -108,5 +417,23 @@ describe('array', () => {
     `,
       )
     expectThrowError(program, InvalidArraySize, 'Invalid array size of int -1.')
+  })
+
+  test('return array from function', () => {
+    const program = () =>
+      testProgram(
+        `
+      int a()[5] {
+        int b[] = {1, 2, 3, 4};
+        return b;
+      }
+
+      int main() {
+        int x[4] = a();
+        return 0;
+      }
+    `,
+      )
+    expectThrowError(program, FunctionCannotReturnArray, 'Function a cannot return an array.')
   })
 })

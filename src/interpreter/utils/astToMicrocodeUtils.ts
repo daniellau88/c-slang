@@ -9,6 +9,7 @@ import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
   CASTDeclaration,
+  CASTExpression,
   CASTNode,
 } from '../../typings/programAST'
 import { ProgramState } from '../programState'
@@ -17,7 +18,7 @@ import {
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
 import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
-import { shouldDerefExpression } from './utils'
+import { isExpressionList, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
 export function astToMicrocode(state: ProgramState, node: CASTNode) {
@@ -84,13 +85,50 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         case 'Float':
           state.pushA({ tag: 'load_float', value: parseFloat(node.value), node: node })
           return
+        case 'Char':
+          state.pushA({ tag: 'load_char', value: node.value, node: node })
+          return
         default:
           throw new NotImplementedRuntimeError(node)
       }
       return
     }
+    case 'StringLiteral': {
+      state.pushA({ tag: 'load_string', value: node.value, node: node })
+      return
+    }
+    case 'ArrayExpression': {
+      state.pushA({ tag: 'load_int', value: node.elements.length, node: node })
+      const allNested = node.elements.every(isExpressionList)
+      if (allNested) {
+        state.pushA({ tag: 'load_int', value: 1, node: node })
+      } else {
+        state.pushA({ tag: 'load_int', value: 0, node: node })
+      }
+      ;[...node.elements].reverse().forEach(x => {
+        let currentNode: CASTExpression = x
+        while (!allNested && isExpressionList(currentNode)) {
+          if (currentNode.type === 'ArrayExpression') {
+            currentNode = currentNode.elements[0] // Take only first element if not all are nested
+          } else if (currentNode.type === 'StringLiteral') {
+            currentNode = { type: 'Literal', subtype: 'Char', value: currentNode.value.charAt(0) }
+          } else {
+            break
+          }
+        }
+        if (shouldDerefExpression(currentNode)) state.pushA({ tag: 'deref', node: x })
+        state.pushA(currentNode)
+      })
+      return
+    }
     case 'AssignmentExpression': {
-      state.pushA({ tag: 'assgn', node: node })
+      if (isExpressionList(node.right)) {
+        state.pushA({ tag: 'assgn_list', node: node })
+      } else {
+        state.pushA({ tag: 'assgn', node: node })
+      }
+
+      state.pushA(node.left)
 
       const isBasicAssignment = node.operator === CASTAssignmentOperator.Equal
       if (!isBasicAssignment) {
@@ -104,9 +142,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA(node.right)
       if (!isBasicAssignment) {
         if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
-        state.pushA({ tag: 'duplicate_top_os', node: node })
+        state.pushA(node.left)
       }
-      state.pushA(node.left)
       return
     }
     case 'BinaryExpression': {
@@ -140,15 +177,15 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           state.pushA({ tag: 'pop_os', node: node })
         }
         state.pushA({ tag: 'assgn', node: node })
+        state.pushA(node.expression)
         state.pushA({ tag: 'bin_op_auto_promotion', operator: binOp, node: node })
         state.pushA({ tag: 'load_int', value: 1, node: node })
         state.pushA({ tag: 'deref', node: node.expression })
-        state.pushA({ tag: 'duplicate_top_os', node: node })
+        state.pushA(node.expression) // Have to evaluate expression twice (if is post) because the first needs to be derefed
         if (incrementType.unaryType === 'post') {
-          state.pushA(node.expression) // Have to evaluate expression twice because the first needs to be derefed
           state.pushA({ tag: 'deref', node: node.expression })
+          state.pushA(node.expression)
         }
-        state.pushA(node.expression)
         return
       }
 
@@ -183,7 +220,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length, node: node })
       // Insert from left to right into OS (i.e. evaluate left first)
       node.argumentExpression.forEach(x => {
-        if (shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
+        state.pushA({ tag: 'load_int', value: shouldDerefExpression(x) ? 1 : 0, node: node })
         state.pushA(x)
       })
       state.pushA(node.expression)
@@ -313,7 +350,6 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       throw new InternalUnreachableRuntimeError(node)
     }
 
-    case 'ArrayExpression':
     case 'CastExpression':
     case 'GotoStatement': {
       throw new NotImplementedRuntimeError(node)

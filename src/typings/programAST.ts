@@ -161,6 +161,7 @@ export interface CASTExpressionMap {
   BinaryExpression: CASTBinaryExpression
   ConditionalExpression: CASTConditionalExprssion
   Literal: CASTLiteral
+  StringLiteral: CASTStringLiteral
   UnaryExpression: CASTUnaryExpression
   CastExpression: CASTCastExpression
   Identifier: CASTIdentifier
@@ -298,6 +299,11 @@ export interface CASTCharLiteralExpression extends BaseNode, BaseExpression {
   value: string
 }
 
+export interface CASTStringLiteral extends BaseNode, BaseExpression {
+  type: 'StringLiteral'
+  value: string
+}
+
 export interface CASTArrayExpression extends BaseNode, BaseExpression {
   type: 'ArrayExpression'
   elements: Array<CASTExpression>
@@ -342,9 +348,9 @@ export type CASTTypeModifier =
   | CASTTypeModifierPointer
   | CASTTypeModifierParameters
 
-export type ProgramType = Array<CASTTypeModifier>
+export type CASTTypeModifiers = Array<CASTTypeModifier>
 
 export interface CASTType extends BaseNode {
   type: 'Type'
-  typeModifiers: ProgramType
+  typeModifiers: CASTTypeModifiers
 }

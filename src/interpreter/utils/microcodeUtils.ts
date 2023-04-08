@@ -2,6 +2,7 @@ import {
   CannotDereferenceTypeError,
   CannotPerformLossyConversion,
   CannotPerformOperation,
+  FunctionCannotReturnArray,
   InvalidArraySize,
   InvalidFreeMemoryValue,
   InvalidMallocSize,
@@ -12,14 +13,15 @@ import {
   VariableRedeclaration,
 } from '../../errors/errors'
 import { InternalUnreachableRuntimeError } from '../../errors/runtimeSourceError'
-import {
-  CASTBinaryOperator,
-  CASTExpression,
-  CASTTypeModifier,
-  ProgramType,
-} from '../../typings/programAST'
+import { CASTBinaryOperator, CASTExpression } from '../../typings/programAST'
 import { ProgramState } from '../programState'
-import { BinaryWithType, MicroCode, MicroCodeBinaryOperator } from '../typings'
+import {
+  BinaryWithType,
+  MicroCode,
+  MicroCodeBinaryOperator,
+  ProgramType,
+  ProgramTypeModifier,
+} from '../typings'
 import {
   ArithmeticType,
   CASTUnaryOperatorWithoutDerefence,
@@ -29,11 +31,15 @@ import {
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
 } from './arithmeticUtils'
+import { doAssignmentList } from './arrayUtils'
 import {
   CASTUnaryOperatorIncrement,
+  CHAR_BASE_TYPE,
+  convertCASTTypeModifierToProgramTypeModifier,
   decrementPointerDepth,
   FLOAT_BASE_TYPE,
   getArrayItemsType,
+  getStaticSizeFromProgramType,
   incrementPointerDepth,
   INT_BASE_TYPE,
   isArray,
@@ -42,7 +48,16 @@ import {
   isTypeEquivalent,
   VOID_BASE_TYPE,
 } from './typeUtils'
-import { binaryToInt, intToBinary, isMicrocode, isTruthy, shouldDerefExpression } from './utils'
+import {
+  binaryToInt,
+  derefBinary,
+  getExpressionLength,
+  intToBinary,
+  isExpressionList,
+  isMicrocode,
+  isTruthy,
+  shouldDerefExpression,
+} from './utils'
 
 export const wordSize = 8
 
@@ -55,13 +70,25 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (state.hasKeyGlobalE(funcName)) {
         throw new VariableRedeclaration(node.function, funcName)
       }
+
+      const functionReturnType = node.function.returnType.typeModifiers.map(
+        convertCASTTypeModifierToProgramTypeModifier,
+      )
+
+      // Disallow return of arrays from functions: https://stackoverflow.com/a/32622114
+      if (isArray(functionReturnType)) {
+        throw new FunctionCannotReturnArray(node.node)
+      }
+
       state.pushFD({
         subtype: 'func',
         arity: node.function.parameters.length,
         identifier: node.function.identifier,
         parameters: node.function.parameters,
         body: node.function.body,
-        returnProgType: node.function.returnType.typeModifiers,
+        returnProgType: node.function.returnType.typeModifiers.map(
+          convertCASTTypeModifierToProgramTypeModifier,
+        ),
       })
       state.addRecordToGlobalE(funcName, {
         subtype: 'func',
@@ -75,6 +102,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'load_float': {
       state.pushOS(node.value, FLOAT_BASE_TYPE)
+      return
+    }
+    case 'load_char': {
+      state.pushOS(intToBinary(node.value.charCodeAt(0)), CHAR_BASE_TYPE)
+      return
+    }
+    case 'load_string': {
+      for (let i = 0; i < node.value.length; i++) {
+        state.pushOS(intToBinary(node.value.charCodeAt(i)), CHAR_BASE_TYPE)
+      }
+      state.pushOS(0, CHAR_BASE_TYPE) // C strings end with \0
+      state.pushOS(0, INT_BASE_TYPE)
+      state.pushOS(intToBinary(node.value.length + 1), INT_BASE_TYPE)
       return
     }
     case 'load_var': {
@@ -100,23 +140,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'deref': {
       const { binary, type } = state.popOS()
-      if (type[0].subtype !== 'Pointer') {
-        throw new CannotDereferenceTypeError(node.node)
-      }
-      const newType = decrementPointerDepth(type)
-      if (newType[0].subtype === 'Array') {
-        state.pushOS(binary, newType)
-        return
-      }
-      state.pushOS(state.getMemoryAtIndex(binaryToInt(binary)), newType)
+      const { binary: newBinary, type: newType } = derefBinary(state, { binary, type })
+      state.pushOS(newBinary, newType)
       return
     }
     case 'func_apply': {
       const args: Array<BinaryWithType> = []
+      const needDerefs: Array<BinaryWithType> = []
       for (let i = 0; i < node.arity; i++) {
+        needDerefs.push(state.popOS())
         args.push(state.popOS())
       }
       args.reverse()
+      needDerefs.reverse()
 
       const { binary: funcId } = state.popOS()
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
@@ -131,7 +167,16 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        functionToCall.func(state, args, node.node)
+        const derefedArgs = args.map((x, i) => {
+          const needDeref = needDerefs[i]
+          // console.log(binaryToFormattedString(needDeref.binary, needDeref.type))
+          // console.log(binaryToFormattedString(x.binary, x.type))
+          if (isTruthy(needDeref.binary)) {
+            return derefBinary(state, x)
+          }
+          return x
+        })
+        functionToCall.func(state, derefedArgs, node.node)
         return
       }
 
@@ -144,14 +189,38 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
+        const arg = args[i]
+        const needDerefItem = isTruthy(needDerefs[i].binary)
         const identifierName = parameter.identifier?.name
-        if (identifierName)
+        if (identifierName) {
+          if (parameter.paramType.typeModifiers[0].subtype === 'Array') {
+            // If it is array, set variable pointer directly to location of array
+            if (!needDerefItem) {
+              throw new CannotDereferenceTypeError(node.node)
+            }
+            state.addRecordToE(identifierName, {
+              subtype: 'variable',
+              address: binaryToInt(arg.binary),
+              variableType: decrementPointerDepth(arg.type), // TODO: Check that type is compatible
+            })
+            state.pushRTS(arg.binary, arg.type)
+            continue
+          }
+
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
-            variableType: parameter.paramType.typeModifiers,
+            variableType: parameter.paramType.typeModifiers.map(
+              convertCASTTypeModifierToProgramTypeModifier,
+            ),
           })
-        state.pushRTS(args[i].binary, args[i].type)
+
+          if (needDerefItem) {
+            const { binary, type } = derefBinary(state, arg)
+            state.pushRTS(binary, type)
+          }
+          state.pushRTS(arg.binary, arg.type)
+        }
       }
 
       state.pushA({ tag: 'exit_func', node: node.node, funcNode: functionToCall })
@@ -203,20 +272,41 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         throw new VariableRedeclaration(node.declaration, name)
       }
 
+      const typeModifiers = node.declaration.declarationType.typeModifiers.map(x => {
+        return { ...x }
+      })
+
       if (init) {
-        state.pushA({ tag: 'assgn', node: node.declaration })
-        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
-        state.pushA(init)
+        if (isExpressionList(init)) {
+          state.pushA({ tag: 'assgn_list', node: node.declaration })
+
+          const expressionLength = getExpressionLength(init)
+          // Modify the size of incomplete element (e.g. int a[][5]), so that interpreter knows how much space to allocate
+          if (typeModifiers[0].subtype === 'Array' && typeModifiers[0].size === undefined) {
+            typeModifiers[0].size = {
+              type: 'Literal',
+              subtype: 'Int',
+              value: expressionLength.toString(),
+            }
+          }
+        } else {
+          state.pushA({ tag: 'assgn', node: node.declaration })
+        }
       }
 
       state.pushA({
         tag: 'decl_eval_type_modifier_i',
-        oldTypeModifiers: node.declaration.declarationType.typeModifiers,
+        oldTypeModifiers: typeModifiers,
         newTypeModifiers: [],
         currentIndex: -1,
         name: name,
         node: node.declaration,
       })
+
+      if (init) {
+        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
+        state.pushA(init)
+      }
       return
     }
     case 'decl_eval_type_modifier_i': {
@@ -239,16 +329,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           throw new InvalidArraySize(node.node, { binary, type })
         }
 
-        const currentModifierCopy: CASTTypeModifier = {
-          ...currentModifier,
-          size: { type: 'Literal', subtype: 'Int', value: intValue.toString() },
+        const currentModifierCopy: ProgramTypeModifier = {
+          subtype: 'Array',
+          size: intValue,
         }
         newTypeModifiers.push(currentModifierCopy)
       }
 
       for (let i = curIndex + 1; i < oldTypeModifiers.length; i++) {
         const currentModifier = oldTypeModifiers[i]
-        currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
           if (shouldDerefExpression(currentModifier.size))
@@ -256,7 +345,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           state.pushA(currentModifier.size)
           return
         }
-        newTypeModifiers.push(currentModifier)
+        newTypeModifiers.push(convertCASTTypeModifierToProgramTypeModifier(currentModifier))
       }
 
       state.pushA({
@@ -265,7 +354,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         name: node.name,
         node: node.node,
       })
-      state.pushA({ tag: 'size_of_op', typeModifiers: newTypeModifiers, node: node.node })
+      state.pushA({
+        tag: 'load_int',
+        value: getStaticSizeFromProgramType(newTypeModifiers),
+        node: node.node,
+      })
       return
     }
     case 'decl_alloc_mem': {
@@ -284,8 +377,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
     case 'assgn': {
-      const { binary: val, type: valType } = state.popOS()
       const { binary: addr, type: addrType } = state.popOS()
+      const { binary: val, type: valType } = state.popOS()
       const newType = decrementPointerDepth(addrType)
 
       let newValue = val // TODO: type checking
@@ -312,6 +405,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
+      return
+    }
+    case 'assgn_list': {
+      const { binary: address, type: addressType } = state.popOS()
+      const addressInt = binaryToInt(address)
+      const currentType = decrementPointerDepth(addressType)
+
+      doAssignmentList(state, addressInt, currentType)
+      state.pushOS(address, addressType)
       return
     }
     case 'bin_op_auto_promotion': {
@@ -373,11 +475,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           operator: MicroCodeBinaryOperator.IntMultiply,
           node: node.node,
         })
-        state.pushA({
-          tag: 'size_of_op',
-          typeModifiers: decrementPointerDepth(leftOpType),
-          node: node.node,
-        })
+        const leftOpSize = getStaticSizeFromProgramType(decrementPointerDepth(leftOpType))
+        state.pushA({ tag: 'load_int', value: leftOpSize, node: node.node })
         return
       }
 
