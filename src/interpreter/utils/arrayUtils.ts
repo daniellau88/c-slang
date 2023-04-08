@@ -40,6 +40,7 @@ export const doAssignmentList = (
     let iterateType: ProgramType = currentType
     // Prevents overwriting into other spaces
     let limit = values.length
+    let totalElements = limit
     if (isCharPointer) {
       // Only allocate memory if it is a char pointer
       const nestedType = decrementPointerDepth(currentType)
@@ -53,6 +54,7 @@ export const doAssignmentList = (
         totalElems *= (iterateType[0] as ProgramTypeModifierArray).size as number
         iterateType = getArrayItemsType(iterateType)
       }
+      totalElements = totalElems
       limit = Math.min(totalElems, limit)
     } else {
       state.setMemoryAtIndex(addressToAssgn, values[0], iterateType) // Assign only first character if it is not a pointer or array
@@ -63,6 +65,14 @@ export const doAssignmentList = (
 
     for (let i = limit - 1; i >= 0; i--) {
       state.setMemoryAtIndex(addressToAssgn + (i * staticSize) / wordSize, values[i], iterateType)
+    }
+
+    for (let i = totalElements - 1; i >= limit; i--) {
+      state.setMemoryAtIndex(
+        addressToAssgn + (i * staticSize) / wordSize,
+        intToBinary(0),
+        iterateType,
+      )
     }
 
     if (isCharPointer) {
