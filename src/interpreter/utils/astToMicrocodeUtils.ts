@@ -242,7 +242,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length, node: node })
       // Insert from left to right into OS (i.e. evaluate left first)
       node.argumentExpression.forEach(x => {
-        state.pushA({ tag: 'load_int', value: shouldDerefExpression(x) ? 1 : 0, node: node })
+        if (shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
         state.pushA(x)
       })
       state.pushA(node.expression)

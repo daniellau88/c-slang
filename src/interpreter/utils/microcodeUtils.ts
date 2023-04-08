@@ -1,5 +1,4 @@
 import {
-  CannotDereferenceTypeError,
   CannotPerformLossyConversion,
   CannotPerformOperation,
   FunctionCannotReturnArray,
@@ -16,7 +15,7 @@ import {
   InternalUnreachableRuntimeError,
   NotImplementedRuntimeError,
 } from '../../errors/runtimeSourceError'
-import { CASTBinaryOperator, CASTExpression } from '../../typings/programAST'
+import { CASTBinaryOperator, CASTExpression, CASTLiteral } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import {
   BinaryWithType,
@@ -150,13 +149,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'func_apply': {
       const args: Array<BinaryWithType> = []
-      const needDerefs: Array<BinaryWithType> = []
       for (let i = 0; i < node.arity; i++) {
-        needDerefs.push(state.popOS())
         args.push(state.popOS())
       }
       args.reverse()
-      needDerefs.reverse()
 
       const { binary: funcId } = state.popOS()
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
@@ -171,16 +167,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        const derefedArgs = args.map((x, i) => {
-          const needDeref = needDerefs[i]
-          // console.log(binaryToFormattedString(needDeref.binary, needDeref.type))
-          // console.log(binaryToFormattedString(x.binary, x.type))
-          if (isTruthy(needDeref.binary)) {
-            return derefBinary(state, x)
-          }
-          return x
-        })
-        functionToCall.func(state, derefedArgs, node.node)
+        functionToCall.func(state, args, node.node)
         return
       }
 
@@ -194,36 +181,43 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
         const arg = args[i]
-        const needDerefItem = isTruthy(needDerefs[i].binary)
         const identifierName = parameter.identifier?.name
         if (identifierName) {
           if (parameter.paramType.typeModifiers[0].subtype === 'Array') {
-            // If it is array, set variable pointer directly to location of array
-            if (!needDerefItem) {
-              throw new CannotDereferenceTypeError(node.node)
+            const paramTypeCopy = parameter.paramType.typeModifiers.map(x => {
+              return { ...x }
+            })
+            if (paramTypeCopy[0].subtype === 'Array' && paramTypeCopy[0].size === undefined) {
+              const inferredSize = arg.type[0].subtype === 'Array' ? arg.type[0].size : undefined
+              if (inferredSize !== undefined) {
+                paramTypeCopy[0].size = {
+                  type: 'Literal',
+                  subtype: 'Int',
+                  value: inferredSize.toString(),
+                } as CASTLiteral
+              }
             }
+
             state.addRecordToE(identifierName, {
               subtype: 'variable',
               address: binaryToInt(arg.binary),
-              variableType: decrementPointerDepth(arg.type), // TODO: Check that type is compatible
+              variableType: paramTypeCopy.map(convertCASTTypeModifierToProgramTypeModifier), // TODO: Check that type is compatible
             })
             state.pushRTS(arg.binary, arg.type)
             continue
           }
 
+          const variableType = parameter.paramType.typeModifiers.map(
+            convertCASTTypeModifierToProgramTypeModifier,
+          )
+
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
-            variableType: parameter.paramType.typeModifiers.map(
-              convertCASTTypeModifierToProgramTypeModifier,
-            ),
-          })
+            variableType: variableType,
+                                                                                                                                                                                                                      })
 
-          if (needDerefItem) {
-            const { binary, type } = derefBinary(state, arg)
-            state.pushRTS(binary, type)
-          }
-          state.pushRTS(arg.binary, arg.type)
+          state.pushRTS(arg.binary, variableType)
         }
       }
 

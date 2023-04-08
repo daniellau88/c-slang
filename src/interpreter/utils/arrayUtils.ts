@@ -51,7 +51,7 @@ export const doAssignmentList = (
       // If it is an array, flatten the array
       let totalElems = 1
       while (isArray(iterateType)) {
-        totalElems *= (iterateType[0] as ProgramTypeModifierArray).size as number
+        totalElems *= (iterateType[0] as ProgramTypeModifierArray).size
         iterateType = getArrayItemsType(iterateType)
       }
       totalElements = totalElems
