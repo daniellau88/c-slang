@@ -6,6 +6,8 @@ import {
 import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
 
+const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
+
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
 ]
@@ -96,7 +98,7 @@ export const FALSE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
   type: INT_BASE_TYPE,
 }
 export const TRUE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
-  binary: 2.121995791e-314, // import of intToBinary causes issues during testing
+  binary: ONE_INT_BINARY,
   type: INT_BASE_TYPE,
 }
 
