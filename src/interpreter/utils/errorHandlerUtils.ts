@@ -46,6 +46,10 @@ const arithmeticUtilsErrorHandler = (e: any, node: CASTNode) => {
   }
 }
 
+const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
+
+const typeConversionErrorHandler = (e: any, node: CASTNode) => {}
+
 export const errorHandler = (e: any, node: CASTNode) => {
   if (e instanceof RuntimeSourceError) {
     throw e
@@ -53,6 +57,8 @@ export const errorHandler = (e: any, node: CASTNode) => {
 
   rtmErrorHandler(e, node)
   arithmeticUtilsErrorHandler(e, node)
+  staticSizeErrorHandler(e, node)
+  typeConversionErrorHandler(e, node)
 
   if (e instanceof ParseBaseError) {
     throw new ParseRuntimeError(node, e)

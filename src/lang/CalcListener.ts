@@ -44,6 +44,7 @@ import { MultiplicativeExpressionTypeMultiplicativeBackslashContext } from './Ca
 import { MultiplicativeExpressionTypeMultiplicativePercentContext } from './CalcParser'
 import { PrimaryExpressionTypeIdentifierContext } from './CalcParser'
 import { PrimaryExpressionTypeConstantContext } from './CalcParser'
+import { PrimaryExpressionTypeStringContext } from './CalcParser'
 import { PrimaryExpressionTypeNestedExpressionContext } from './CalcParser'
 import { ExclusiveOrExpressionTypeAndContext } from './CalcParser'
 import { ExclusiveOrExpressionTypeExclusiveOrContext } from './CalcParser'
@@ -140,6 +141,7 @@ import { Direct_abstract_declaratorContext } from './CalcParser'
 import { Unary_expressionContext } from './CalcParser'
 import { Postfix_expressionContext } from './CalcParser'
 import { Primary_expressionContext } from './CalcParser'
+import { StringContext } from './CalcParser'
 import { ConstantContext } from './CalcParser'
 import { Integer_constantContext } from './CalcParser'
 import { Float_constantContext } from './CalcParser'
@@ -761,6 +763,19 @@ export interface CalcListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitPrimaryExpressionTypeConstant?: (ctx: PrimaryExpressionTypeConstantContext) => void
+
+  /**
+   * Enter a parse tree produced by the `PrimaryExpressionTypeString`
+   * labeled alternative in `CalcParser.primary_expression`.
+   * @param ctx the parse tree
+   */
+  enterPrimaryExpressionTypeString?: (ctx: PrimaryExpressionTypeStringContext) => void
+  /**
+   * Exit a parse tree produced by the `PrimaryExpressionTypeString`
+   * labeled alternative in `CalcParser.primary_expression`.
+   * @param ctx the parse tree
+   */
+  exitPrimaryExpressionTypeString?: (ctx: PrimaryExpressionTypeStringContext) => void
 
   /**
    * Enter a parse tree produced by the `PrimaryExpressionTypeNestedExpression`
@@ -1969,6 +1984,17 @@ export interface CalcListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitPrimary_expression?: (ctx: Primary_expressionContext) => void
+
+  /**
+   * Enter a parse tree produced by `CalcParser.string`.
+   * @param ctx the parse tree
+   */
+  enterString?: (ctx: StringContext) => void
+  /**
+   * Exit a parse tree produced by `CalcParser.string`.
+   * @param ctx the parse tree
+   */
+  exitString?: (ctx: StringContext) => void
 
   /**
    * Enter a parse tree produced by `CalcParser.constant`.

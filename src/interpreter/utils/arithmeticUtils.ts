@@ -8,9 +8,8 @@ import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
   CASTUnaryOperator,
-  ProgramType,
 } from '../../typings/programAST'
-import { BinaryWithType, MicroCodeBinaryOperator } from '../typings'
+import { BinaryWithType, MicroCodeBinaryOperator, ProgramType } from '../typings'
 import {
   FALSE_BOOLEAN_BINARY_WITH_TYPE,
   FLOAT_BASE_TYPE,

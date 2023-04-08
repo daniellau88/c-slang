@@ -3,15 +3,10 @@
 import { baseGenerator, generate } from 'astring'
 import * as es from 'estree'
 
-import { BinaryWithType, MicroCodeFunctionDefiniton } from '../interpreter/typings'
+import { BinaryWithType, MicroCodeFunctionDefiniton, ProgramType } from '../interpreter/typings'
 import { binaryToFormattedString, stringify, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
-import {
-  CASTDeclaration,
-  CASTFunctionDefinition,
-  CASTNode,
-  ProgramType,
-} from '../typings/programAST'
+import { CASTDeclaration, CASTFunctionDefinition, CASTNode } from '../typings/programAST'
 import { BaseError } from './baseErrors'
 import { RuntimeSourceError } from './runtimeSourceError'
 
@@ -229,6 +224,24 @@ export class ReturnNotCalled extends RuntimeSourceError {
       name = this.funcNode.identifier.name
     }
     return `Return statement not called for ${name ? `function ${name}` : 'unknown function'}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class FunctionCannotReturnArray extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    let name: string | undefined = undefined
+    if (this.node.type === 'FunctionDefinition') {
+      name = this.node.identifier.name
+    }
+    return `Function ${name} cannot return an array.`
   }
 
   public elaborate() {

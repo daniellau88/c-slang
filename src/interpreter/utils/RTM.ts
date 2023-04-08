@@ -2,7 +2,7 @@ import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
 } from '../../errors/baseErrors'
-import { ProgramType } from '../../typings/programAST'
+import { ProgramType } from '../typings'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
@@ -140,10 +140,12 @@ export class RTM {
   }
 
   allocateSizeOnRTS(size: number, type?: ProgramType) {
+    const startOfRTS = this.NextStack
     for (let i = 0; i < size; i++) {
       if (type) this.TypeAdditionalInfoStack[this.NextStack] = type
       this.NextStack++
     }
+    return startOfRTS
   }
 
   getStartRTS(): number {

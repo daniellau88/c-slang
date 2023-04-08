@@ -132,4 +132,27 @@ describe('assignment', () => {
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
+
+  test('evaluate value before address', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x[3];
+        int y = 0;
+        x[++y] = ++y;
+        printfLog(y, x[0], x[1], x[2]);
+        return 0;
+      }
+    `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
 })

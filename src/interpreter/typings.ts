@@ -8,8 +8,8 @@ import {
   CASTIdentifier,
   CASTNode,
   CASTStatement,
+  CASTTypeModifiers,
   CASTUnaryOperator,
-  ProgramType,
 } from '../typings/programAST'
 import { ProgramState } from './programState'
 
@@ -31,6 +31,16 @@ interface LoadIntMicroCode extends MicroCodeBase {
 interface LoadFloatMicroCode extends MicroCodeBase {
   tag: 'load_float'
   value: number
+}
+
+interface LoadCharMicroCode extends MicroCodeBase {
+  tag: 'load_char'
+  value: string
+}
+
+interface LoadStringMicroCode extends MicroCodeBase {
+  tag: 'load_string'
+  value: string
 }
 
 interface LoadVarMicroCode extends MicroCodeBase {
@@ -68,6 +78,10 @@ interface DeclarationMicroCode extends MicroCodeBase {
 
 interface AssignmentMicroCode extends MicroCodeBase {
   tag: 'assgn'
+}
+
+interface AssignmentListMicroCode extends MicroCodeBase {
+  tag: 'assgn_list'
 }
 
 export enum MicroCodeBinaryOperator {
@@ -132,13 +146,13 @@ interface ConditionalOperationMicroCode extends MicroCodeBase {
 
 interface SizeOfOperationMicroCode extends MicroCodeBase {
   tag: 'size_of_op'
-  typeModifiers: ProgramType
+  typeModifiers: CASTTypeModifiers
 }
 
 // Evaluates expressions in array
 interface DeclarationEvaluateTypeModifierIterativeMicroCode extends MicroCodeBase {
   tag: 'decl_eval_type_modifier_i'
-  oldTypeModifiers: ProgramType
+  oldTypeModifiers: CASTTypeModifiers
   newTypeModifiers: ProgramType
   currentIndex: number
   name: string
@@ -154,10 +168,17 @@ interface ArrayAddressComputeMicroCode extends MicroCodeBase {
   tag: 'array_add_comp'
 }
 
+interface CastValueMicroCode extends MicroCodeBase {
+  tag: 'cast_value'
+  castType: ProgramType
+}
+
 export type MicroCode =
   | LoadFuncMicroCode
   | LoadIntMicroCode
   | LoadFloatMicroCode
+  | LoadCharMicroCode
+  | LoadStringMicroCode
   | LoadVarMicroCode
   | FuncApplyMicroCode
   | PopOSMicroCode
@@ -166,6 +187,7 @@ export type MicroCode =
   | ExitScopeMicroCode
   | DeclarationMicroCode
   | AssignmentMicroCode
+  | AssignmentListMicroCode
   | BinaryOperationMicroCode
   | BinaryOperationAutoPromotionMicroCode
   | ExitFuncMicroCode
@@ -187,6 +209,7 @@ export type MicroCode =
   | SwitchBodyMicrocode
   | MallocMicrocode
   | FreeMicrocode
+  | CastValueMicroCode
 
 interface FreeMicrocode extends MicroCodeBase {
   tag: 'free_op'
@@ -263,6 +286,36 @@ export interface EScope {
 
 export type Env = Array<EScope>
 
+type ProgramBaseType = 'int' | 'float' | 'char' | 'void'
+
+interface ProgramTypeModifierBaseType {
+  subtype: 'BaseType'
+  baseType: ProgramBaseType
+}
+
+export interface ProgramTypeModifierArray {
+  subtype: 'Array'
+  size: number
+}
+
+interface ProgramTypeModifierPointer {
+  subtype: 'Pointer'
+  pointerDepth: number
+}
+
+interface ProgramTypeModifierParameters {
+  subtype: 'Parameters'
+  parameterTypeList: Array<CASTFunctionParameter>
+}
+
+export type ProgramTypeModifier =
+  | ProgramTypeModifierBaseType
+  | ProgramTypeModifierArray
+  | ProgramTypeModifierPointer
+  | ProgramTypeModifierParameters
+
+export type ProgramType = Array<ProgramTypeModifier>
+
 interface MicroCodeFunctionBase {
   subtype: string
 }
@@ -278,7 +331,7 @@ export interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
 export interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
   subtype: 'func'
   arity: number
-  returnProgType: ProgramType
+  returnProgType: ProgramType // function declaration cannot have variably modified type
 
   identifier: CASTIdentifier
   parameters: Array<CASTFunctionParameter>

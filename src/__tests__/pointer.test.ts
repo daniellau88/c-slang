@@ -2,13 +2,13 @@ import { describe, test } from '@jest/globals'
 
 import { CannotDereferenceTypeError, InvalidMemoryAccess } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
+import { ProgramType } from '../interpreter/typings'
 import {
   FLOAT_BASE_TYPE,
   incrementPointerDepth,
   INT_BASE_TYPE,
 } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { ProgramType } from '../typings/programAST'
 import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('pointer', () => {
@@ -56,13 +56,9 @@ describe('pointer', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const intArrayType: ProgramType = [
-      { type: 'TypeModifier', subtype: 'Pointer', pointerDepth: 1 },
-      {
-        type: 'TypeModifier',
-        subtype: 'Array',
-        size: { type: 'Literal', subtype: 'Int', value: '2' },
-      },
-      { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
+      { subtype: 'Pointer', pointerDepth: 1 },
+      { subtype: 'Array', size: 2 },
+      { subtype: 'BaseType', baseType: 'int' },
     ]
     const expectedLogOutput = [
       { binary: intToBinary(3), type: intArrayType },
