@@ -372,6 +372,44 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('initialize array to zeros', () => {
+    const output = testProgram(
+      `
+      void a() {
+        int b[5] = { 1, };
+        for (int i = 0; i < 5; i++) {
+          printfLog(b[i]);
+        }
+        b[3] = 2;
+        b[4] = 3;
+        return;
+      }
+
+      int main() {
+        a();
+        a();
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('arrays as function parameter', () => {
     const output = testProgram(
       `
