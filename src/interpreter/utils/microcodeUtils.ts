@@ -3,9 +3,9 @@ import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
   InvalidArraySize,
+  InvalidMallocSize,
   InvalidNumberOfArguments,
   MemoryFreeError,
-  MemoryMallocError,
   ReturnNotCalled,
   UndefinedVariable,
   UnknownSize,
@@ -599,7 +599,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'malloc_op': {
       const { binary: size, type: typeSize } = node.size
       if (binaryToInt(size) <= 0) {
-        throw new MemoryMallocError(node.node, binaryToInt(size))
+        throw new InvalidMallocSize(node.node, binaryToInt(size))
       }
       const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))

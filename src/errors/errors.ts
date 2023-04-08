@@ -351,13 +351,27 @@ export class InvalidMemoryAccess extends RuntimeSourceError {
   }
 }
 
-export class MemoryMallocError extends RuntimeSourceError {
+export class InvalidMallocSize extends RuntimeSourceError {
   constructor(node: CASTNode, private size: number, stackTrace?: BaseError) {
     super(node, stackTrace)
   }
 
   public explain() {
     return `Cannot allocate memory of size ${this.size}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class NotEnoughMemory extends RuntimeSourceError {
+  constructor(node: CASTNode, private size: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Not enough memory.`
   }
 
   public elaborate() {
