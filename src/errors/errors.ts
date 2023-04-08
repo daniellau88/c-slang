@@ -379,13 +379,27 @@ export class NotEnoughMemory extends RuntimeSourceError {
   }
 }
 
-export class MemoryFreeError extends RuntimeSourceError {
+export class MemoryFreeNotAllocatedError extends RuntimeSourceError {
   constructor(node: CASTNode, private address: number, stackTrace?: BaseError) {
     super(node, stackTrace)
   }
 
   public explain() {
     return `Cannot free memory at ${this.address}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidFreeMemoryValue extends RuntimeSourceError {
+  constructor(node: CASTNode, private value: BinaryWithType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Invalid free value of ${binaryToFormattedString(this.value.binary, this.value.type)}.`
   }
 
   public elaborate() {

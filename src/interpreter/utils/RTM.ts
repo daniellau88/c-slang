@@ -1,4 +1,7 @@
-import { RTMInvalidFreeBaseError, RTMInvalidMemoryAccessBaseError } from '../../errors/baseErrors'
+import {
+  RTMInvalidMemoryAccessBaseError,
+  RTMMemoryNotAllocatedBaseError,
+} from '../../errors/baseErrors'
 import { ProgramType } from '../../typings/programAST'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
@@ -56,7 +59,7 @@ export class RTM {
 
   freeHeapMemory(address: number) {
     if (!this.AllocatedMemory.has(address)) {
-      throw new RTMInvalidFreeBaseError(address)
+      throw new RTMMemoryNotAllocatedBaseError(address)
     }
     this.FreeList.push({ Address: address, Size: this.AllocatedMemory.get(address)! })
     this.AllocatedMemory.delete(address)

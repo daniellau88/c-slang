@@ -3,9 +3,9 @@ import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
   InvalidArraySize,
+  InvalidFreeMemoryValue,
   InvalidMallocSize,
   InvalidNumberOfArguments,
-  MemoryFreeError,
   ReturnNotCalled,
   UndefinedVariable,
   UnknownSize,
@@ -610,7 +610,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: address, type: typeAddress } = node.address
       const addressIndex = binaryToInt(address)
       if (!isPointer(typeAddress)) {
-        throw new MemoryFreeError(node.node, addressIndex)
+        throw new InvalidFreeMemoryValue(node.node, { binary: address, type: typeAddress })
       }
       state.freeHeapMemory(addressIndex)
       state.pushOS(0, VOID_BASE_TYPE)

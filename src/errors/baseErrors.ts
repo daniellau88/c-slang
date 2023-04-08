@@ -23,7 +23,7 @@ export class RTMInvalidMemoryAccessBaseError extends BaseError {
   }
 }
 
-export class RTMInvalidFreeBaseError extends BaseError {
+export class RTMMemoryNotAllocatedBaseError extends BaseError {
   constructor(public address: number) {
     super()
   }

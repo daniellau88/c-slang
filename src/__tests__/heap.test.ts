@@ -1,6 +1,10 @@
 import { describe, test } from '@jest/globals'
 
-import { InvalidMemoryAccess, MemoryFreeError, MemoryMallocError } from '../errors/errors'
+import {
+  InvalidMallocSize,
+  InvalidMemoryAccess,
+  MemoryFreeNotAllocatedError,
+} from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
@@ -142,7 +146,7 @@ describe('heap', () => {
       }
     `,
       )
-    expectThrowError(program, MemoryMallocError, 'Cannot allocate memory of size -1.')
+    expectThrowError(program, InvalidMallocSize, 'Cannot allocate memory of size -1.')
   })
 
   test('double free', () => {
@@ -157,7 +161,7 @@ describe('heap', () => {
       }
     `,
       )
-    expectThrowError(program, MemoryFreeError, 'Cannot free memory at 124999.')
+    expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 124999.')
   })
 
   test('use after free', () => {
@@ -186,6 +190,6 @@ describe('heap', () => {
       }
     `,
       )
-    expectThrowError(program, MemoryFreeError, 'Cannot free memory at 5.')
+    expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 5.')
   })
 })

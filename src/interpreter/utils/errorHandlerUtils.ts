@@ -5,8 +5,8 @@ import {
   NonArrayBaseError,
   NonPointerBaseError,
   ParseBaseError,
-  RTMInvalidFreeBaseError,
   RTMInvalidMemoryAccessBaseError,
+  RTMMemoryNotAllocatedBaseError,
   UnknownTypeBaseError,
 } from '../../errors/baseErrors'
 import {
@@ -14,7 +14,7 @@ import {
   CannotDivideByZero,
   CannotPerformOperation,
   InvalidMemoryAccess,
-  MemoryFreeError,
+  MemoryFreeNotAllocatedError,
   UnknownError,
   UnknownType,
 } from '../../errors/errors'
@@ -29,8 +29,8 @@ const rtmErrorHandler = (e: any, node: CASTNode) => {
   if (e instanceof RTMInvalidMemoryAccessBaseError) {
     throw new InvalidMemoryAccess(node, e.index, e)
   }
-  if (e instanceof RTMInvalidFreeBaseError) {
-    throw new MemoryFreeError(node, e.address, e)
+  if (e instanceof RTMMemoryNotAllocatedBaseError) {
+    throw new MemoryFreeNotAllocatedError(node, e.address, e)
   }
 }
 
