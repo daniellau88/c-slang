@@ -146,12 +146,3 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
-
-// test(`
-
-// int main() {
-//   int* a = 5;
-//   float c = *a;
-//   printfLog(a, c);
-//   return 0;
-// }`)
