@@ -201,6 +201,7 @@ import {
   CCSTWhileStatement,
 } from '../typings/programCST'
 import { stripIndent } from '../utils/formatters'
+import { removeQuotes, unescapeString } from '../utils/parser'
 
 export class DisallowedConstructError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -1323,7 +1324,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitString(ctx: StringContext): CCSTString {
     return {
       type: 'String',
-      value: ctx.text.substring(1, ctx.text.length - 1),
+      value: unescapeString(removeQuotes(ctx.text)),
       loc: contextToLocation(ctx),
     }
   }
@@ -1358,7 +1359,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitCharacter_constant(ctx: Character_constantContext): CCSTCharacterConstant {
     return {
       type: 'CharacterConstant',
-      value: ctx.text.substring(1, ctx.text.length - 1),
+      value: unescapeString(removeQuotes(ctx.text)),
       loc: contextToLocation(ctx),
     }
   }

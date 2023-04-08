@@ -472,6 +472,7 @@ function visitCCSTForInitDeclaration(
     return {
       type: 'ExpressionStatement',
       expressions: visitCCSTExpression(node.expression),
+      loc: node.loc,
     }
   }
 

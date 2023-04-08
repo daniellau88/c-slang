@@ -143,10 +143,14 @@ fragment
 ZERO_DIGIT: [0];
 
 fragment
+ESCAPE_CHAR
+   : '\\' ('a'|'b'|'f'|'n'|'r'|'t'|'v'|'\\'|'\''|'"'|'?'|'0')
+   ;
+
+fragment
 S_CHAR
    : ~["\\\r\n]
-   | '\\\n'
-   | '\\\r\n'
+   | ESCAPE_CHAR
    ;
 
 INTEGER: (NON_ZERO_DIGIT DIGIT* | ZERO_DIGIT);
