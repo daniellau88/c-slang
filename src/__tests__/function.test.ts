@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { ReturnNotCalled } from '../errors/errors'
+import { CannotReturnNonVoidValue, CannotReturnVoidValue, ReturnNotCalled } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
@@ -120,5 +120,60 @@ describe('function', () => {
         `,
       )
     expectThrowError(program, ReturnNotCalled, 'Return statement not called for function a.')
+  })
+
+  test('void function return value', () => {
+    const program = () =>
+      testProgram(
+        rawCode`
+        void a(int b, int c) {
+          printfLog(b);
+          return 2;
+        }
+
+        int main() {
+          a(2, 3);
+          return 0;
+        }
+        `,
+      )
+    expectThrowError(program, CannotReturnNonVoidValue, 'Cannot return non-void value.')
+  })
+
+  test('non-void function return void', () => {
+    const program = () =>
+      testProgram(
+        rawCode`
+        int a(int b, int c) {
+          printfLog(b);
+          return;
+        }
+
+        int main() {
+          int b = a(2, 3);
+          return 0;
+        }
+        `,
+      )
+    expectThrowError(program, CannotReturnVoidValue, 'Cannot return void value.')
+  })
+
+  test('void function no return', () => {
+    const output = testProgram(
+      rawCode`
+      void a(int b) {
+        printfLog(b);
+      }
+
+      int main() {
+        a(2);
+        return 0;
+      }
+      `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: intToBinary(2), type: INT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })

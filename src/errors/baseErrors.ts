@@ -79,3 +79,9 @@ export class StaticSizeUnknownSizeBaseError extends BaseError {
     super()
   }
 }
+
+export class VoidHasNoValueBaseError extends BaseError {
+  constructor() {
+    super()
+  }
+}

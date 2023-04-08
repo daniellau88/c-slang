@@ -420,6 +420,48 @@ export class InvalidFreeMemoryValue extends RuntimeSourceError {
   }
 }
 
+export class VoidHasNoValue extends RuntimeSourceError {
+  constructor(node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Void does not have a value.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotReturnNonVoidValue extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot return non-void value.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotReturnVoidValue extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot return void value.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
 export class UnknownError extends RuntimeSourceError {
   constructor(node: CASTNode, private e: Error) {
     super(node)

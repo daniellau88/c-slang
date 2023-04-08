@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { UndefinedVariable, VariableRedeclaration } from '../errors/errors'
+import { UndefinedVariable, VariableRedeclaration, VoidHasNoValue } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   FLOAT_BASE_TYPE,
@@ -116,5 +116,18 @@ describe('declaration', () => {
         `,
       )
     expectThrowError(program, VariableRedeclaration, 'Redeclaration of name x.')
+  })
+
+  test('cannot declare void type', () => {
+    const program = () =>
+      testProgram(
+        rawCode`
+        int main() {
+          void x = 3;
+          return 0;
+        }
+        `,
+      )
+    expectThrowError(program, VoidHasNoValue, 'Void does not have a value.')
   })
 })
