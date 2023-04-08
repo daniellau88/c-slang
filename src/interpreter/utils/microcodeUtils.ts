@@ -12,7 +12,10 @@ import {
   UnknownSize,
   VariableRedeclaration,
 } from '../../errors/errors'
-import { InternalUnreachableRuntimeError } from '../../errors/runtimeSourceError'
+import {
+  InternalUnreachableRuntimeError,
+  NotImplementedRuntimeError,
+} from '../../errors/runtimeSourceError'
 import { CASTBinaryOperator, CASTExpression } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import {
@@ -44,6 +47,7 @@ import {
   INT_BASE_TYPE,
   isArray,
   isBaseType,
+  isParameters,
   isPointer,
   isTypeEquivalent,
   VOID_BASE_TYPE,
@@ -287,6 +291,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
               type: 'Literal',
               subtype: 'Int',
               value: expressionLength.toString(),
+              loc: init.loc,
             }
           }
         } else {
@@ -713,6 +718,40 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
       state.freeHeapMemory(addressIndex)
       state.pushOS(0, VOID_BASE_TYPE)
+      return
+    }
+
+    case 'cast_value': {
+      const { binary: value, type: valueType } = state.popOS()
+      const castType = node.castType
+      let newValue = value
+
+      if (
+        isArray(castType) ||
+        isArray(valueType) ||
+        isParameters(castType) ||
+        isParameters(valueType)
+      ) {
+        throw new NotImplementedRuntimeError(node.node)
+      }
+
+      if (isBaseType(valueType) && isBaseType(castType)) {
+        const valuePriority = getBaseTypePromotionPriority(valueType)
+        const castPriority = getBaseTypePromotionPriority(castType)
+
+        if (castPriority > valuePriority) {
+          newValue = binaryToInt(value)
+        } else if (castPriority < valuePriority) {
+          newValue = intToBinary(Math.trunc(value))
+        }
+      } else if (isPointer(castType) && isBaseType(valueType)) {
+        const valuePriority = getBaseTypePromotionPriority(valueType)
+        if (valuePriority === ArithmeticType.Float) {
+          newValue = intToBinary(Math.trunc(value))
+        }
+      }
+
+      state.pushOS(newValue, castType)
       return
     }
 

@@ -1240,6 +1240,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       subtype: 'FunctionCall',
       expression: expressionContext ? (this.visit(expressionContext) as CCSTExpression) : undefined,
       postfixExpression: this.visit(ctx.postfix_expression()) as CCSTPostfixExpression,
+      loc: contextToLocation(ctx),
     }
   }
 
@@ -1322,6 +1323,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     return {
       type: 'String',
       value: ctx.text.substring(1, ctx.text.length - 1),
+      loc: contextToLocation(ctx),
     }
   }
 

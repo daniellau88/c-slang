@@ -12,12 +12,17 @@ import {
   CASTExpression,
   CASTNode,
 } from '../../typings/programAST'
+import { dummyLocation } from '../../utils/dummyAstCreator'
 import { ProgramState } from '../programState'
 import {
   CASTUnaryOperatorWithoutDerefence,
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
-import { CASTUnaryOperatorIncrement, getUnaryOperatorIncrementType } from './typeUtils'
+import {
+  CASTUnaryOperatorIncrement,
+  convertCASTTypeModifierToProgramTypeModifier,
+  getUnaryOperatorIncrementType,
+} from './typeUtils'
 import { isExpressionList, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
@@ -35,8 +40,9 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           arity: 0,
           node: {
             type: 'FunctionCallExpression',
-            expression: { type: 'Identifier', name: 'main' },
+            expression: { type: 'Identifier', name: 'main', loc: dummyLocation() },
             argumentExpression: [],
+            loc: dummyLocation(),
           },
         })
         state.pushA(fdNode.identifier)
@@ -111,7 +117,12 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           if (currentNode.type === 'ArrayExpression') {
             currentNode = currentNode.elements[0] // Take only first element if not all are nested
           } else if (currentNode.type === 'StringLiteral') {
-            currentNode = { type: 'Literal', subtype: 'Char', value: currentNode.value.charAt(0) }
+            currentNode = {
+              type: 'Literal',
+              subtype: 'Char',
+              value: currentNode.value.charAt(0),
+              loc: currentNode.loc,
+            }
           } else {
             break
           }
@@ -158,6 +169,17 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue, node: node })
       if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref', node: node.predicate })
       state.pushA(node.predicate)
+      return
+    }
+    case 'CastExpression': {
+      state.pushA({
+        tag: 'cast_value',
+        castType: node.castType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier),
+        node: node,
+      })
+      if (shouldDerefExpression(node.expression))
+        state.pushA({ tag: 'deref', node: node.expression })
+      state.pushA(node.expression)
       return
     }
     case 'SizeOfExpression': {
@@ -350,7 +372,6 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       throw new InternalUnreachableRuntimeError(node)
     }
 
-    case 'CastExpression':
     case 'GotoStatement': {
       throw new NotImplementedRuntimeError(node)
     }

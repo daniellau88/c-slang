@@ -38,6 +38,11 @@ export const isArray = (type: ProgramType): boolean => {
   return type[0].subtype === 'Array'
 }
 
+export const isParameters = (type: ProgramType): boolean => {
+  if (type.length === 0) return false
+  return type[0].subtype === 'Parameters'
+}
+
 export const convertCASTTypeModifierToProgramTypeModifier = (
   castTypeModifier: CASTTypeModifier,
 ): ProgramTypeModifier => {

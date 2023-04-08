@@ -2,7 +2,7 @@ import * as es from 'estree'
 
 interface CCSTNodeBase {
   type: string
-  loc?: es.SourceLocation
+  loc: es.SourceLocation
 }
 
 export interface CCSTProgram extends CCSTNodeBase {
