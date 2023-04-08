@@ -1,6 +1,10 @@
+import {
+  RTMInvalidMemoryAccessBaseError,
+  RTMMemoryNotAllocatedBaseError,
+} from '../../errors/baseErrors'
 import { ProgramType } from '../../typings/programAST'
 import { POINTER_BASE_TYPE } from './typeUtils'
-import { binaryToInt, intToBinary, pop, printBinariesWithTypes, push, RuntimeError } from './utils'
+import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
 const WORD_SIZE = 8
 
@@ -55,19 +59,19 @@ export class RTM {
 
   freeHeapMemory(address: number) {
     if (!this.AllocatedMemory.has(address)) {
-      throw new RuntimeError('Invalid free on non allocated heap memory')
+      throw new RTMMemoryNotAllocatedBaseError(address)
     }
     this.FreeList.push({ Address: address, Size: this.AllocatedMemory.get(address)! })
     this.AllocatedMemory.delete(address)
   }
 
   setHeapMemoryAtIndex(address: number, binary: number, type?: ProgramType) {
-    if (!this.isAtHeap(address)) throw new RuntimeError('Invalid Set Heap on Non Allocated Memory')
+    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
     this.Memory.setFloat64(address * WORD_SIZE, binary)
   }
 
   getHeapMemoryAtIndex(address: number): number {
-    if (!this.isAtHeap(address)) throw new RuntimeError('Invalid Get Heap on Non Allocated Memory')
+    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
     return this.Memory.getFloat64(address * WORD_SIZE)
   }
 
@@ -113,12 +117,12 @@ export class RTM {
   }
 
   getRTSAtIndex(index: number): number {
-    if (!this.isAtRTS(index)) throw new RuntimeError('Invalid Stack memory access')
+    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     return this.Memory.getFloat64(index * WORD_SIZE)
   }
 
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
-    if (!this.isAtRTS(index)) throw new RuntimeError('Invalid Stack memory access')
+    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     this.Memory.setFloat64(index * WORD_SIZE, binary)
     if (type) this.TypeAdditionalInfoStack[index] = type
   }

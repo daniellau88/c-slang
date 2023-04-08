@@ -1,8 +1,6 @@
-/* tslint:disable:max-classes-per-file */
-import * as es from 'estree'
-
 import { JSSLANG_PROPERTIES } from '../constants'
 import { ErrorSeverity, ErrorType } from '../types'
+import { CASTNode } from '../typings/programAST'
 import { stripIndent } from '../utils/formatters'
 import { stringify } from '../utils/stringify'
 import { RuntimeSourceError } from './runtimeSourceError'
@@ -15,13 +13,24 @@ function getWarningMessage(maxExecTime: number) {
       This page may be unresponsive for up to ${to} seconds if you do so.`
 }
 
-export class TimeoutError extends RuntimeSourceError {}
+export class TimeoutError extends RuntimeSourceError {
+  public type = ErrorType.RUNTIME
+  public severity = ErrorSeverity.ERROR
+
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return stripIndent`${'Step limit exceeded.'}`
+  }
+}
 
 export class PotentialInfiniteLoopError extends TimeoutError {
   public type = ErrorType.RUNTIME
   public severity = ErrorSeverity.ERROR
 
-  constructor(node: es.Node, private maxExecTime: number) {
+  constructor(node: CASTNode, private maxExecTime: number) {
     super(node)
   }
 
@@ -39,7 +48,7 @@ export class PotentialInfiniteRecursionError extends TimeoutError {
   public type = ErrorType.RUNTIME
   public severity = ErrorSeverity.ERROR
 
-  constructor(node: es.Node, private calls: [string, any[]][], private maxExecTime: number) {
+  constructor(node: CASTNode, private calls: [string, any[]][], private maxExecTime: number) {
     super(node)
     this.calls = this.calls.slice(-3)
   }

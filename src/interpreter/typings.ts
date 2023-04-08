@@ -6,13 +6,16 @@ import {
   CASTFunctionDefinition,
   CASTFunctionParameter,
   CASTIdentifier,
+  CASTNode,
   CASTStatement,
   CASTUnaryOperator,
   ProgramType,
 } from '../typings/programAST'
+import { ProgramState } from './programState'
 
 interface MicroCodeBase {
   tag: string
+  node: CASTNode
 }
 
 interface LoadFuncMicroCode extends MicroCodeBase {
@@ -32,7 +35,7 @@ interface LoadFloatMicroCode extends MicroCodeBase {
 
 interface LoadVarMicroCode extends MicroCodeBase {
   tag: 'load_var'
-  name: string
+  identifier: CASTIdentifier
 }
 
 interface FuncApplyMicroCode extends MicroCodeBase {
@@ -104,6 +107,7 @@ interface BinaryOperationAutoPromotionMicroCode extends MicroCodeBase {
 
 interface ExitFuncMicroCode extends MicroCodeBase {
   tag: 'exit_func'
+  funcNode: MicroCodeFunctionDefiniton
 }
 
 interface DereferenceMicroCode extends MicroCodeBase {
@@ -263,14 +267,15 @@ interface MicroCodeFunctionBase {
   subtype: string
 }
 
-interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
+export interface MicroCodeBuiltinFunction extends MicroCodeFunctionBase {
   subtype: 'builtin_func'
-  func: Function
+  func: (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => void
   returnProgType: ProgramType
   arity: number
+  name: string
 }
 
-interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
+export interface MicroCodeCASTFunctionDefinition extends MicroCodeFunctionBase {
   subtype: 'func'
   arity: number
   returnProgType: ProgramType
@@ -291,7 +296,9 @@ type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 export type BinaryWithLoseType = WithOptional<BinaryWithType, 'type'>
 
 export interface BuiltinFunctionDefinition {
-  func: Function
+  func: (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => void
   returnProgType: ProgramType
   arity: number
 }
+
+export type AgendaNode = CASTNode | MicroCode

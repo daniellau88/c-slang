@@ -1,14 +1,15 @@
 import { describe, test } from '@jest/globals'
 
+import { CannotDereferenceTypeError, InvalidMemoryAccess } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   FLOAT_BASE_TYPE,
   incrementPointerDepth,
   INT_BASE_TYPE,
 } from '../interpreter/utils/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
+import { intToBinary } from '../interpreter/utils/utils'
 import { ProgramType } from '../typings/programAST'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('pointer', () => {
   test('pointer arithmetic', () => {
@@ -160,7 +161,25 @@ describe('pointer', () => {
         }
       `,
       )
-    expectThrowError(program, RuntimeError, `Get Memory error, Memory is not allocated`)
+    expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 5.`)
+  })
+
+  test('unary address dereference literal', () => {
+    const program = () =>
+      testProgram(
+        `
+        int main() {
+          int* a = &5;
+          printfLog(a);
+          return 0;
+        }
+      `,
+      )
+    expectThrowError(
+      program,
+      CannotDereferenceTypeError,
+      'Cannot dereference non-address of type "Literal".',
+    )
   })
 
   test('function pointer', () => {

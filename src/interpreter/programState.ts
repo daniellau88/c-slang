@@ -1,22 +1,21 @@
+import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '../errors/baseErrors'
 import { CASTNode, ProgramType } from '../typings/programAST'
 import {
+  AgendaNode,
   BinaryWithType,
   BuiltinFunctionDefinition,
   ERecord,
   EScope,
-  MicroCode,
   MicroCodeFunctionDefiniton,
 } from './typings'
 import { RTM } from './utils/RTM'
 import {
-  LogicError,
   peek,
   pop,
   popStackAndType,
   printBinariesWithTypes,
   push,
   pushStackAndType,
-  RuntimeError,
 } from './utils/utils'
 
 type ReturnRegisterType =
@@ -24,7 +23,7 @@ type ReturnRegisterType =
   | { binary: undefined; assigned: false }
 
 export class ProgramState {
-  private A: Array<CASTNode | MicroCode>
+  private A: Array<AgendaNode>
   private OS: Array<number>
   private OSType: Record<number, ProgramType>
   private RTM: RTM
@@ -55,24 +54,30 @@ export class ProgramState {
     this.A = [ast]
   }
 
+  defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
+    const newIndex = this.FD.length
+    if (this.E[0].record[key] !== undefined) {
+      throw new InternalUnreachableBaseError(
+        'Builtin function ' + key + ' has already been defined',
+      )
+    }
+    push(this.FD, {
+      subtype: 'builtin_func',
+      func: builtinFunctionDefintion.func,
+      returnProgType: builtinFunctionDefintion.returnProgType,
+      arity: builtinFunctionDefintion.arity,
+      name: key,
+    })
+    this.addRecordToGlobalE(key, {
+      subtype: 'func',
+      funcIndex: newIndex,
+    })
+  }
+
   initializeBuiltInFunctions(builtinFunctions: Record<string, BuiltinFunctionDefinition>) {
     const builtinFunctionKeys = Object.keys(builtinFunctions)
     builtinFunctionKeys.forEach(key => {
-      const newIndex = this.FD.length
-      if (this.E[0].record[key] !== undefined) {
-        throw new LogicError('Buitlin function ' + key + ' has already been defined')
-      }
-      const builtinFunctionDefintion = builtinFunctions[key]
-      push(this.FD, {
-        subtype: 'builtin_func',
-        func: builtinFunctionDefintion.func,
-        returnProgType: builtinFunctionDefintion.returnProgType,
-        arity: builtinFunctionDefintion.arity,
-      })
-      this.addRecordToGlobalE(key, {
-        subtype: 'func',
-        funcIndex: newIndex,
-      })
+      this.defineBuiltInFunction(key, builtinFunctionKeys[key])
     })
   }
 
@@ -82,7 +87,7 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       return this.RTM.getHeapMemoryAtIndex(index)
     } else {
-      throw new RuntimeError('Get Memory error, Memory is not allocated')
+      throw new RTMInvalidMemoryAccessBaseError(index)
     }
   }
 
@@ -92,19 +97,19 @@ export class ProgramState {
     } else if (this.RTM.isAtHeap(index)) {
       this.RTM.setHeapMemoryAtIndex(index, binary, type)
     } else {
-      throw new RuntimeError('Set Memory error, Memory is not allocated')
+      throw new RTMInvalidMemoryAccessBaseError(index)
     }
   }
 
-  pushA(cmd: CASTNode | MicroCode) {
+  pushA(cmd: AgendaNode) {
     push(this.A, cmd)
   }
 
-  popA(): CASTNode | MicroCode {
+  popA(): AgendaNode {
     return pop(this.A)
   }
 
-  peekA(): CASTNode | MicroCode | undefined {
+  peekA(): AgendaNode | undefined {
     return peek(this.A)
   }
 
@@ -199,13 +204,14 @@ export class ProgramState {
   popScopeE() {
     const currentTopE = peek(this.E)
     if (!currentTopE || !currentTopE.parent) {
-      throw new LogicError('No more scope to pop')
+      throw new InternalUnreachableBaseError('No more scope to pop')
     }
     this.E[this.E.length - 1] = currentTopE.parent
   }
 
   popFunctionE() {
-    if (this.E.length === 1) throw new LogicError('Cannot remove global environment')
+    if (this.E.length === 1)
+      throw new InternalUnreachableBaseError('Cannot remove global environment')
     pop(this.E)
   }
 

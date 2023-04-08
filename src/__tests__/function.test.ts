@@ -1,9 +1,10 @@
 import { describe, test } from '@jest/globals'
 
+import { ReturnNotCalled } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
-import { intToBinary, RuntimeError } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from './utils'
+import { intToBinary } from '../interpreter/utils/utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('function', () => {
   test('simple function', () => {
@@ -118,6 +119,6 @@ describe('function', () => {
       }
     `,
       )
-    expectThrowError(program, RuntimeError, 'Return function not called')
+    expectThrowError(program, ReturnNotCalled, 'Return statement not called for function a.')
   })
 })

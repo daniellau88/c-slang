@@ -1,4 +1,18 @@
 import {
+  CannotDereferenceTypeError,
+  CannotPerformLossyConversion,
+  CannotPerformOperation,
+  InvalidArraySize,
+  InvalidFreeMemoryValue,
+  InvalidMallocSize,
+  InvalidNumberOfArguments,
+  ReturnNotCalled,
+  UndefinedVariable,
+  UnknownSize,
+  VariableRedeclaration,
+} from '../../errors/errors'
+import { InternalUnreachableRuntimeError } from '../../errors/runtimeSourceError'
+import {
   CASTBinaryOperator,
   CASTExpression,
   CASTTypeModifier,
@@ -28,27 +42,18 @@ import {
   isTypeEquivalent,
   VOID_BASE_TYPE,
 } from './typeUtils'
-import {
-  binaryToInt,
-  intToBinary,
-  isMicrocode,
-  isTruthy,
-  LogicError,
-  NotImplementedError,
-  RuntimeError,
-  shouldDerefExpression,
-} from './utils'
+import { binaryToInt, intToBinary, isMicrocode, isTruthy, shouldDerefExpression } from './utils'
 
 export const wordSize = 8
 
 // Microcode are allowed to touch any of the given structures
-export function* executeMicrocode(state: ProgramState, node: MicroCode) {
+export function executeMicrocode(state: ProgramState, node: MicroCode) {
   switch (node.tag) {
     case 'load_func': {
       const newIndex = state.getFDLength()
       const funcName = node.function.identifier.name
       if (state.hasKeyGlobalE(funcName)) {
-        throw new RuntimeError('Function ' + funcName + ' has already been defined')
+        throw new VariableRedeclaration(node.function, funcName)
       }
       state.pushFD({
         subtype: 'func',
@@ -73,9 +78,10 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
     case 'load_var': {
-      const record = state.lookupE(node.name)
+      const name = node.identifier.name
+      const record = state.lookupE(name)
       if (!record) {
-        throw new RuntimeError('Variable ' + node.name + ' not declared')
+        throw new UndefinedVariable(node.identifier, name)
       }
 
       switch (record.subtype) {
@@ -94,7 +100,9 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'deref': {
       const { binary, type } = state.popOS()
-      if (type[0].subtype !== 'Pointer') throw new Error('Argument given is not a pointer')
+      if (type[0].subtype !== 'Pointer') {
+        throw new CannotDereferenceTypeError(node.node)
+      }
       const newType = decrementPointerDepth(type)
       if (newType[0].subtype === 'Array') {
         state.pushOS(binary, newType)
@@ -114,11 +122,16 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
 
       if (functionToCall.arity !== -1 && functionToCall.arity !== args.length) {
-        throw new RuntimeError('Wrong number of arguments given for function')
+        throw new InvalidNumberOfArguments(
+          node.node,
+          functionToCall.arity,
+          args.length,
+          functionToCall,
+        )
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        functionToCall.func(state, ...args)
+        functionToCall.func(state, args, node.node)
         return
       }
 
@@ -141,13 +154,13 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushRTS(args[i].binary, args[i].type)
       }
 
-      state.pushA({ tag: 'exit_func' })
+      state.pushA({ tag: 'exit_func', node: node.node, funcNode: functionToCall })
       ;[...functionToCall.body.statements].reverse().forEach(x => state.pushA(x))
       return
     }
     case 'exit_func':
       if (!state.getReturnRegister().assigned) {
-        throw new RuntimeError('Return function not called')
+        throw new ReturnNotCalled(node.node, node.funcNode)
       }
 
       state.shrinkRTSToIndex(state.getRTSStart())
@@ -187,12 +200,12 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const init = node.declaration.init
       const record = state.lookupE(name)
       if (record) {
-        throw new RuntimeError('Invalid redeclaration of ' + name)
+        throw new VariableRedeclaration(node.declaration, name)
       }
 
       if (init) {
-        state.pushA({ tag: 'assgn' })
-        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref' })
+        state.pushA({ tag: 'assgn', node: node.declaration })
+        if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
         state.pushA(init)
       }
 
@@ -202,6 +215,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         newTypeModifiers: [],
         currentIndex: -1,
         name: name,
+        node: node.declaration,
       })
       return
     }
@@ -212,17 +226,17 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       if (curIndex !== -1) {
         const currentModifier = node.oldTypeModifiers[curIndex]
         if (currentModifier.subtype !== 'Array') {
-          throw new LogicError('Subtype should be array')
+          throw new InternalUnreachableRuntimeError(node.node)
         }
 
         const { binary, type } = state.popOS() // Assert type should be int
         if (!isTypeEquivalent(type, INT_BASE_TYPE)) {
-          throw new RuntimeError('Array size is not integer')
+          throw new InvalidArraySize(node.node, { binary, type })
         }
 
         const intValue = binaryToInt(binary)
         if (intValue < 0) {
-          throw new RuntimeError('Array size cannot be negative')
+          throw new InvalidArraySize(node.node, { binary, type })
         }
 
         const currentModifierCopy: CASTTypeModifier = {
@@ -234,17 +248,24 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
 
       for (let i = curIndex + 1; i < oldTypeModifiers.length; i++) {
         const currentModifier = oldTypeModifiers[i]
+        currentModifier.loc = undefined // Keeps loc undefined for test cases
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
-          if (shouldDerefExpression(currentModifier.size)) state.pushA({ tag: 'deref' })
+          if (shouldDerefExpression(currentModifier.size))
+            state.pushA({ tag: 'deref', node: currentModifier.size })
           state.pushA(currentModifier.size)
           return
         }
         newTypeModifiers.push(currentModifier)
       }
 
-      state.pushA({ tag: 'decl_alloc_mem', typeModifiers: newTypeModifiers, name: node.name })
-      state.pushA({ tag: 'size_of_op', typeModifiers: newTypeModifiers })
+      state.pushA({
+        tag: 'decl_alloc_mem',
+        typeModifiers: newTypeModifiers,
+        name: node.name,
+        node: node.node,
+      })
+      state.pushA({ tag: 'size_of_op', typeModifiers: newTypeModifiers, node: node.node })
       return
     }
     case 'decl_alloc_mem': {
@@ -283,7 +304,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
             }
 
             if (newArithmeticType < maxPriority) {
-              throw new RuntimeError('Cannot perform lossy assignment')
+              throw new CannotPerformLossyConversion(node.node, valType, newType)
             }
           }
         }
@@ -321,7 +342,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
 
         state.pushOS(newLeftOp, newType)
         state.pushOS(newRightOp, newType)
-        state.pushA({ tag: 'bin_op', operator: newOperator })
+        state.pushA({ tag: 'bin_op', operator: newOperator, node: node.node })
         return
       } else if (
         isPointer(leftOpType) &&
@@ -337,20 +358,30 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
             case CASTBinaryOperator.Minus:
               return MicroCodeBinaryOperator.IntSubtraction
             default:
-              throw new RuntimeError('Cannot perform operation between pointer and integer')
+              throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
           }
         })()
-        state.pushA({ tag: 'bin_op', operator: microcodeOperator })
-        state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntDivision })
-        state.pushA({ tag: 'load_int', value: wordSize })
-        state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntMultiply })
-        state.pushA({ tag: 'size_of_op', typeModifiers: decrementPointerDepth(leftOpType) })
+        state.pushA({ tag: 'bin_op', operator: microcodeOperator, node: node.node })
+        state.pushA({
+          tag: 'bin_op',
+          operator: MicroCodeBinaryOperator.IntDivision,
+          node: node.node,
+        })
+        state.pushA({ tag: 'load_int', value: wordSize, node: node.node })
+        state.pushA({
+          tag: 'bin_op',
+          operator: MicroCodeBinaryOperator.IntMultiply,
+          node: node.node,
+        })
+        state.pushA({
+          tag: 'size_of_op',
+          typeModifiers: decrementPointerDepth(leftOpType),
+          node: node.node,
+        })
         return
       }
 
-      throw new RuntimeError(
-        'Cannot perform operation between type ' + leftOpType[0].type + ' and ',
-      )
+      throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
     }
     case 'bin_op': {
       const rightOpWithType = state.popOS()
@@ -363,7 +394,8 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'conditional_op': {
       const predicate = state.popOS()
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
-      if (shouldDerefExpression(expressionToPush)) state.pushA({ tag: 'deref' })
+      if (shouldDerefExpression(expressionToPush))
+        state.pushA({ tag: 'deref', node: expressionToPush })
       state.pushA(expressionToPush)
       return
     }
@@ -375,30 +407,34 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         let shouldBreak = false
         switch (typeModifier.subtype) {
           case 'Array': {
-            if (typeModifier.size === undefined) throw new RuntimeError('Array size is not defined')
+            if (typeModifier.size === undefined) throw new InvalidArraySize(node.node)
             expressions.push(typeModifier.size)
             break
           }
           case 'BaseType': {
-            expressions.push({ tag: 'load_int', value: 8 })
+            expressions.push({ tag: 'load_int', value: 8, node: node.node })
             shouldBreak = true
             break
           }
           case 'Pointer': {
-            expressions.push({ tag: 'load_int', value: 8 })
+            expressions.push({ tag: 'load_int', value: 8, node: node.node })
             shouldBreak = true
             break
           }
           case 'Parameters': {
-            throw new RuntimeError('Cannot get size of function')
+            throw new UnknownSize(node.node)
           }
         }
         if (shouldBreak) break
       }
       expressions.forEach((x, i) => {
         if (i !== expressions.length - 1)
-          state.pushA({ tag: 'bin_op', operator: MicroCodeBinaryOperator.IntMultiply })
-        if (!isMicrocode(x) && shouldDerefExpression(x)) state.pushA({ tag: 'deref' })
+          state.pushA({
+            tag: 'bin_op',
+            operator: MicroCodeBinaryOperator.IntMultiply,
+            node: node.node,
+          })
+        if (!isMicrocode(x) && shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
         state.pushA(x)
       })
       return
@@ -408,7 +444,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
       const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
       if (isIncrementOperator) {
-        throw new LogicError('Unary expression is handled earlier')
+        throw new InternalUnreachableRuntimeError(node.node)
       }
 
       let result: BinaryWithType
@@ -441,7 +477,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         nextInstruction = state.peekA()
       }
       if (nextInstruction === undefined) {
-        throw new LogicError('Microcode exit function not found')
+        throw new InternalUnreachableRuntimeError(node.node)
       }
       return
     }
@@ -457,7 +493,11 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
       }
       state.pushOS(indexBinary, indexType)
 
-      state.pushA({ tag: 'bin_op_auto_promotion', operator: CASTBinaryOperator.Plus })
+      state.pushA({
+        tag: 'bin_op_auto_promotion',
+        operator: CASTBinaryOperator.Plus,
+        node: node.node,
+      })
       return
     }
     case 'conditional_statement_op': {
@@ -473,10 +513,10 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'while_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
       if (Boolean(binaryToInt(indexBinary))) {
-        state.pushA({ tag: 'break_marker' })
+        state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
         state.pushA(node.condition)
-        state.pushA({ tag: 'continue_marker' })
+        state.pushA({ tag: 'continue_marker', node: node.node })
         state.pushA(node.statement)
       }
       return
@@ -489,14 +529,14 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
         testExpressionValue = Boolean(binaryToInt(indexBinary))
       }
       if (testExpressionValue) {
-        state.pushA({ tag: 'break_marker' })
+        state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
         if (node.testExpression) state.pushA(node.testExpression)
         if (node.updateExpression) {
-          state.pushA({ tag: 'pop_os' })
+          state.pushA({ tag: 'pop_os', node: node.node })
           state.pushA(node.updateExpression)
         }
-        state.pushA({ tag: 'continue_marker' })
+        state.pushA({ tag: 'continue_marker', node: node.node })
         state.pushA(node.statement)
       }
       return
@@ -559,7 +599,7 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'malloc_op': {
       const { binary: size, type: typeSize } = node.size
       if (binaryToInt(size) <= 0) {
-        throw new RuntimeError('cannot memory allocate of size 0 or below')
+        throw new InvalidMallocSize(node.node, binaryToInt(size))
       }
       const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
@@ -568,15 +608,16 @@ export function* executeMicrocode(state: ProgramState, node: MicroCode) {
 
     case 'free_op': {
       const { binary: address, type: typeAddress } = node.address
+      const addressIndex = binaryToInt(address)
       if (!isPointer(typeAddress)) {
-        throw new RuntimeError('Invalid free operation, not a pointer')
+        throw new InvalidFreeMemoryValue(node.node, { binary: address, type: typeAddress })
       }
-      state.freeHeapMemory(binaryToInt(address))
+      state.freeHeapMemory(addressIndex)
       state.pushOS(0, VOID_BASE_TYPE)
       return
     }
 
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableRuntimeError((node as MicroCode).node)
   }
 }

@@ -3,12 +3,20 @@
 import { baseGenerator, generate } from 'astring'
 import * as es from 'estree'
 
+import { BinaryWithType, MicroCodeFunctionDefiniton } from '../interpreter/typings'
+import { binaryToFormattedString, stringify, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
-import { stringify } from '../utils/stringify'
+import {
+  CASTDeclaration,
+  CASTFunctionDefinition,
+  CASTNode,
+  ProgramType,
+} from '../typings/programAST'
+import { BaseError } from './baseErrors'
 import { RuntimeSourceError } from './runtimeSourceError'
 
 export class InterruptedError extends RuntimeSourceError {
-  constructor(node: es.Node) {
+  constructor(node: CASTNode) {
     super(node)
   }
 
@@ -50,7 +58,7 @@ export class MaximumStackLimitExceeded extends RuntimeSourceError {
     },
   }
 
-  constructor(node: es.Node, private calls: es.CallExpression[]) {
+  constructor(node: CASTNode, private calls: es.CallExpression[]) {
     super(node)
   }
 
@@ -66,42 +74,13 @@ export class MaximumStackLimitExceeded extends RuntimeSourceError {
   }
 }
 
-export class CallingNonFunctionValue extends RuntimeSourceError {
-  constructor(private callee: Value, private node: es.Node) {
-    super(node)
-  }
-
-  public explain() {
-    return `Calling non-function value ${stringify(this.callee)}.`
-  }
-
-  public elaborate() {
-    const calleeVal = this.callee
-    const calleeStr = stringify(calleeVal)
-    let argStr = ''
-
-    const callArgs = (this.node as es.CallExpression).arguments
-
-    argStr = callArgs.map(generate).join(', ')
-
-    const elabStr = `Because ${calleeStr} is not a function, you cannot run ${calleeStr}(${argStr}).`
-    const multStr = `If you were planning to perform multiplication by ${calleeStr}, you need to use the * operator.`
-
-    if (Number.isFinite(calleeVal)) {
-      return `${elabStr} ${multStr}`
-    } else {
-      return elabStr
-    }
-  }
-}
-
 export class UndefinedVariable extends RuntimeSourceError {
-  constructor(public name: string, node: es.Node) {
+  constructor(node: CASTNode, public name: string) {
     super(node)
   }
 
   public explain() {
-    return `Name ${this.name} not declared.`
+    return `Variable ${this.name} not declared.`
   }
 
   public elaborate() {
@@ -109,37 +88,30 @@ export class UndefinedVariable extends RuntimeSourceError {
   }
 }
 
-export class UnassignedVariable extends RuntimeSourceError {
-  constructor(public name: string, node: es.Node) {
-    super(node)
-  }
-
-  public explain() {
-    return `Name ${this.name} declared later in current scope but not yet assigned`
-  }
-
-  public elaborate() {
-    return `If you're trying to access the value of ${this.name} from an outer scope, please rename the inner ${this.name}. An easy way to avoid this issue in future would be to avoid declaring any variables or constants with the name ${this.name} in the same scope.`
-  }
-}
-
 export class InvalidNumberOfArguments extends RuntimeSourceError {
   private calleeStr: string
 
   constructor(
-    node: es.Node,
+    node: CASTNode,
     private expected: number,
     private got: number,
+    private funcNode: MicroCodeFunctionDefiniton,
     private hasVarArgs = false,
   ) {
     super(node)
-    this.calleeStr = generate((node as es.CallExpression).callee)
+    this.calleeStr = stringify(node)
   }
 
   public explain() {
+    let name: string | undefined = undefined
+    if (this.funcNode.subtype === 'builtin_func') {
+      name = this.funcNode.name
+    } else {
+      name = this.funcNode.identifier.name
+    }
     return `Expected ${this.expected} ${this.hasVarArgs ? 'or more ' : ''}arguments, but got ${
       this.got
-    }.`
+    } for ${name ? `function ${name}` : 'unknown function'}.`
   }
 
   public elaborate() {
@@ -151,12 +123,12 @@ export class InvalidNumberOfArguments extends RuntimeSourceError {
 }
 
 export class VariableRedeclaration extends RuntimeSourceError {
-  constructor(private node: es.Node, private name: string, private writable?: boolean) {
+  constructor(private node: CASTNode, private name: string, private writable?: boolean) {
     super(node)
   }
 
   public explain() {
-    return `Redeclaring name ${this.name}.`
+    return `Redeclaration of name ${this.name}.`
   }
 
   public elaborate() {
@@ -165,11 +137,13 @@ export class VariableRedeclaration extends RuntimeSourceError {
 
       let initStr = ''
 
-      if (this.node.type === 'FunctionDeclaration') {
+      if (this.node.type === 'FunctionDefinition') {
         initStr =
-          '(' + (this.node as es.FunctionDeclaration).params.map(generate).join(',') + ') => {...'
-      } else if (this.node.type === 'VariableDeclaration') {
-        initStr = generate((this.node as es.VariableDeclaration).declarations[0].init)
+          '(' +
+          (this.node as CASTFunctionDefinition).parameters.map(x => stringify(x)).join(',') +
+          ') => {...'
+      } else if (this.node.type === 'Declaration') {
+        initStr = stringify((this.node as CASTDeclaration).init)
       }
 
       return `${elabStr} As such, you can just do\n\n\t${this.name} = ${initStr};\n`
@@ -181,22 +155,8 @@ export class VariableRedeclaration extends RuntimeSourceError {
   }
 }
 
-export class ConstAssignment extends RuntimeSourceError {
-  constructor(node: es.Node, private name: string) {
-    super(node)
-  }
-
-  public explain() {
-    return `Cannot assign new value to constant ${this.name}.`
-  }
-
-  public elaborate() {
-    return `As ${this.name} was declared as a constant, its value cannot be changed. You will have to declare a new variable.`
-  }
-}
-
 export class GetPropertyError extends RuntimeSourceError {
-  constructor(node: es.Node, private obj: Value, private prop: string) {
+  constructor(node: CASTNode, private obj: Value, private prop: string) {
     super(node)
   }
 
@@ -214,7 +174,7 @@ export class GetInheritedPropertyError extends RuntimeSourceError {
   public severity = ErrorSeverity.ERROR
   public location: es.SourceLocation
 
-  constructor(node: es.Node, private obj: Value, private prop: string) {
+  constructor(node: CASTNode, private obj: Value, private prop: string) {
     super(node)
     this.location = node.loc!
   }
@@ -229,12 +189,231 @@ export class GetInheritedPropertyError extends RuntimeSourceError {
 }
 
 export class SetPropertyError extends RuntimeSourceError {
-  constructor(node: es.Node, private obj: Value, private prop: string) {
+  constructor(node: CASTNode, private obj: Value, private prop: string) {
     super(node)
   }
 
   public explain() {
     return `Cannot assign property ${this.prop} of ${stringify(this.obj)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotDereferenceTypeError extends RuntimeSourceError {
+  constructor(private node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Cannot dereference non-address of type ${stringify(this.node.type)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class ReturnNotCalled extends RuntimeSourceError {
+  constructor(node: CASTNode, private funcNode: MicroCodeFunctionDefiniton) {
+    super(node)
+  }
+
+  public explain() {
+    let name: string | undefined = undefined
+    if (this.funcNode.subtype === 'builtin_func') {
+      name = this.funcNode.name
+    } else {
+      name = this.funcNode.identifier.name
+    }
+    return `Return statement not called for ${name ? `function ${name}` : 'unknown function'}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidArraySize extends RuntimeSourceError {
+  constructor(node: CASTNode, private binaryType?: BinaryWithType) {
+    super(node)
+  }
+
+  public explain() {
+    const size = this.binaryType
+      ? binaryToFormattedString(this.binaryType.binary, this.binaryType.type)
+      : 'undefined'
+    return `Invalid array size of ${size}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotPerformLossyConversion extends RuntimeSourceError {
+  constructor(node: CASTNode, private fromType: ProgramType, private toType: ProgramType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot perform lossy conversion from ${typeToString(this.fromType)} to ${typeToString(
+      this.toType,
+    )}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotPerformOperation extends RuntimeSourceError {
+  private types: Array<ProgramType>
+  constructor(node: CASTNode, types: Array<ProgramType>, stackTrace?: BaseError) {
+    super(node, stackTrace)
+    this.types = types
+  }
+
+  public explain() {
+    if (this.types.length === 0) {
+      return `Cannot perform operation.`
+    }
+    if (this.types.length === 1) {
+      return `Cannot perform operation on ${typeToString(this.types[0])}.`
+    }
+    const typeStrings = this.types.map(x => typeToString(x))
+    const typeCommas = typeStrings.slice(0, typeStrings.length - 1).join(',')
+    return `Cannot perform operation between ${typeCommas} and ${
+      typeStrings[typeStrings.length - 1]
+    }.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownSize extends RuntimeSourceError {
+  constructor(private node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Unknown size of ${stringify(this.node)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotDivideByZero extends RuntimeSourceError {
+  constructor(node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Cannot divide by zero.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownType extends RuntimeSourceError {
+  constructor(node: CASTNode, private progType: ProgramType, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Unknown type ${stringify(this.progType)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidMemoryAccess extends RuntimeSourceError {
+  constructor(node: CASTNode, private address: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Invalid memory access to ${this.address}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidMallocSize extends RuntimeSourceError {
+  constructor(node: CASTNode, private size: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Cannot allocate memory of size ${this.size}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class NotEnoughMemory extends RuntimeSourceError {
+  constructor(node: CASTNode, private size: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Not enough memory.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class MemoryFreeNotAllocatedError extends RuntimeSourceError {
+  constructor(node: CASTNode, private address: number, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Cannot free memory at ${this.address}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class InvalidFreeMemoryValue extends RuntimeSourceError {
+  constructor(node: CASTNode, private value: BinaryWithType) {
+    super(node)
+  }
+
+  public explain() {
+    return `Invalid free value of ${binaryToFormattedString(this.value.binary, this.value.type)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownError extends RuntimeSourceError {
+  constructor(node: CASTNode, private e: Error) {
+    super(node)
+  }
+
+  public explain() {
+    return `Unknown error. Please check with the developers.`
   }
 
   public elaborate() {

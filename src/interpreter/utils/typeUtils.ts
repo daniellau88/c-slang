@@ -1,6 +1,12 @@
+import {
+  InternalUnreachableBaseError,
+  NonArrayBaseError,
+  NonPointerBaseError,
+} from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType } from '../typings'
-import { intToBinary, LogicError, RuntimeError, typeToString } from './utils'
+
+const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
 
 export const INT_BASE_TYPE: ProgramType = [
   { type: 'TypeModifier', subtype: 'BaseType', baseType: 'int' },
@@ -67,7 +73,7 @@ export const incrementPointerDepth = (type: ProgramType): ProgramType => {
 export const decrementPointerDepth = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Pointer') {
-    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not a pointer')
+    throw new NonPointerBaseError(deepCopy)
   }
 
   if (deepCopy[0].pointerDepth == 1) {
@@ -81,18 +87,18 @@ export const decrementPointerDepth = (type: ProgramType): ProgramType => {
 export const getArrayItemsType = (type: ProgramType): ProgramType => {
   const deepCopy = makeDeepCopy(type)
   if (deepCopy[0].subtype !== 'Array') {
-    throw new RuntimeError('Type ' + typeToString(deepCopy) + ' is not an array')
+    throw new NonArrayBaseError(deepCopy)
   }
 
   return deepCopy.splice(1)
 }
 
 export const FALSE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
-  binary: intToBinary(0),
+  binary: 0,
   type: INT_BASE_TYPE,
 }
 export const TRUE_BOOLEAN_BINARY_WITH_TYPE: BinaryWithType = {
-  binary: intToBinary(1),
+  binary: ONE_INT_BINARY,
   type: INT_BASE_TYPE,
 }
 
@@ -119,7 +125,7 @@ export const getUnaryOperatorIncrementType = (operator: CASTUnaryOperator): Incr
     case CASTUnaryOperator.PostDecrement:
       return { incrementType: 'decrement', unaryType: 'post' }
     default:
-      throw new LogicError('Unary operator is not of increment type')
+      throw new InternalUnreachableBaseError('Should be only increment unary operators', [operator])
   }
 }
 

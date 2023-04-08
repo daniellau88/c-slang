@@ -4,7 +4,7 @@ import * as es from 'estree'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { Context, Environment, Value } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
-import { execute, initializeProgramStateWithProgramAST } from './cInterpreter'
+import { execute } from './cInterpreter'
 
 class Thunk {
   public value: Value
@@ -23,7 +23,7 @@ const handleRuntimeError = (context: Context, error: RuntimeSourceError): never 
   throw error
 }
 
-function* visit(context: Context, node: es.Node) {
+function* visit(context: Context, node: CASTNode) {
   context.runtime.nodes.unshift(node)
   yield context
 }
@@ -44,14 +44,18 @@ export const pushEnvironment = (context: Context, environment: Environment) => {
 
 export function* evaluate(node: CASTNode, context: Context) {
   if (context.programState) {
-    const state = initializeProgramStateWithProgramAST(node as CASTProgram)
-    context.programState = state
+    context.programState.initializeAST(node as CASTProgram)
   }
-  const executeGenerator = execute(context.programState)
-  let programStep = executeGenerator.next()
-  while (!programStep.done) {
-    yield programStep.value
-    programStep = executeGenerator.next()
+
+  try {
+    const executeGenerator = execute(context.programState)
+    let programStep = executeGenerator.next()
+    while (!programStep.done) {
+      yield programStep.value
+      programStep = executeGenerator.next()
+    }
+    yield* leave(context)
+  } catch (e) {
+    handleRuntimeError(context, e)
   }
-  yield* leave(context)
 }

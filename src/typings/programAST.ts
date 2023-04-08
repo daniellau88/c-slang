@@ -3,22 +3,28 @@ import * as es from 'estree'
 export type CASTNode =
   | CASTProgram
   | CASTFunctionDefinition
+  | CASTFunctionParameter
   | CASTExpression
   | CASTStatement
   | CASTDeclaration
+  | CASTDummyNode
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseNode {
   type: string
-  loc?: es.SourceLocation | null | undefined
+  loc?: es.SourceLocation
+}
+
+export interface CASTDummyNode extends BaseNode {
+  type: 'Dummy'
 }
 
 export interface CASTProgram extends BaseNode {
   type: 'Program'
-  children: Array<CASTStatement | CASTFunctionDefinition>
+  children: Array<CASTDeclarationStatement | CASTFunctionDefinition>
 }
 
-export interface CASTFunctionDefinition {
+export interface CASTFunctionDefinition extends BaseNode {
   type: 'FunctionDefinition'
   identifier: CASTIdentifier
   parameters: Array<CASTFunctionParameter>
@@ -26,7 +32,7 @@ export interface CASTFunctionDefinition {
   returnType: CASTType
 }
 
-export interface CASTFunctionParameter {
+export interface CASTFunctionParameter extends BaseNode {
   type: 'FunctionParameter'
   identifier?: CASTIdentifier
   paramType: CASTType
@@ -151,7 +157,7 @@ export type CASTStatement =
 interface BaseExpression extends BaseNode {}
 
 export interface CASTExpressionMap {
-  AssignmentExpression: CASTAssignmentExprssion
+  AssignmentExpression: CASTAssignmentExpression
   BinaryExpression: CASTBinaryExpression
   ConditionalExpression: CASTConditionalExprssion
   Literal: CASTLiteral
@@ -171,7 +177,7 @@ export type CASTAssignableExpressions =
   | CASTSizeOfExpression
   | CASTIdentifier
 
-export interface CASTAssignmentExprssion extends BaseExpression {
+export interface CASTAssignmentExpression extends BaseExpression {
   type: 'AssignmentExpression'
   operator: CASTAssignmentOperator
   left: CASTAssignableExpressions
@@ -304,7 +310,7 @@ export interface CASTIdentifier extends BaseExpression {
   name: string
 }
 
-interface CASTTypeModifierBase {
+interface CASTTypeModifierBase extends BaseNode {
   type: 'TypeModifier'
 }
 
@@ -338,7 +344,7 @@ export type CASTTypeModifier =
 
 export type ProgramType = Array<CASTTypeModifier>
 
-export interface CASTType {
+export interface CASTType extends BaseNode {
   type: 'Type'
   typeModifiers: ProgramType
 }

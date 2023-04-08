@@ -1,4 +1,10 @@
 import {
+  CannotDivideByZeroBaseError,
+  CannotPerformOperationBaseError,
+  InternalUnreachableBaseError,
+  UnknownTypeBaseError,
+} from '../../errors/baseErrors'
+import {
   CASTAssignmentOperator,
   CASTBinaryOperator,
   CASTUnaryOperator,
@@ -11,7 +17,7 @@ import {
   INT_BASE_TYPE,
   TRUE_BOOLEAN_BINARY_WITH_TYPE,
 } from './typeUtils'
-import { binaryToInt, intToBinary, LogicError, NotImplementedError, RuntimeError } from './utils'
+import { binaryToInt, intToBinary, isTruthy } from './utils'
 
 export enum ArithmeticType {
   Integer = 0,
@@ -19,13 +25,13 @@ export enum ArithmeticType {
 }
 
 export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType => {
-  if (type.length === 0) throw new LogicError('Type is empty')
+  if (type.length === 0) throw new UnknownTypeBaseError(type)
 
   if (type[0].subtype === 'Pointer') {
     return ArithmeticType.Integer
   }
 
-  if (type[0].subtype !== 'BaseType') throw new LogicError('Type is not base type')
+  if (type[0].subtype !== 'BaseType') throw new UnknownTypeBaseError(type)
 
   switch (type[0].baseType) {
     case 'int':
@@ -84,7 +90,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.ShiftRight:
           return MicroCodeBinaryOperator.ShiftRight
         default:
-          throw new RuntimeError('Operation not supported for integer')
+          throw new CannotPerformOperationBaseError(INT_BASE_TYPE, INT_BASE_TYPE)
       }
     }
     case ArithmeticType.Float: {
@@ -98,7 +104,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.Divide:
           return MicroCodeBinaryOperator.FloatDivision
         default:
-          throw new RuntimeError('Operation not supported for floating point numbers')
+          throw new CannotPerformOperationBaseError(FLOAT_BASE_TYPE, FLOAT_BASE_TYPE)
       }
     }
   }
@@ -129,7 +135,7 @@ export const convertAssignmentOperatorToBinaryOperator = (
     case CASTAssignmentOperator.TimesEqual:
       return CASTBinaryOperator.Multiply
     default:
-      throw new LogicError('Unsupported assignment operator')
+      throw new InternalUnreachableBaseError('Unsupported assignment operator')
   }
 }
 
@@ -141,7 +147,7 @@ const getJSValueFromBinaryWithType = (binaryWithType: BinaryWithType): number =>
     case ArithmeticType.Float:
       return binaryWithType.binary
     default:
-      throw new RuntimeError('Type not supported')
+      throw new UnknownTypeBaseError(binaryWithType.type)
   }
 }
 
@@ -153,7 +159,7 @@ const getBinaryValueFromJSValueWithType = (jsValue: number, type: ProgramType): 
     case ArithmeticType.Float:
       return { binary: jsValue, type }
     default:
-      throw new RuntimeError('Type not supported')
+      throw new UnknownTypeBaseError(type)
   }
 }
 
@@ -183,7 +189,7 @@ export const doBinaryOperation = (
     case MicroCodeBinaryOperator.IntDivision: {
       const op1 = getJSValueFromBinaryWithType(operand1)
       const op2 = getJSValueFromBinaryWithType(operand2)
-      if (op2 === 0) throw new RuntimeError('Cannot divide by 0')
+      if (op2 === 0) throw new CannotDivideByZeroBaseError()
       return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
     }
     case MicroCodeBinaryOperator.IntModulo: {
@@ -209,17 +215,19 @@ export const doBinaryOperation = (
     case MicroCodeBinaryOperator.FloatDivision: {
       const op1 = getJSValueFromBinaryWithType(operand1)
       const op2 = getJSValueFromBinaryWithType(operand2)
-      if (op2 === 0) throw new RuntimeError('Cannot divide by 0')
+      if (op2 === 0) throw new CannotDivideByZeroBaseError()
       return getBinaryValueFromJSValueWithType(op1 / op2, operand1.type)
     }
     case MicroCodeBinaryOperator.LogicalOr: {
       // Both integer and float representation of 0 are all 0s in binary
-      if (operand1.binary === 0 && operand2.binary === 0) return FALSE_BOOLEAN_BINARY_WITH_TYPE
+      if (!isTruthy(operand1.binary) && !isTruthy(operand2.binary))
+        return FALSE_BOOLEAN_BINARY_WITH_TYPE
       return TRUE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.LogicalAnd: {
       // Both integer and float representation of 0 are all 0s in binary
-      if (operand1.binary !== 0 && operand2.binary !== 0) return TRUE_BOOLEAN_BINARY_WITH_TYPE
+      if (isTruthy(operand1.binary) && isTruthy(operand2.binary))
+        return TRUE_BOOLEAN_BINARY_WITH_TYPE
       return FALSE_BOOLEAN_BINARY_WITH_TYPE
     }
     case MicroCodeBinaryOperator.InclusiveOr: {
@@ -276,7 +284,7 @@ export const doBinaryOperation = (
       return getBinaryValueFromJSValueWithType(op1 >> op2, operand1.type)
     }
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableBaseError('Binary operation not supported')
   }
 }
 
@@ -291,7 +299,7 @@ export const doUnaryOperationWithoutDereference = (
       return operand
     }
     default:
-      throw new LogicError('Unary operation not supported')
+      throw new InternalUnreachableBaseError('Unary operation not supported')
   }
 }
 
@@ -315,7 +323,7 @@ export const doUnaryOperationWithDereference = (
     case CASTUnaryOperator.BitwiseNot: {
       const arithmeticType = getBaseTypePromotionPriority(operand.type)
       if (arithmeticType !== ArithmeticType.Integer) {
-        throw new RuntimeError('Operation not supported for non integer')
+        throw new CannotPerformOperationBaseError(operand.type)
       }
       return { binary: intToBinary(~binaryToInt(operand.binary)), type: operand.type }
     }
@@ -327,6 +335,6 @@ export const doUnaryOperationWithDereference = (
       return operand
     }
     default:
-      throw new LogicError('Unary operation not supported')
+      throw new InternalUnreachableBaseError('Unary operation not supported')
   }
 }

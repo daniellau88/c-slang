@@ -1,28 +1,9 @@
 import createContext from '../../createContext'
+import { InternalUnreachableBaseError, ParseBaseError } from '../../errors/baseErrors'
 import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import { CASTExpression, CASTNode, CASTUnaryOperator, ProgramType } from '../../typings/programAST'
 import { BinaryWithType, MicroCode } from '../typings'
-
-export class NotImplementedError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
-
-// Error that happens as a result of wrong implementation
-export class LogicError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
-
-// Error that happens as a result of runtime issues
-export class RuntimeError extends Error {
-  constructor(msg?: string) {
-    super(msg)
-  }
-}
 
 export const stringify = (x: any) => JSON.stringify(x)
 
@@ -35,7 +16,7 @@ export const peek = <T>(array: Array<T>): T | undefined => array.slice(-1)[0]
 
 export const pop = <T>(array: Array<T>): T => {
   if (array.length === 0) {
-    throw new LogicError('Cannot pop from empty stack')
+    throw new InternalUnreachableBaseError('Cannot pop from empty stack')
   }
   return array.pop() as T
 }
@@ -113,7 +94,7 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
     case 'Parameters':
       return 'parameters ' + binary
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableBaseError('Unknown type')
   }
 }
 
@@ -139,7 +120,7 @@ export const typeToString = (type: ProgramType): string => {
     case 'Parameters':
       return 'function'
     default:
-      throw new NotImplementedError()
+      throw new InternalUnreachableBaseError('Unknown type')
   }
 }
 
@@ -147,10 +128,11 @@ export const parseStringToAST = (program: string): CASTNode => {
   const context = createContext()
   const parsedProgram = parse(program, context)
   if (!parsedProgram) {
-    throw new Error('Cannot parse program')
+    throw new ParseBaseError()
   }
 
-  return convertCSTProgramToAST(parsedProgram)
+  const ast = convertCSTProgramToAST(parsedProgram)
+  return ast
 }
 
 export const printBinariesWithTypes = (

@@ -1,5 +1,8 @@
+import * as es from 'estree'
+
 interface CCSTNodeBase {
   type: string
+  loc?: es.SourceLocation
 }
 
 export interface CCSTProgram extends CCSTNodeBase {
@@ -439,19 +442,19 @@ interface CCSTCastExpressionTypeCast extends CCSTCastExpressionBase {
 
 export type CCSTCastExpression = CCSTCastExpressionTypeUnary | CCSTCastExpressionTypeCast
 
-export interface CCSTTypeName {
+export interface CCSTTypeName extends CCSTNodeBase {
   type: 'TypeName'
   typeSpecifier: CCSTTypeSpecifier
   abstractDeclarator?: CCSTAbstractDeclarator
 }
 
-export interface CCSTAbstractDeclarator {
+export interface CCSTAbstractDeclarator extends CCSTNodeBase {
   type: 'AbstractDeclarator'
   pointer?: CCSTPointer
   directAbstractDeclarator?: CCSTDirectAbstractDeclarator
 }
 
-interface CCSTDirectAbstractDeclaratorBase {
+interface CCSTDirectAbstractDeclaratorBase extends CCSTNodeBase {
   type: 'DirectAbstractDeclarator'
 }
 

@@ -3,7 +3,7 @@ import { describe, test } from '@jest/globals'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, verifyProgramCompleted } from './utils'
+import { expectLogOutputToBe, verifyProgramCompleted } from '../utils/testing'
 
 describe('loop', () => {
   test('regular for loop', () => {
@@ -31,7 +31,7 @@ describe('loop', () => {
             int main() {
                 int x = 0;
                 while (x < 20) {
-                    x = x + 2
+                    x = x + 2;
                 }
                 printfLog(x);
                 return 0;
@@ -91,7 +91,7 @@ describe('loop', () => {
             int main() {
                 int x = 0;
                 while (x < 20) {
-                    x = x + 2
+                    x = x + 2;
                     if (x == 10) {
                         break;
                     }

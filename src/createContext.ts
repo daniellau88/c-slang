@@ -1,7 +1,8 @@
 // Variable determining chapter of Source is contained in this file.
 
+import { defaultExternalBuiltinFunctions, importBuiltins } from './interpreter/cInterpreter'
 import { ProgramState } from './interpreter/programState'
-import { Context, Environment, Variant } from './types'
+import { Context, CustomBuiltIns, Environment, Variant } from './types'
 
 export class LazyBuiltIn {
   func: (...arg0: any) => any
@@ -130,9 +131,11 @@ const createContext = <T>(
   variant: Variant = Variant.DEFAULT,
   externalSymbols: string[] = [],
   externalContext?: T,
+  externalBuiltIns: CustomBuiltIns = defaultExternalBuiltinFunctions,
 ): Context => {
   const context = createEmptyContext(variant, externalSymbols, externalContext)
 
+  importBuiltins(context.programState, externalBuiltIns, context)
   return context
 }
 

@@ -1,12 +1,19 @@
 import * as es from 'estree'
 
 import { AllowedDeclarations, BlockExpression, FunctionDeclarationExpression } from '../types'
+import { CASTDeclaration, CASTNode } from '../typings/programAST'
 
-export const getVariableDecarationName = (decl: es.VariableDeclaration) =>
-  (decl.declarations[0].id as es.Identifier).name
+export const getVariableDeclarationName = (decl: CASTDeclaration) => decl.identifier.name
 
-export const locationDummyNode = (line: number, column: number) =>
-  literal('Dummy', { start: { line, column }, end: { line, column } })
+export const locationDummyNode = (line: number, column: number): CASTNode => {
+  return {
+    type: 'Dummy',
+    loc: {
+      start: { line, column },
+      end: { line, column },
+    },
+  }
+}
 
 export const identifier = (name: string, loc?: es.SourceLocation | null): es.Identifier => ({
   type: 'Identifier',
