@@ -121,7 +121,7 @@ describe('declaration', () => {
   test('cannot declare void type', () => {
     const program = () =>
       testProgram(
-        rawCode`
+        `
         int main() {
           void x = 3;
           return 0;

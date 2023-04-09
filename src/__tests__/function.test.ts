@@ -125,7 +125,7 @@ describe('function', () => {
   test('void function return value', () => {
     const program = () =>
       testProgram(
-        rawCode`
+        `
         void a(int b, int c) {
           printfLog(b);
           return 2;
@@ -143,7 +143,7 @@ describe('function', () => {
   test('non-void function return void', () => {
     const program = () =>
       testProgram(
-        rawCode`
+        `
         int a(int b, int c) {
           printfLog(b);
           return;
@@ -160,7 +160,7 @@ describe('function', () => {
 
   test('void function no return', () => {
     const output = testProgram(
-      rawCode`
+      `
       void a(int b) {
         printfLog(b);
       }

@@ -274,7 +274,7 @@ describe('arithmetic', () => {
     expectThrowError(
       program,
       CannotPerformOperation,
-      'Cannot perform operation between float and float.',
+      'Cannot perform operation BitwiseAnd between float and float.',
     )
   })
 

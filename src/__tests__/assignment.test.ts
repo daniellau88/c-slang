@@ -160,7 +160,7 @@ describe('assignment', () => {
   test('cannot assign void value', () => {
     const program = () =>
       testProgram(
-        rawCode`
+        `
         void a(int b, int c) {
           printfLog(b);
           return;
