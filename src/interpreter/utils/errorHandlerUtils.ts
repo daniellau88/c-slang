@@ -41,7 +41,7 @@ const arithmeticUtilsErrorHandler = (e: any, node: CASTNode) => {
     throw new UnknownType(node, e.type, e)
   }
   if (e instanceof CannotPerformOperationBaseError) {
-    throw new CannotPerformOperation(node, e.types, e)
+    throw new CannotPerformOperation(node, e.operation, e.types, e)
   }
   if (e instanceof CannotDivideByZeroBaseError) {
     throw new CannotDivideByZero(node, e)

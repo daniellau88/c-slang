@@ -207,16 +207,16 @@ export interface CASTConditionalExprssion extends BaseExpression {
 }
 
 export enum CASTUnaryOperator {
-  PreIncrement,
-  PreDecrement,
-  Address,
-  Dereference,
-  Positive,
-  Negate,
-  BitwiseNot,
-  LogicalNot,
-  PostIncrement,
-  PostDecrement,
+  PreIncrement = 'PreIncrement',
+  PreDecrement = 'PreDecrement',
+  Address = 'Address',
+  Dereference = 'Dereference',
+  Positive = 'Positive',
+  Negate = 'Negate',
+  BitwiseNot = 'BitwiseNot',
+  LogicalNot = 'LogicalNot',
+  PostIncrement = 'PostIncrement',
+  PostDecrement = 'PostDecrement',
 }
 
 export interface CASTUnaryExpression extends BaseExpression {
@@ -226,24 +226,24 @@ export interface CASTUnaryExpression extends BaseExpression {
 }
 
 export enum CASTBinaryOperator {
-  Plus,
-  Minus,
-  Multiply,
-  Divide,
-  Modulo,
-  LogicalOr,
-  LogicalAnd,
-  InclusiveOr,
-  ExclusiveOr,
-  BitwiseAnd,
-  EqualityEqual,
-  EqualityNotEqual,
-  RelationalGreaterThan,
-  RelationalLessThan,
-  RelationalGreaterThanOrEqual,
-  RelationalLessThanOrEqual,
-  ShiftLeft,
-  ShiftRight,
+  Plus = 'Plus',
+  Minus = 'Minus',
+  Multiply = 'Multiply',
+  Divide = 'Divide',
+  Modulo = 'Modulo',
+  LogicalOr = 'LogicalOr',
+  LogicalAnd = 'LogicalAnd',
+  InclusiveOr = 'InclusiveOr',
+  ExclusiveOr = 'ExclusiveOr',
+  BitwiseAnd = 'BitwiseAnd',
+  EqualityEqual = 'EqualityEqual',
+  EqualityNotEqual = 'EqualityNotEqual',
+  RelationalGreaterThan = 'RelationalGreaterThan',
+  RelationalLessThan = 'RelationalLessThan',
+  RelationalGreaterThanOrEqual = 'RelationalGreaterThanOrEqual',
+  RelationalLessThanOrEqual = 'RelationalLessThanOrEqual',
+  ShiftLeft = 'ShiftLeft',
+  ShiftRight = 'ShiftRight',
 }
 
 export interface CASTBinaryExpression extends BaseExpression {

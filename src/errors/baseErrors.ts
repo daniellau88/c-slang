@@ -50,7 +50,7 @@ export class UnknownTypeBaseError extends BaseError {
 
 export class CannotPerformOperationBaseError extends BaseError {
   public types: Array<ProgramType>
-  constructor(...types: Array<ProgramType>) {
+  constructor(public operation: string, ...types: Array<ProgramType>) {
     super()
     this.types = types
   }

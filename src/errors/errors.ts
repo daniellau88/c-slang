@@ -284,21 +284,26 @@ export class CannotPerformLossyConversion extends RuntimeSourceError {
 
 export class CannotPerformOperation extends RuntimeSourceError {
   private types: Array<ProgramType>
-  constructor(node: CASTNode, types: Array<ProgramType>, stackTrace?: BaseError) {
+  constructor(
+    node: CASTNode,
+    private operation: string,
+    types: Array<ProgramType>,
+    stackTrace?: BaseError,
+  ) {
     super(node, stackTrace)
     this.types = types
   }
 
   public explain() {
     if (this.types.length === 0) {
-      return `Cannot perform operation.`
+      return `Cannot perform operation ${this.operation}.`
     }
     if (this.types.length === 1) {
-      return `Cannot perform operation on ${typeToString(this.types[0])}.`
+      return `Cannot perform operation ${this.operation} on ${typeToString(this.types[0])}.`
     }
     const typeStrings = this.types.map(x => typeToString(x))
     const typeCommas = typeStrings.slice(0, typeStrings.length - 1).join(',')
-    return `Cannot perform operation between ${typeCommas} and ${
+    return `Cannot perform operation ${this.operation} between ${typeCommas} and ${
       typeStrings[typeStrings.length - 1]
     }.`
   }

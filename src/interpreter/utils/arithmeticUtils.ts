@@ -89,7 +89,7 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.ShiftRight:
           return MicroCodeBinaryOperator.ShiftRight
         default:
-          throw new CannotPerformOperationBaseError(INT_BASE_TYPE, INT_BASE_TYPE)
+          throw new CannotPerformOperationBaseError(binaryOperator, INT_BASE_TYPE, INT_BASE_TYPE)
       }
     }
     case ArithmeticType.Float: {
@@ -103,7 +103,11 @@ export const convertBinaryOperatorToMicroCodeBinaryOperator = (
         case CASTBinaryOperator.Divide:
           return MicroCodeBinaryOperator.FloatDivision
         default:
-          throw new CannotPerformOperationBaseError(FLOAT_BASE_TYPE, FLOAT_BASE_TYPE)
+          throw new CannotPerformOperationBaseError(
+            binaryOperator,
+            FLOAT_BASE_TYPE,
+            FLOAT_BASE_TYPE,
+          )
       }
     }
   }
@@ -322,7 +326,7 @@ export const doUnaryOperationWithDereference = (
     case CASTUnaryOperator.BitwiseNot: {
       const arithmeticType = getBaseTypePromotionPriority(operand.type)
       if (arithmeticType !== ArithmeticType.Integer) {
-        throw new CannotPerformOperationBaseError(operand.type)
+        throw new CannotPerformOperationBaseError(operator, operand.type)
       }
       return { binary: intToBinary(~binaryToInt(operand.binary)), type: operand.type }
     }

@@ -494,7 +494,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             case CASTBinaryOperator.Minus:
               return MicroCodeBinaryOperator.IntSubtraction
             default:
-              throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
+              throw new CannotPerformOperation(node.node, node.operator, [leftOpType, rightOpType])
           }
         })()
         state.pushA({ tag: 'bin_op', operator: microcodeOperator, node: node.node })
@@ -514,7 +514,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         return
       }
 
-      throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
+      throw new CannotPerformOperation(node.node, node.operator, [leftOpType, rightOpType])
     }
     case 'bin_op': {
       const rightOpWithType = state.popOS()
