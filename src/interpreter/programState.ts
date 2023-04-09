@@ -122,6 +122,10 @@ export class ProgramState {
     return this.A.length
   }
 
+  printA() {
+    console.log('A: ', this.A)
+  }
+
   getGlobalLength(): number {
     return this.GlobalLength
   }
@@ -188,6 +192,10 @@ export class ProgramState {
 
   getFDAtIndex(index: number): MicroCodeFunctionDefiniton {
     return this.FD[index]
+  }
+
+  printFD() {
+    console.log('FD: ', JSON.stringify(this.FD))
   }
 
   extendFunctionE() {
