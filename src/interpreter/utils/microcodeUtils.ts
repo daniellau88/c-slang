@@ -35,6 +35,7 @@ import {
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
+  isNonArithmeticBinaryOperator,
 } from './arithmeticUtils'
 import { doAssignmentList } from './arrayUtils'
 import {
@@ -512,6 +513,36 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         })
         const leftOpSize = getStaticSizeFromProgramType(decrementPointerDepth(leftOpType))
         state.pushA({ tag: 'load_int', value: leftOpSize, node: node.node })
+        return
+      } else if (
+        isTypeEquivalent(leftOpType, rightOpType) &&
+        isNonArithmeticBinaryOperator(node.operator)
+      ) {
+        state.pushOS(leftOp, leftOpType)
+        state.pushOS(rightOp, rightOpType)
+        // Treat all remaining ones as integer
+        state.pushA({
+          tag: 'bin_op',
+          operator: convertBinaryOperatorToMicroCodeBinaryOperator(
+            ArithmeticType.Integer,
+            node.operator,
+          ),
+          node: node.node,
+        })
+        return
+      } else if (
+        isPointer(leftOpType) &&
+        isPointer(rightOpType) &&
+        node.operator === CASTBinaryOperator.Minus
+      ) {
+        // Allows only subtraction between pointers
+        state.pushOS(leftOp, INT_BASE_TYPE)
+        state.pushOS(rightOp, INT_BASE_TYPE)
+        state.pushA({
+          tag: 'bin_op',
+          operator: MicroCodeBinaryOperator.IntSubtraction,
+          node: node.node,
+        })
         return
       }
 

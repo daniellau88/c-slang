@@ -18,6 +18,21 @@ import {
 } from './typeUtils'
 import { binaryToInt, intToBinary, isTruthy } from './utils'
 
+const nonArithmeticBinaryOperator: Array<CASTBinaryOperator> = [
+  CASTBinaryOperator.LogicalOr,
+  CASTBinaryOperator.LogicalAnd,
+  CASTBinaryOperator.EqualityEqual,
+  CASTBinaryOperator.EqualityNotEqual,
+  CASTBinaryOperator.RelationalGreaterThan,
+  CASTBinaryOperator.RelationalLessThan,
+  CASTBinaryOperator.RelationalGreaterThanOrEqual,
+  CASTBinaryOperator.RelationalLessThanOrEqual,
+]
+
+export const isNonArithmeticBinaryOperator = (op: CASTBinaryOperator) => {
+  return nonArithmeticBinaryOperator.includes(op)
+}
+
 export enum ArithmeticType {
   Integer = 0,
   Float = 1,
