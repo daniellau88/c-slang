@@ -257,16 +257,17 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       state.popAndRestoreRTSStartOntoStack()
       state.popFunctionE()
 
-      state.setReturnRegisterAssigned(false)
+      const binaryWithType = state.getReturnRegister().binary
       if (isVoidReturn) {
         state.pushOS(0, VOID_BASE_TYPE)
-        return
+      } else if (binaryWithType) {
+        state.pushOS(binaryWithType.binary, binaryWithType.type)
+      } else {
+        throw new InternalUnreachableRuntimeError(node.node)
       }
 
-      const binaryWithType = state.getReturnRegister().binary
-      if (binaryWithType !== undefined) {
-        state.pushOS(binaryWithType.binary, binaryWithType.type)
-      }
+      state.resetReturnRegister()
+
       return
     case 'pop_os':
       state.popOS()

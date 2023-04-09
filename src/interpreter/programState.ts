@@ -303,6 +303,10 @@ export class ProgramState {
     this.ReturnRegister.binary = returnRegister
   }
 
+  resetReturnRegister() {
+    this.ReturnRegister = { binary: undefined, assigned: false }
+  }
+
   getLogOutput(): Array<BinaryWithType> {
     return this.LogOutput
   }
