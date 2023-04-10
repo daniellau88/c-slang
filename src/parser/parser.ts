@@ -136,6 +136,7 @@ import {
 } from '../lang/CalcParser'
 import { CalcVisitor } from '../lang/CalcVisitor'
 import { Context, ErrorSeverity, ErrorType, SourceError } from '../types'
+import { CASTProgram } from '../typings/programAST'
 import {
   CCSTAbstractDeclarator,
   CCSTAdditiveExpression,
@@ -200,8 +201,10 @@ import {
   CCSTUnaryOperator,
   CCSTWhileStatement,
 } from '../typings/programCST'
+import { dummyLocation } from '../utils/dummyAstCreator'
 import { stripIndent } from '../utils/formatters'
 import { removeQuotes, unescapeString } from '../utils/parser'
+import { convertCSTProgramToAST } from './ASTConverter'
 
 export class DisallowedConstructError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -1765,7 +1768,7 @@ function convertSource(expression: ProgramContext): CCSTProgram {
 }
 
 export function parse(source: string, context: Context) {
-  let program: CCSTProgram | undefined
+  let parsedProgram: CASTProgram | undefined
 
   if (context.variant === 'calc') {
     const inputStream = CharStreams.fromString(source)
@@ -1775,7 +1778,9 @@ export function parse(source: string, context: Context) {
     parser.buildParseTree = true
     try {
       const tree = parser.program()
-      program = convertSource(tree)
+      const cstProgram = convertSource(tree)
+      if (!cstProgram) throw new FatalSyntaxError(dummyLocation(), 'Cannot parse program')
+      parsedProgram = convertCSTProgramToAST(cstProgram)
     } catch (error) {
       if (error instanceof FatalSyntaxError) {
         context.errors.push(error)
@@ -1784,8 +1789,9 @@ export function parse(source: string, context: Context) {
       }
     }
     const hasErrors = context.errors.find(m => m.severity === ErrorSeverity.ERROR)
-    if (program && !hasErrors) {
-      return program
+    if (parsedProgram && !hasErrors) {
+      context.programState.initializeAST(parsedProgram)
+      return parsedProgram
     } else {
       return undefined
     }

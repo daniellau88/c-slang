@@ -55,12 +55,8 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
   },
   debugger: {
     func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
-      state.printOS()
-      state.printRTS()
-      state.printE()
-      state.printFD()
-      state.printHeap()
-      throw new InterruptedError(node)
+      state.setRuntimeBreak(true)
+      state.pushOS(0, VOID_BASE_TYPE)
     },
     returnProgType: VOID_BASE_TYPE,
     arity: 0,
@@ -98,6 +94,9 @@ export function* execute(state: ProgramState, withLog: boolean = false) {
   if (withLog) state.printState()
   let lastCmd: AgendaNode | undefined
   while (i < step_limit) {
+    const runtimeVars = state.getRuntimeVars()
+    if (runtimeVars.break) break
+
     if (state.isAEmpty()) break
     const cmd = state.popA()
     if (withLog) console.log('cmd:', cmd)

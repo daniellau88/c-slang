@@ -36,12 +36,13 @@ export async function sourceRunner(
   context: Context,
   options: Partial<IOptions> = {},
 ): Promise<Result> {
+  console.log('called source runner')
   const theOptions: IOptions = { ...DEFAULT_SOURCE_OPTIONS, ...options }
   context.variant = determineVariant(context, options)
   context.errors = []
 
   // Parse and validate
-  const program: CCSTProgram | undefined = parse(code, context)
+  const program: CASTProgram | undefined = parse(code, context)
   if (!program) {
     return resolvedErrorPromise
   }
@@ -50,9 +51,7 @@ export async function sourceRunner(
     return resolvedErrorPromise
   }
 
-  const programAST: CASTProgram = convertCSTProgramToAST(program)
-
-  return runInterpreter(programAST, context, theOptions)
+  return runInterpreter(program, context, theOptions)
 }
 
 export async function sourceFilesRunner(

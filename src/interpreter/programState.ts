@@ -24,6 +24,12 @@ type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
   | { binary: undefined; assigned: false }
 
+interface RuntimeVarsType {
+  break: boolean
+  debuggerOn: boolean
+  isRunning: boolean
+}
+
 export class ProgramState {
   private A: Array<AgendaNode>
   private OS: Array<number>
@@ -42,6 +48,8 @@ export class ProgramState {
 
   private warningOutput: Array<Warning>
 
+  private RuntimeVars: RuntimeVarsType
+
   constructor() {
     this.A = []
     this.OS = []
@@ -53,6 +61,27 @@ export class ProgramState {
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
     this.warningOutput = []
+    this.RuntimeVars = {
+      break: false,
+      debuggerOn: true,
+      isRunning: false,
+    }
+  }
+
+  getRuntimeVars(): Readonly<RuntimeVarsType> {
+    return this.RuntimeVars
+  }
+
+  setRuntimeIsRunning(isRunning: boolean) {
+    this.RuntimeVars.isRunning = isRunning
+  }
+
+  setRuntimeDebuggerOn(debuggerOn: boolean) {
+    this.RuntimeVars.debuggerOn = debuggerOn
+  }
+
+  setRuntimeBreak(isBreak: boolean) {
+    this.RuntimeVars.break = isBreak
   }
 
   initializeAST(ast: CASTNode) {
@@ -127,7 +156,7 @@ export class ProgramState {
   }
 
   printA() {
-    console.log('A: ', this.A)
+    console.log('A: ', JSON.stringify(this.A))
   }
 
   getGlobalLength(): number {
