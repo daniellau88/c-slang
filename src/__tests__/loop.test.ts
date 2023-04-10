@@ -9,15 +9,15 @@ describe('loop', () => {
   test('regular for loop', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                for (int i = 0; i < 10; i++) {
-                    x = x + 2;
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        for (int i = 0; i < 10; i++) {
+          x = x + 2;
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -28,15 +28,15 @@ describe('loop', () => {
   test('regular while loop', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                while (x < 20) {
-                    x = x + 2;
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        while (x < 20) {
+          x = x + 2;
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -47,15 +47,15 @@ describe('loop', () => {
   test('regular do while loop', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                do {
-                    x = x + 2;
-                } while(x < 20);
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        do {
+          x = x + 2;
+        } while(x < 20);
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -66,18 +66,18 @@ describe('loop', () => {
   test('for loop with break', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                for (int i = 0; i < 10; i++) {
-                    x = x + 2;
-                    if (x == 10) {
-                        break;
-                    }
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        for (int i = 0; i < 10; i++) {
+          x = x + 2;
+          if (x == 10) {
+            break;
+          }
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -88,18 +88,18 @@ describe('loop', () => {
   test('while loop with break', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                while (x < 20) {
-                    x = x + 2;
-                    if (x == 10) {
-                        break;
-                    }
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        while (x < 20) {
+          x = x + 2;
+          if (x == 10) {
+            break;
+          }
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -110,18 +110,18 @@ describe('loop', () => {
   test('do while loop with break', () => {
     const output = testProgram(
       `
-          int main() {
-              int x = 0;
-              do {
-                  x = x + 2;
-                  if(x == 10) {
-                      break;
-                  }
-              } while(x < 20);
-              printfLog(x);
-              return 0;
+      int main() {
+        int x = 0;
+        do {
+          x = x + 2;
+          if(x == 10) {
+            break;
           }
-          `,
+        } while(x < 20);
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -131,18 +131,18 @@ describe('loop', () => {
   test('for loop with continue', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                for (int i = 0; i < 10; i++) {
-                    if (i % 2 == 0) {
-                        continue;
-                    }
-                    x = x + 2;
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        for (int i = 0; i < 10; i++) {
+          if (i % 2 == 0) {
+              continue;
+          }
+          x = x + 2;
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -153,20 +153,20 @@ describe('loop', () => {
   test('while loop with continue', () => {
     const output = testProgram(
       `
-            int main() {
-                int x = 0;
-                int i = 0;
-                while (i < 10) {
-                    i++;
-                    if (i % 2 == 0) {
-                        continue;
-                    }
-                    x = x + 2;
-                }
-                printfLog(x);
-                return 0;
-            }
-            `,
+      int main() {
+        int x = 0;
+        int i = 0;
+        while (i < 10) {
+          i++;
+          if (i % 2 == 0) {
+              continue;
+          }
+          x = x + 2;
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -177,20 +177,20 @@ describe('loop', () => {
   test('do while loop with continue', () => {
     const output = testProgram(
       `
-          int main() {
-              int x = 0;
-              int i = 0;
-              do {
-                  i++;
-                  if (i % 2 == 0) {
-                      continue;
-                  }
-                  x = x + 2;
-              } while(x < 10);
-              printfLog(x);
-              return 0;
+      int main() {
+        int x = 0;
+        int i = 0;
+        do {
+          i++;
+          if (i % 2 == 0) {
+            continue;
           }
-          `,
+          x = x + 2;
+        } while(x < 10);
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -201,18 +201,18 @@ describe('loop', () => {
   test('edge case for loop', () => {
     const output = testProgram(
       `
-          int main() {
-            int x = 0;
-            for(;;) {
-              x++;
-              if(x == 10) {
-                break;
-              }
-            }
-            printfLog(x);
-            return 0;
+      int main() {
+        int x = 0;
+        for(;;) {
+          x++;
+          if(x == 10) {
+            break;
           }
-          `,
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -223,17 +223,17 @@ describe('loop', () => {
   test('nested for loop', () => {
     const output = testProgram(
       `
-          int main() {
-            int x = 0;
-            for(int i = 0; i < 10; i++) {
-              for(int j = 0; j < 10; j++) {
-                x++;
-              }
-            }
-            printfLog(x);
-            return 0;
+      int main() {
+        int x = 0;
+        for(int i = 0; i < 10; i++) {
+          for(int j = 0; j < 10; j++) {
+            x++;
           }
-          `,
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -244,21 +244,21 @@ describe('loop', () => {
   test('nested while loop', () => {
     const output = testProgram(
       `
-          int main() {
-            int x = 0;
-            int i = 0;
-            while(i < 10) {
-              int j = 0;
-              while(j < 10) {
-                x++;
-                j++;
-              }
-              i++;
-            }
-            printfLog(x);
-            return 0;
+      int main() {
+        int x = 0;
+        int i = 0;
+        while(i < 10) {
+          int j = 0;
+          while(j < 10) {
+            x++;
+            j++;
           }
-          `,
+          i++;
+        }
+        printfLog(x);
+        return 0;
+      }
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()

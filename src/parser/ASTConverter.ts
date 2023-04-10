@@ -465,7 +465,17 @@ function visitCCSTForStatement(node: CCSTForStatement): CASTForStatement {
 }
 
 // Same as DeclarationStatement (just without the semicolon)
-function visitCCSTForInitDeclaration(node: CCSTForInitDeclaration): CASTDeclarationStatement {
+function visitCCSTForInitDeclaration(
+  node: CCSTForInitDeclaration,
+): CASTDeclarationStatement | CASTExpressionStatement {
+  if (node.subtype === 'Expression') {
+    return {
+      type: 'ExpressionStatement',
+      expressions: visitCCSTExpression(node.expression),
+      loc: node.loc,
+    }
+  }
+
   const baseType = visitCCSTDeclarationSpecifier(node.declarationSpecifiers)
 
   return {

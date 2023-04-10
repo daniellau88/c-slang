@@ -1,3 +1,4 @@
+import { VoidHasNoValueBaseError } from '../../errors/baseErrors'
 import { ProgramState } from '../programState'
 import { ProgramType, ProgramTypeModifierArray } from '../typings'
 import { wordSize } from './microcodeUtils'
@@ -8,6 +9,7 @@ import {
   isArray,
   isBaseType,
   isPointer,
+  isVoid,
 } from './typeUtils'
 import { binaryToInt, intToBinary, isTruthy } from './utils'
 
@@ -32,6 +34,7 @@ export const doAssignmentList = (
     const values = []
     for (let i = lengthInt - 1; i >= 0; i--) {
       const { binary: innerValue, type: innerType } = state.popOS()
+      if (isVoid(innerType)) throw new VoidHasNoValueBaseError()
       values.push(innerValue)
     }
     values.reverse()
@@ -51,7 +54,7 @@ export const doAssignmentList = (
       // If it is an array, flatten the array
       let totalElems = 1
       while (isArray(iterateType)) {
-        totalElems *= (iterateType[0] as ProgramTypeModifierArray).size as number
+        totalElems *= (iterateType[0] as ProgramTypeModifierArray).size
         iterateType = getArrayItemsType(iterateType)
       }
       totalElements = totalElems

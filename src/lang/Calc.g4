@@ -143,14 +143,18 @@ fragment
 ZERO_DIGIT: [0];
 
 fragment
+ESCAPE_CHAR
+   : '\\' ('a'|'b'|'f'|'n'|'r'|'t'|'v'|'\\'|'\''|'"'|'?'|'0')
+   ;
+
+fragment
 S_CHAR
    : ~["\\\r\n]
-   | '\\\n'
-   | '\\\r\n'
+   | ESCAPE_CHAR
    ;
 
 INTEGER: (NON_ZERO_DIGIT DIGIT* | ZERO_DIGIT);
-FLOAT: NON_ZERO_DIGIT DIGIT* FULLSTOP DIGIT*;
+FLOAT: INTEGER FULLSTOP DIGIT*;
 CHAR: '\'' S_CHAR '\'';
 STRING: '"' S_CHAR* '"';
 IDENTIFIER: ALPHABET_AND_UNDERSCORE (ALPHABET_AND_UNDERSCORE | DIGIT)*;
@@ -482,7 +486,8 @@ for_statement
    ;
 
 for_init_declaration
-   : declaration_specifiers init_declarator_list
+   : declaration_specifiers init_declarator_list   # ForInitDeclarationTypeDeclaration
+   | expression                                    # ForInitDeclarationTypeExpression
    ;
 
 // Goto Statement

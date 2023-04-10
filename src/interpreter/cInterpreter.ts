@@ -1,7 +1,9 @@
+import { InterruptedError } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { TimeoutError } from '../errors/timeoutErrors'
 import { Context, CustomBuiltIns } from '../types'
 import { CASTNode, CASTProgram } from '../typings/programAST'
+import { rawCode } from '../utils/parser'
 import { ProgramState } from './programState'
 import { AgendaNode, BinaryWithType, BuiltinFunctionDefinition } from './typings'
 import { astToMicrocode } from './utils/astToMicrocodeUtils'
@@ -51,6 +53,18 @@ export const builtinFunctions: Record<string, BuiltinFunctionDefinition> = {
     returnProgType: VOID_BASE_TYPE,
     arity: 1,
   },
+  debugger: {
+    func: function (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) {
+      state.printOS()
+      state.printRTS()
+      state.printE()
+      state.printFD()
+      state.printHeap()
+      throw new InterruptedError(node)
+    },
+    returnProgType: VOID_BASE_TYPE,
+    arity: 0,
+  },
 }
 
 export const importBuiltins = (
@@ -70,6 +84,7 @@ export const importBuiltins = (
   programState.defineBuiltInFunction('sizeof', builtinFunctions.sizeof)
   programState.defineBuiltInFunction('malloc', builtinFunctions.malloc)
   programState.defineBuiltInFunction('free', builtinFunctions.free)
+  programState.defineBuiltInFunction('debugger', builtinFunctions.debugger)
 }
 
 /* ****************

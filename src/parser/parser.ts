@@ -54,8 +54,9 @@ import {
   ExpressionTypeAssignmentContext,
   ExpressionTypeExpressionContext,
   Float_constantContext,
-  For_init_declarationContext,
   For_statementContext,
+  ForInitDeclarationTypeDeclarationContext,
+  ForInitDeclarationTypeExpressionContext,
   Function_definitionContext,
   Goto_statementContext,
   IdentifierContext,
@@ -200,6 +201,7 @@ import {
   CCSTWhileStatement,
 } from '../typings/programCST'
 import { stripIndent } from '../utils/formatters'
+import { removeQuotes, unescapeString } from '../utils/parser'
 
 export class DisallowedConstructError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -1322,7 +1324,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitString(ctx: StringContext): CCSTString {
     return {
       type: 'String',
-      value: ctx.text.substring(1, ctx.text.length - 1),
+      value: unescapeString(removeQuotes(ctx.text)),
       loc: contextToLocation(ctx),
     }
   }
@@ -1357,7 +1359,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
   visitCharacter_constant(ctx: Character_constantContext): CCSTCharacterConstant {
     return {
       type: 'CharacterConstant',
-      value: ctx.text.substring(1, ctx.text.length - 1),
+      value: unescapeString(removeQuotes(ctx.text)),
       loc: contextToLocation(ctx),
     }
   }
@@ -1463,7 +1465,7 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
       type: 'ForStatement',
       initDeclaration:
         initDeclarationContext !== undefined
-          ? this.visitFor_init_declaration(initDeclarationContext)
+          ? (this.visit(initDeclarationContext) as CCSTForInitDeclaration)
           : undefined,
       testExpression:
         testExpressionContext !== undefined
@@ -1478,11 +1480,25 @@ class ExpressionGenerator implements CalcVisitor<CCSTNode> {
     }
   }
 
-  visitFor_init_declaration(ctx: For_init_declarationContext): CCSTForInitDeclaration {
+  visitForInitDeclarationTypeDeclaration(
+    ctx: ForInitDeclarationTypeDeclarationContext,
+  ): CCSTForInitDeclaration {
     return {
       type: 'ForInitDeclaration',
+      subtype: 'Declaration',
       declarationSpecifiers: this.visitDeclaration_specifiers(ctx.declaration_specifiers()),
       initDeclaratorList: this.visitInit_declarator_list(ctx.init_declarator_list()),
+      loc: contextToLocation(ctx),
+    }
+  }
+
+  visitForInitDeclarationTypeExpression(
+    ctx: ForInitDeclarationTypeExpressionContext,
+  ): CCSTForInitDeclaration {
+    return {
+      type: 'ForInitDeclaration',
+      subtype: 'Expression',
+      expression: this.visit(ctx.expression()) as CCSTExpression,
       loc: contextToLocation(ctx),
     }
   }

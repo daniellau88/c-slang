@@ -8,6 +8,7 @@ import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
   UnknownTypeBaseError,
+  VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import {
   CannotDereferenceTypeError,
@@ -17,6 +18,7 @@ import {
   MemoryFreeNotAllocatedError,
   UnknownError,
   UnknownType,
+  VoidHasNoValue,
 } from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
@@ -39,7 +41,7 @@ const arithmeticUtilsErrorHandler = (e: any, node: CASTNode) => {
     throw new UnknownType(node, e.type, e)
   }
   if (e instanceof CannotPerformOperationBaseError) {
-    throw new CannotPerformOperation(node, e.types, e)
+    throw new CannotPerformOperation(node, e.operation, e.types, e)
   }
   if (e instanceof CannotDivideByZeroBaseError) {
     throw new CannotDivideByZero(node, e)
@@ -50,6 +52,12 @@ const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
 
 const typeConversionErrorHandler = (e: any, node: CASTNode) => {}
 
+const voidHasNoValueErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof VoidHasNoValueBaseError) {
+    throw new VoidHasNoValue(node, e)
+  }
+}
+
 export const errorHandler = (e: any, node: CASTNode) => {
   if (e instanceof RuntimeSourceError) {
     throw e
@@ -59,6 +67,7 @@ export const errorHandler = (e: any, node: CASTNode) => {
   arithmeticUtilsErrorHandler(e, node)
   staticSizeErrorHandler(e, node)
   typeConversionErrorHandler(e, node)
+  voidHasNoValueErrorHandler(e, node)
 
   if (e instanceof ParseBaseError) {
     throw new ParseRuntimeError(node, e)

@@ -1,7 +1,8 @@
 import {
-  CannotDereferenceTypeError,
   CannotPerformLossyConversion,
   CannotPerformOperation,
+  CannotReturnNonVoidValue,
+  CannotReturnVoidValue,
   FunctionCannotReturnArray,
   InvalidArraySize,
   InvalidFreeMemoryValue,
@@ -11,12 +12,13 @@ import {
   UndefinedVariable,
   UnknownSize,
   VariableRedeclaration,
+  VoidHasNoValue,
 } from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
   NotImplementedRuntimeError,
 } from '../../errors/runtimeSourceError'
-import { CASTBinaryOperator, CASTExpression } from '../../typings/programAST'
+import { CASTBinaryOperator, CASTExpression, CASTLiteral } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import {
   BinaryWithType,
@@ -33,6 +35,7 @@ import {
   doUnaryOperationWithDereference,
   doUnaryOperationWithoutDereference,
   getBaseTypePromotionPriority,
+  isNonArithmeticBinaryOperator,
 } from './arithmeticUtils'
 import { doAssignmentList } from './arrayUtils'
 import {
@@ -50,6 +53,7 @@ import {
   isParameters,
   isPointer,
   isTypeEquivalent,
+  isVoid,
   VOID_BASE_TYPE,
 } from './typeUtils'
 import {
@@ -144,19 +148,20 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'deref': {
       const { binary, type } = state.popOS()
+      if (isVoid(type)) throw new VoidHasNoValue(node.node)
+
       const { binary: newBinary, type: newType } = derefBinary(state, { binary, type })
       state.pushOS(newBinary, newType)
       return
     }
     case 'func_apply': {
       const args: Array<BinaryWithType> = []
-      const needDerefs: Array<BinaryWithType> = []
       for (let i = 0; i < node.arity; i++) {
-        needDerefs.push(state.popOS())
-        args.push(state.popOS())
+        const item = state.popOS()
+        if (isVoid(item.type)) throw new VoidHasNoValue(node.node)
+        args.push(item)
       }
       args.reverse()
-      needDerefs.reverse()
 
       const { binary: funcId } = state.popOS()
       const functionToCall = state.getFDAtIndex(binaryToInt(funcId))
@@ -171,16 +176,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       }
 
       if (functionToCall.subtype === 'builtin_func') {
-        const derefedArgs = args.map((x, i) => {
-          const needDeref = needDerefs[i]
-          // console.log(binaryToFormattedString(needDeref.binary, needDeref.type))
-          // console.log(binaryToFormattedString(x.binary, x.type))
-          if (isTruthy(needDeref.binary)) {
-            return derefBinary(state, x)
-          }
-          return x
-        })
-        functionToCall.func(state, derefedArgs, node.node)
+        functionToCall.func(state, args, node.node)
         return
       }
 
@@ -194,36 +190,43 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
         const arg = args[i]
-        const needDerefItem = isTruthy(needDerefs[i].binary)
         const identifierName = parameter.identifier?.name
         if (identifierName) {
           if (parameter.paramType.typeModifiers[0].subtype === 'Array') {
-            // If it is array, set variable pointer directly to location of array
-            if (!needDerefItem) {
-              throw new CannotDereferenceTypeError(node.node)
+            const paramTypeCopy = parameter.paramType.typeModifiers.map(x => {
+              return { ...x }
+            })
+            if (paramTypeCopy[0].subtype === 'Array' && paramTypeCopy[0].size === undefined) {
+              const inferredSize = arg.type[0].subtype === 'Array' ? arg.type[0].size : undefined
+              if (inferredSize !== undefined) {
+                paramTypeCopy[0].size = {
+                  type: 'Literal',
+                  subtype: 'Int',
+                  value: inferredSize.toString(),
+                } as CASTLiteral
+              }
             }
+
             state.addRecordToE(identifierName, {
               subtype: 'variable',
               address: binaryToInt(arg.binary),
-              variableType: decrementPointerDepth(arg.type), // TODO: Check that type is compatible
+              variableType: paramTypeCopy.map(convertCASTTypeModifierToProgramTypeModifier), // TODO: Check that type is compatible
             })
             state.pushRTS(arg.binary, arg.type)
             continue
           }
 
+          const variableType = parameter.paramType.typeModifiers.map(
+            convertCASTTypeModifierToProgramTypeModifier,
+          )
+
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
-            variableType: parameter.paramType.typeModifiers.map(
-              convertCASTTypeModifierToProgramTypeModifier,
-            ),
+            variableType: variableType,
           })
 
-          if (needDerefItem) {
-            const { binary, type } = derefBinary(state, arg)
-            state.pushRTS(binary, type)
-          }
-          state.pushRTS(arg.binary, arg.type)
+          state.pushRTS(arg.binary, variableType)
         }
       }
 
@@ -232,8 +235,22 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       return
     }
     case 'exit_func':
-      if (!state.getReturnRegister().assigned) {
+      const returnType = node.funcNode.returnProgType
+      const isVoidReturn = isVoid(returnType)
+      if (!isVoidReturn && !state.getReturnRegister().assigned) {
         throw new ReturnNotCalled(node.node, node.funcNode)
+      }
+
+      if (
+        isVoidReturn &&
+        state.getReturnRegister().assigned &&
+        state.getReturnRegister().binary !== undefined
+      ) {
+        throw new CannotReturnNonVoidValue(node.node)
+      }
+
+      if (!isVoidReturn && state.getReturnRegister().binary === undefined) {
+        throw new CannotReturnVoidValue(node.node)
       }
 
       state.shrinkRTSToIndex(state.getRTSStart())
@@ -241,11 +258,17 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       state.popAndRestoreRTSStartOntoStack()
       state.popFunctionE()
 
-      state.setReturnRegisterAssigned(false)
       const binaryWithType = state.getReturnRegister().binary
-      if (binaryWithType !== undefined) {
+      if (isVoidReturn) {
+        state.pushOS(0, VOID_BASE_TYPE)
+      } else if (binaryWithType) {
         state.pushOS(binaryWithType.binary, binaryWithType.type)
+      } else {
+        throw new InternalUnreachableRuntimeError(node.node)
       }
+
+      state.resetReturnRegister()
+
       return
     case 'pop_os':
       state.popOS()
@@ -384,7 +407,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'assgn': {
       const { binary: addr, type: addrType } = state.popOS()
       const { binary: val, type: valType } = state.popOS()
+      if (isVoid(valType)) throw new VoidHasNoValue(node.node)
+
       const newType = decrementPointerDepth(addrType)
+
+      if (isVoid(valType)) {
+        throw new VoidHasNoValue(node.node)
+      }
 
       let newValue = val // TODO: type checking
       if (!isTypeEquivalent(valType, newType)) {
@@ -424,6 +453,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'bin_op_auto_promotion': {
       const { binary: rightOp, type: rightOpType } = state.popOS()
       const { binary: leftOp, type: leftOpType } = state.popOS()
+
+      if (isVoid(rightOpType) || isVoid(leftOpType)) throw new VoidHasNoValue(node.node)
 
       if (isBaseType(leftOpType) && isBaseType(rightOpType)) {
         let newLeftOp = leftOp
@@ -465,7 +496,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             case CASTBinaryOperator.Minus:
               return MicroCodeBinaryOperator.IntSubtraction
             default:
-              throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
+              throw new CannotPerformOperation(node.node, node.operator, [leftOpType, rightOpType])
           }
         })()
         state.pushA({ tag: 'bin_op', operator: microcodeOperator, node: node.node })
@@ -483,13 +514,45 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const leftOpSize = getStaticSizeFromProgramType(decrementPointerDepth(leftOpType))
         state.pushA({ tag: 'load_int', value: leftOpSize, node: node.node })
         return
+      } else if (
+        isTypeEquivalent(leftOpType, rightOpType) &&
+        isNonArithmeticBinaryOperator(node.operator)
+      ) {
+        state.pushOS(leftOp, leftOpType)
+        state.pushOS(rightOp, rightOpType)
+        // Treat all remaining ones as integer
+        state.pushA({
+          tag: 'bin_op',
+          operator: convertBinaryOperatorToMicroCodeBinaryOperator(
+            ArithmeticType.Integer,
+            node.operator,
+          ),
+          node: node.node,
+        })
+        return
+      } else if (
+        isPointer(leftOpType) &&
+        isPointer(rightOpType) &&
+        node.operator === CASTBinaryOperator.Minus
+      ) {
+        // Allows only subtraction between pointers
+        state.pushOS(leftOp, INT_BASE_TYPE)
+        state.pushOS(rightOp, INT_BASE_TYPE)
+        state.pushA({
+          tag: 'bin_op',
+          operator: MicroCodeBinaryOperator.IntSubtraction,
+          node: node.node,
+        })
+        return
       }
 
-      throw new CannotPerformOperation(node.node, [leftOpType, rightOpType])
+      throw new CannotPerformOperation(node.node, node.operator, [leftOpType, rightOpType])
     }
     case 'bin_op': {
       const rightOpWithType = state.popOS()
       const leftOpWithType = state.popOS()
+      if (isVoid(leftOpWithType.type) || isVoid(rightOpWithType.type))
+        throw new VoidHasNoValue(node.node)
 
       const result = doBinaryOperation(leftOpWithType, rightOpWithType, node.operator)
       state.pushOS(result.binary, result.type)
@@ -516,6 +579,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             break
           }
           case 'BaseType': {
+            if (typeModifier.baseType === 'void') throw new VoidHasNoValue(node.node)
             expressions.push({ tag: 'load_int', value: 8, node: node.node })
             shouldBreak = true
             break
@@ -545,6 +609,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'unary_op': {
       const operand = state.popOS()
+      if (isVoid(operand.type)) throw new VoidHasNoValue(node.node)
+
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
       const isIncrementOperator = CASTUnaryOperatorIncrement.includes(node.operator)
       if (isIncrementOperator) {
@@ -564,9 +630,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       state.setReturnRegisterAssigned(true)
       if (node.withExpression) {
         const returnValueAndType = state.popOS()
+        if (isVoid(returnValueAndType.type)) throw new VoidHasNoValue(node.node)
         state.setReturnRegisterBinary(returnValueAndType)
-      } else {
-        state.setReturnRegisterBinary({ binary: 0, type: VOID_BASE_TYPE }) // TODO: Fix void base type
       }
       let nextInstruction = state.peekA()
       while (nextInstruction !== undefined) {
@@ -588,6 +653,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'array_add_comp': {
       const { binary: indexBinary, type: indexType } = state.popOS()
       const { binary: arrayAddressBinary, type: arrayAddressType } = state.popOS()
+      if (isVoid(indexType)) throw new VoidHasNoValue(node.node)
 
       if (isArray(arrayAddressType)) {
         const arrayItemsType = getArrayItemsType(arrayAddressType)
@@ -606,6 +672,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     }
     case 'conditional_statement_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
+      if (isVoid(indexType)) throw new VoidHasNoValue(node.node)
+
       if (isTruthy(indexBinary)) {
         state.pushA(node.ifTrue)
       } else {
@@ -616,7 +684,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
     case 'while_op': {
       const { binary: indexBinary, type: indexType } = state.popOS()
-      if (Boolean(binaryToInt(indexBinary))) {
+      if (isVoid(indexType)) throw new VoidHasNoValue(node.node)
+      if (isTruthy(indexBinary)) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
         state.pushA(node.condition)
@@ -630,7 +699,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       let testExpressionValue = true
       if (node.testExpression) {
         const { binary: indexBinary, type: indexType } = state.popOS()
-        testExpressionValue = Boolean(binaryToInt(indexBinary))
+        if (isVoid(indexType)) throw new VoidHasNoValue(node.node)
+        testExpressionValue = isTruthy(indexBinary)
       }
       if (testExpressionValue) {
         state.pushA({ tag: 'break_marker', node: node.node })
@@ -702,6 +772,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
     case 'malloc_op': {
       const { binary: size, type: typeSize } = node.size
+      if (isVoid(typeSize)) throw new VoidHasNoValue(node.node)
       if (binaryToInt(size) <= 0) {
         throw new InvalidMallocSize(node.node, binaryToInt(size))
       }
@@ -712,6 +783,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
     case 'free_op': {
       const { binary: address, type: typeAddress } = node.address
+      if (isVoid(typeAddress)) throw new VoidHasNoValue(node.node)
       const addressIndex = binaryToInt(address)
       if (!isPointer(typeAddress)) {
         throw new InvalidFreeMemoryValue(node.node, { binary: address, type: typeAddress })
