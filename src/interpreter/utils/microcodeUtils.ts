@@ -191,9 +191,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       state.extendScopeE()
 
       const funcParameters = functionToCall.parameters
-      console.log("func Params: ", funcParameters)
-      console.log("args test: ", args)
-      console.log("args deref teset: ", needDerefs)
+      console.log('func Params: ', funcParameters)
+      console.log('args test: ', args)
+      console.log('args deref teset: ', needDerefs)
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
@@ -215,9 +215,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             continue
           }
           //check type
-          console.log("Type test ", parameter.paramType.typeModifiers.map(
-            convertCASTTypeModifierToProgramTypeModifier,
-          ))
+          console.log(
+            'Type test ',
+            parameter.paramType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier),
+          )
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
@@ -226,7 +227,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             ),
           })
 
-          const paramType: ProgramType = parameter.paramType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier)
+          const paramType: ProgramType = parameter.paramType.typeModifiers.map(
+            convertCASTTypeModifierToProgramTypeModifier,
+          )
           if (needDerefItem) {
             const { binary, type } = derefBinary(state, arg)
             // state.pushRTS(binary, type)
@@ -398,11 +401,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const newType = decrementPointerDepth(addrType)
 
       try {
-        let newValue = convertValueToType(val, valType, newType)
+        const newValue = convertValueToType(val, valType, newType)
         state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
         state.pushOS(newValue, newType)
         return
-      } catch(e) {
+      } catch (e) {
         throw new CannotPerformLossyConversion(node.node, valType, newType)
       }
     }
