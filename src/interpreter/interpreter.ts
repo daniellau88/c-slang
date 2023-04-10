@@ -43,7 +43,6 @@ export const pushEnvironment = (context: Context, environment: Environment) => {
 // tslint:enable:object-literal-shorthand
 
 export function* evaluate(node: CASTNode, context: Context) {
-  context.programState.printA()
   try {
     const executeGenerator = execute(context.programState)
     let programStep = executeGenerator.next()

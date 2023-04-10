@@ -2,7 +2,7 @@ import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
 } from '../../errors/baseErrors'
-import { ProgramType } from '../typings'
+import { BinaryWithOptionalType, ProgramType } from '../typings'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
@@ -82,6 +82,10 @@ export class RTM {
     return false
   }
 
+  getNextHeap(): number {
+    return this.NextHeap
+  }
+
   printHeap() {
     console.log('--------------- HEAP --------------- ')
     console.log('Next heap: ', this.NextHeap)
@@ -119,6 +123,14 @@ export class RTM {
   getRTSAtIndex(index: number): number {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     return this.Memory.getFloat64(index * WORD_SIZE)
+  }
+
+  getRTSAtIndexWithType(index: number): BinaryWithOptionalType {
+    if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
+    return {
+      binary: this.Memory.getFloat64(index * WORD_SIZE),
+      type: this.TypeAdditionalInfoStack[index],
+    }
   }
 
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {

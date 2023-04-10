@@ -22,8 +22,6 @@ export class PreemptiveScheduler implements Scheduler {
             const runtimeVars = context.programState.getRuntimeVars()
             actuallyBreak = runtimeVars.break && runtimeVars.debuggerOn
             if (actuallyBreak) {
-              console.log('finalState')
-              context.programState.printA()
               itValue.done = true
             }
           }

@@ -184,7 +184,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       state.saveAndUpdateRTSStartOntoStack()
 
-      state.extendFunctionE()
+      state.extendFunctionE(functionToCall.identifier.name)
       state.extendScopeE()
 
       const funcParameters = functionToCall.parameters

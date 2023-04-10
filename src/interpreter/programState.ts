@@ -2,12 +2,14 @@ import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '.
 import { CASTNode } from '../typings/programAST'
 import {
   AgendaNode,
+  BinaryWithOptionalType,
   BinaryWithType,
   BuiltinFunctionDefinition,
   ERecord,
   EScope,
   MicroCodeFunctionDefiniton,
   ProgramType,
+  VariableScope,
 } from './typings'
 import { RTM } from './utils/RTM'
 import {
@@ -20,6 +22,20 @@ import {
 } from './utils/utils'
 import { Warning } from './utils/warning'
 
+type DeepReadonly<T> = T extends (infer R)[]
+  ? DeepReadonlyArray<R>
+  : T extends Function
+  ? T
+  : T extends object
+  ? DeepReadonlyObject<T>
+  : T
+
+type DeepReadonlyArray<T> = ReadonlyArray<DeepReadonly<T>>
+
+type DeepReadonlyObject<T> = {
+  readonly [P in keyof T]: DeepReadonly<T[P]>
+}
+
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
   | { binary: undefined; assigned: false }
@@ -29,6 +45,8 @@ interface RuntimeVarsType {
   debuggerOn: boolean
   isRunning: boolean
 }
+
+const DEFAULT_MEMORY_SIZE = 1_000_000
 
 export class ProgramState {
   private A: Array<AgendaNode>
@@ -50,13 +68,16 @@ export class ProgramState {
 
   private RuntimeVars: RuntimeVarsType
 
-  constructor() {
+  private MemorySize: number
+
+  constructor(memorySize: number = DEFAULT_MEMORY_SIZE) {
     this.A = []
     this.OS = []
     this.OSType = {}
-    this.RTM = new RTM(1000000)
+    this.MemorySize = memorySize
+    this.RTM = new RTM(memorySize)
     this.FD = []
-    this.E = [{ record: {} }]
+    this.E = [{ name: 'global', varScope: { record: {} } }]
     this.LogOutput = []
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
@@ -90,7 +111,7 @@ export class ProgramState {
 
   defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
     const newIndex = this.FD.length
-    if (this.E[0].record[key] !== undefined) {
+    if (this.E[0].varScope.record[key] !== undefined) {
       throw new InternalUnreachableBaseError(
         'Builtin function ' + key + ' has already been defined',
       )
@@ -207,6 +228,17 @@ export class ProgramState {
     return this.RTM.getLengthRTS()
   }
 
+  getRTSSnapshot(): DeepReadonly<Array<BinaryWithOptionalType>> {
+    const rtsLength = this.getRTSLength()
+    const array: Array<DeepReadonlyObject<BinaryWithOptionalType>> = Array(rtsLength)
+    for (let i = 0; i < rtsLength; i++) {
+      array[i] = this.RTM.getRTSAtIndexWithType(i)
+    }
+
+    const finalArray: DeepReadonlyArray<DeepReadonlyObject<BinaryWithOptionalType>> = array
+    return finalArray
+  }
+
   shrinkRTSToIndex(index: number) {
     this.RTM.shrinkToIndexRTS(index)
   }
@@ -231,24 +263,24 @@ export class ProgramState {
     console.log('FD: ', JSON.stringify(this.FD))
   }
 
-  extendFunctionE() {
-    push(this.E, this.getGlobalE())
+  extendFunctionE(name: string) {
+    push(this.E, { name: name, varScope: { parent: this.getGlobalE().varScope, record: {} } })
   }
 
   extendScopeE() {
     const currentTopE = peek(this.E)
-    this.E[this.E.length - 1] = {
-      parent: currentTopE,
+    this.E[this.E.length - 1].varScope = {
+      parent: currentTopE?.varScope,
       record: {},
     }
   }
 
   popScopeE() {
     const currentTopE = peek(this.E)
-    if (!currentTopE || !currentTopE.parent) {
+    if (!currentTopE || !currentTopE.varScope.parent) {
       throw new InternalUnreachableBaseError('No more scope to pop')
     }
-    this.E[this.E.length - 1] = currentTopE.parent
+    this.E[this.E.length - 1].varScope = currentTopE.varScope.parent
   }
 
   popFunctionE() {
@@ -267,7 +299,7 @@ export class ProgramState {
       return undefined
     }
 
-    let currentEntry: EScope | undefined = currentEnv
+    let currentEntry: VariableScope | undefined = currentEnv.varScope
     while (currentEntry) {
       if (key in currentEntry.record) {
         return currentEntry.record[key]
@@ -278,7 +310,7 @@ export class ProgramState {
   }
 
   addRecordToE(key: string, record: ERecord) {
-    this.E[this.E.length - 1].record[key] = record
+    this.E[this.E.length - 1].varScope.record[key] = record
   }
 
   getGlobalE() {
@@ -286,15 +318,19 @@ export class ProgramState {
   }
 
   hasKeyGlobalE(key: string) {
-    return this.E[0].record[key] !== undefined
+    return this.E[0].varScope.record[key] !== undefined
   }
 
   addRecordToGlobalE(key: string, record: ERecord) {
-    this.E[0].record[key] = record
+    this.E[0].varScope.record[key] = record
   }
 
   getELength(): number {
     return this.E.length
+  }
+
+  getE(): DeepReadonly<Array<EScope>> {
+    return this.E
   }
 
   printState() {
@@ -354,6 +390,18 @@ export class ProgramState {
 
   printHeap() {
     this.RTM.printHeap()
+  }
+
+  getHeapSnapshot(): DeepReadonly<Record<number, BinaryWithOptionalType>> {
+    const heapStart = this.RTM.getNextHeap()
+    const heapLength = this.MemorySize - heapStart
+    const array: Array<DeepReadonlyObject<BinaryWithOptionalType>> = Array(heapLength)
+    for (let i = heapStart + 1; i < this.MemorySize; i++) {
+      array[i] = { binary: this.RTM.getHeapMemoryAtIndex(i), type: undefined }
+    }
+
+    const finalArray: DeepReadonlyArray<DeepReadonlyObject<BinaryWithOptionalType>> = array
+    return finalArray
   }
 
   pushWarning(...warnings: Array<Warning>) {

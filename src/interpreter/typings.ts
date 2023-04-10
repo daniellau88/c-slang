@@ -279,9 +279,14 @@ interface ERecordVariable extends ERecordBase {
 
 export type ERecord = ERecordFunction | ERecordVariable
 
-export interface EScope {
-  parent?: EScope
+export interface VariableScope {
+  parent?: VariableScope
   record: Record<string, ERecord>
+}
+
+export interface EScope {
+  name: string
+  varScope: VariableScope
 }
 
 export type Env = Array<EScope>
@@ -346,7 +351,7 @@ export type BinaryWithType = {
 }
 
 type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
-export type BinaryWithLoseType = WithOptional<BinaryWithType, 'type'>
+export type BinaryWithOptionalType = WithOptional<BinaryWithType, 'type'>
 
 export interface BuiltinFunctionDefinition {
   func: (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => void
