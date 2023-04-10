@@ -152,3 +152,41 @@ Test case: ` +
 }
 
 // Uncomment where necessary to see the logs of running a program
+// test (`
+// int main() {
+//   int* a = 10;
+//   float* b = a;
+//   printfLog(*b);
+//   return 0;
+// }
+// `)
+// test (`
+// int main() {
+//   int a = 10;
+//   float b = 20;
+//   int *c = &b;
+//   printfLog(*c);
+//   return 0;
+// }
+// `)
+test(`
+  int test(int a, float b, char c) {
+    printfLog(a, b, c);
+    return 0;
+  }
+  int square(int a) {
+    return a * a;
+  }
+
+  int main() {
+    test(square(5), square(7), 49);
+    return 0;
+  }
+`)
+// test(`
+//   int main() {
+//     int a = "hello";
+//     printfLog(a);
+//     return 0;
+//   }
+// `)

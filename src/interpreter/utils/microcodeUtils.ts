@@ -35,6 +35,7 @@ import {
   getBaseTypePromotionPriority,
 } from './arithmeticUtils'
 import { doAssignmentList } from './arrayUtils'
+import { convertValueToType } from './typeConversionUtils'
 import {
   CASTUnaryOperatorIncrement,
   CHAR_BASE_TYPE,
@@ -190,6 +191,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       state.extendScopeE()
 
       const funcParameters = functionToCall.parameters
+      console.log("func Params: ", funcParameters)
+      console.log("args test: ", args)
+      console.log("args deref teset: ", needDerefs)
       for (let i = 0; i < args.length; i++) {
         const rtsIndex = state.getRTSLength()
         const parameter = funcParameters[i]
@@ -210,7 +214,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             state.pushRTS(arg.binary, arg.type)
             continue
           }
-
+          //check type
+          console.log("Type test ", parameter.paramType.typeModifiers.map(
+            convertCASTTypeModifierToProgramTypeModifier,
+          ))
           state.addRecordToE(identifierName, {
             subtype: 'variable',
             address: rtsIndex,
@@ -219,11 +226,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             ),
           })
 
+          const paramType: ProgramType = parameter.paramType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier)
           if (needDerefItem) {
             const { binary, type } = derefBinary(state, arg)
-            state.pushRTS(binary, type)
+            // state.pushRTS(binary, type)
+            state.pushRTS(convertValueToType(binary, type, paramType), paramType)
+            // TODO: is this correct?
+            continue
           }
-          state.pushRTS(arg.binary, arg.type)
+          state.pushRTS(convertValueToType(arg.binary, arg.type, paramType), paramType)
         }
       }
 
@@ -386,31 +397,14 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: val, type: valType } = state.popOS()
       const newType = decrementPointerDepth(addrType)
 
-      let newValue = val // TODO: type checking
-      if (!isTypeEquivalent(valType, newType)) {
-        if (valType.length === 0) {
-        } // If value's type is unknown, use address's type
-        else {
-          if (isBaseType(newType) && isBaseType(valType)) {
-            const newArithmeticType = getBaseTypePromotionPriority(newType)
-            const valArithmeticType = getBaseTypePromotionPriority(valType)
-            const maxPriority = Math.max(newArithmeticType, valArithmeticType)
-
-            if (valArithmeticType < maxPriority) {
-              // Promote value if smaller
-              newValue = binaryToInt(val)
-            }
-
-            if (newArithmeticType < maxPriority) {
-              throw new CannotPerformLossyConversion(node.node, valType, newType)
-            }
-          }
-        }
+      try {
+        let newValue = convertValueToType(val, valType, newType)
+        state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
+        state.pushOS(newValue, newType)
+        return
+      } catch(e) {
+        throw new CannotPerformLossyConversion(node.node, valType, newType)
       }
-
-      state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
-      state.pushOS(newValue, newType)
-      return
     }
     case 'assgn_list': {
       const { binary: address, type: addressType } = state.popOS()
