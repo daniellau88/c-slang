@@ -17,7 +17,7 @@ describe('size of', () => {
         printfLog(a, b, c, d);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -42,7 +42,7 @@ describe('size of', () => {
         printfLog(a, b, c, d);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -67,7 +67,7 @@ describe('size of', () => {
         printfLog(b);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()

@@ -1,9 +1,10 @@
 import { describe, test } from '@jest/globals'
 
+import { VoidHasNoValue } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import { incrementPointerDepth, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, verifyProgramCompleted } from '../utils/testing'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('assignment', () => {
   test('single assignment', () => {
@@ -18,7 +19,7 @@ describe('assignment', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -43,7 +44,7 @@ describe('assignment', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -70,7 +71,7 @@ describe('assignment', () => {
         printfLog(x, y, z, a);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -114,7 +115,7 @@ describe('assignment', () => {
         printfLog(y);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -143,7 +144,7 @@ describe('assignment', () => {
         printfLog(y, x[0], x[1], x[2]);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -154,5 +155,23 @@ describe('assignment', () => {
       { binary: intToBinary(1), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('cannot assign void value', () => {
+    const program = () =>
+      testProgram(
+        `
+        void a(int b, int c) {
+          printfLog(b);
+          return;
+        }
+
+        int main() {
+          int b = a(2, 3);
+          return 0;
+        }
+        `,
+      )
+    expectThrowError(program, VoidHasNoValue, 'Void does not have a value.')
   })
 })

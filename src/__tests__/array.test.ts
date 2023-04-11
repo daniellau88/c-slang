@@ -23,7 +23,7 @@ describe('array', () => {
         printfLog(a[0], a[1], a[2], a[3], a[4]);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -49,7 +49,7 @@ describe('array', () => {
         printfLog(a[4][5], a[2][3], a[3][5], a[3][4]);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -90,7 +90,7 @@ describe('array', () => {
         printfLog((*a[2])(x, y));
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -120,7 +120,7 @@ describe('array', () => {
 
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -153,7 +153,7 @@ describe('array', () => {
         }
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -185,7 +185,7 @@ describe('array', () => {
         }
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -215,7 +215,7 @@ describe('array', () => {
         }
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -252,7 +252,7 @@ describe('array', () => {
         printfLog(sizeof(c));
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -302,7 +302,7 @@ describe('array', () => {
         printfLog(sizeof(b));
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -348,7 +348,7 @@ describe('array', () => {
         printfLog(sizeof(b));
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -372,7 +372,45 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('arrays as function parameter', () => {
+  test('initialize array to zeros', () => {
+    const output = testProgram(
+      `
+      void a() {
+        int b[5] = { 1, };
+        for (int i = 0; i < 5; i++) {
+          printfLog(b[i]);
+        }
+        b[3] = 2;
+        b[4] = 3;
+        return;
+      }
+
+      int main() {
+        a();
+        a();
+        return 0;
+      }
+    `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+      { binary: intToBinary(0), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
+  test('array as function parameter', () => {
     const output = testProgram(
       `
       int a(int x[], int y) {
@@ -391,7 +429,7 @@ describe('array', () => {
         printfLog(b, sum);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -410,11 +448,11 @@ describe('array', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x[-1];
-        return 0;
-      }
-    `,
+        int main() {
+          int x[-1];
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, InvalidArraySize, 'Invalid array size of int -1.')
   })
@@ -423,16 +461,16 @@ describe('array', () => {
     const program = () =>
       testProgram(
         `
-      int a()[5] {
-        int b[] = {1, 2, 3, 4};
-        return b;
-      }
+        int a()[5] {
+          int b[] = {1, 2, 3, 4};
+          return b;
+        }
 
-      int main() {
-        int x[4] = a();
-        return 0;
-      }
-    `,
+        int main() {
+          int x[4] = a();
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, FunctionCannotReturnArray, 'Function a cannot return an array.')
   })

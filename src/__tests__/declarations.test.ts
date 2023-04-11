@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
 
-import { UndefinedVariable, VariableRedeclaration } from '../errors/errors'
+import { UndefinedVariable, VariableRedeclaration, VoidHasNoValue } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   FLOAT_BASE_TYPE,
@@ -19,7 +19,7 @@ describe('declaration', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -38,7 +38,7 @@ describe('declaration', () => {
         printfLog(z);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -62,7 +62,7 @@ describe('declaration', () => {
         printfLog(x, y, z);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -82,7 +82,7 @@ describe('declaration', () => {
         printfLog(x);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -94,12 +94,12 @@ describe('declaration', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x = 1 + 4;
-        z;
-        return 0;
-      }
-    `,
+        int main() {
+          int x = 1 + 4;
+          z;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, UndefinedVariable, 'Variable z not declared.')
   })
@@ -108,13 +108,26 @@ describe('declaration', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x = 1 + 4;
-        int x = 2 + 3;
-        return 0;
-      }
-    `,
+        int main() {
+          int x = 1 + 4;
+          int x = 2 + 3;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, VariableRedeclaration, 'Redeclaration of name x.')
+  })
+
+  test('cannot declare void type', () => {
+    const program = () =>
+      testProgram(
+        `
+        int main() {
+          void x = 3;
+          return 0;
+        }
+        `,
+      )
+    expectThrowError(program, VoidHasNoValue, 'Void does not have a value.')
   })
 })

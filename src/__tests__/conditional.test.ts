@@ -16,7 +16,7 @@ describe('conditional', () => {
         printfLog(x, y, z);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -41,7 +41,7 @@ describe('conditional', () => {
         printfLog(x, y);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()

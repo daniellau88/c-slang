@@ -5,6 +5,7 @@ import {
   StaticSizeInvalidTypeBaseError,
   StaticSizeUnknownSizeBaseError,
   TypeConversionBaseError,
+  VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
 import { BinaryWithType, ProgramType, ProgramTypeModifier } from '../typings'
@@ -41,6 +42,10 @@ export const isArray = (type: ProgramType): boolean => {
 export const isParameters = (type: ProgramType): boolean => {
   if (type.length === 0) return false
   return type[0].subtype === 'Parameters'
+}
+
+export const isVoid = (type: ProgramType): boolean => {
+  return isBaseType(type) && type[0].subtype === 'BaseType' && type[0].baseType === 'void'
 }
 
 export const convertCASTTypeModifierToProgramTypeModifier = (
@@ -83,6 +88,7 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
         break
       }
       case 'BaseType': {
+        if (typeModifier.baseType === 'void') throw new VoidHasNoValueBaseError()
         sizes.push(8)
         shouldBreak = true
         break

@@ -702,11 +702,25 @@ export interface CCSTForStatement extends CCSTNodeBase {
   updateExpression?: CCSTExpression
 }
 
-export interface CCSTForInitDeclaration extends CCSTNodeBase {
+interface CCSTForInitDeclarationBase extends CCSTNodeBase {
   type: 'ForInitDeclaration'
+  subtype: string
+}
+
+interface CCSTForInitDeclarationTypeDeclaration extends CCSTForInitDeclarationBase {
+  subtype: 'Declaration'
   declarationSpecifiers: CCSTDeclarationSpecifier
   initDeclaratorList: CCSTInitDeclaratorList
 }
+
+interface CCSTForInitDeclarationTypeExpression extends CCSTForInitDeclarationBase {
+  subtype: 'Expression'
+  expression: CCSTExpression
+}
+
+export type CCSTForInitDeclaration =
+  | CCSTForInitDeclarationTypeDeclaration
+  | CCSTForInitDeclarationTypeExpression
 
 export interface CCSTGotoStatement extends CCSTNodeBase {
   type: 'GotoStatement'

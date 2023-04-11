@@ -55,6 +55,8 @@ import { InitializerListTypeInitializerContext } from './CalcParser'
 import { InitializerListTypeRecursiveInitializerContext } from './CalcParser'
 import { InclusiveOrExpressionTypeExclusiveOrContext } from './CalcParser'
 import { InclusiveOrExpressionTypeInclusiveOrContext } from './CalcParser'
+import { ForInitDeclarationTypeDeclarationContext } from './CalcParser'
+import { ForInitDeclarationTypeExpressionContext } from './CalcParser'
 import { ConditionalExpressionTypeLogicalOrContext } from './CalcParser'
 import { ConditionalExpressionTypeConditionalContext } from './CalcParser'
 import { StatementTypeLabeledContext } from './CalcParser'
@@ -934,6 +936,32 @@ export interface CalcListener extends ParseTreeListener {
   exitInclusiveOrExpressionTypeInclusiveOr?: (
     ctx: InclusiveOrExpressionTypeInclusiveOrContext,
   ) => void
+
+  /**
+   * Enter a parse tree produced by the `ForInitDeclarationTypeDeclaration`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  enterForInitDeclarationTypeDeclaration?: (ctx: ForInitDeclarationTypeDeclarationContext) => void
+  /**
+   * Exit a parse tree produced by the `ForInitDeclarationTypeDeclaration`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  exitForInitDeclarationTypeDeclaration?: (ctx: ForInitDeclarationTypeDeclarationContext) => void
+
+  /**
+   * Enter a parse tree produced by the `ForInitDeclarationTypeExpression`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  enterForInitDeclarationTypeExpression?: (ctx: ForInitDeclarationTypeExpressionContext) => void
+  /**
+   * Exit a parse tree produced by the `ForInitDeclarationTypeExpression`
+   * labeled alternative in `CalcParser.for_init_declaration`.
+   * @param ctx the parse tree
+   */
+  exitForInitDeclarationTypeExpression?: (ctx: ForInitDeclarationTypeExpressionContext) => void
 
   /**
    * Enter a parse tree produced by the `ConditionalExpressionTypeLogicalOr`

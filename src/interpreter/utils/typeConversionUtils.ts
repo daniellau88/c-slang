@@ -1,53 +1,60 @@
-import { CannotPerformLossyConversion } from '../../errors/errors'
 import { ProgramType } from '../typings'
 import { ArithmeticType, getBaseTypePromotionPriority } from './arithmeticUtils'
-import { isBaseType, isTypeEquivalent } from './typeUtils'
+import { isArray, isBaseType, isPointer, isTypeEquivalent } from './typeUtils'
 import { binaryToInt, intToBinary } from './utils'
 
 export const convertValueToType = (
   val: number,
   valType: ProgramType,
   newType: ProgramType,
-): number => {
+): [number, boolean] => {
+  let isChanged = false
   if (!isTypeEquivalent(valType, newType)) {
-    console.log('valType: ', valType)
-    console.log('newType: ', newType)
+    isChanged = true
     if (valType.length === 0) {
     } // If value's type is unknown, use address's type
     else {
       // BaseType to BaseType
+      if (isArray(newType)) {
+        throw new Error('Cannot convert type')
+      }
       if (isBaseType(newType) && isBaseType(valType)) {
         const newArithmeticType = getBaseTypePromotionPriority(newType)
         const valArithmeticType = getBaseTypePromotionPriority(valType)
 
         const maxPriority = Math.max(newArithmeticType, valArithmeticType)
-        // this means the an Integer is assigned to a Float
+        // Integer to Float
         if (valArithmeticType < maxPriority) {
           // change from integer binary to float binary
           val = binaryToInt(val)
         }
-        //this means a Float is assigned to an Integer
+        // Float to Integer
         if (newArithmeticType < maxPriority) {
-          // truncate the float to an integer
           val = intToBinary(Math.trunc(val))
         }
-      } // BaseType to Pointer
+      } 
+      // BaseType to Non BaseType
       else if (!isBaseType(newType) && isBaseType(valType)) {
         const valArithmeticType = getBaseTypePromotionPriority(valType)
         if (valArithmeticType == ArithmeticType.Float) {
           throw new Error('Cannot convert type')
         }
-        // if its already an integer, then nothing is wrong
-      } // Pointer to BaseType
-      else {
+        // integer to non array, OK
+      } 
+      // Non Basetype to BaseType
+      else if (isBaseType(newType) && !isBaseType(valType)){
         const newArithmeticType = getBaseTypePromotionPriority(newType)
         if (newArithmeticType == ArithmeticType.Float) {
-          // Pointer to Float -> change the pointer (integer binary) to float
+          // Pointer to Float
           val = binaryToInt(val)
         }
-        // if it is Pointer to Integer, nothing is wrong
+        // Pointer to Integer, OK
+      } 
+      // non BaseType to nonBaseType (Pointer to Pointer or Array to Pointer)
+      else {
+        // OK
       }
     }
   }
-  return val
+  return [val, isChanged]
 }

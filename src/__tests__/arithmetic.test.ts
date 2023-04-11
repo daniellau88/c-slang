@@ -21,7 +21,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d, e);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -52,7 +52,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d, e);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -84,7 +84,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d, e, f);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -114,7 +114,7 @@ describe('arithmetic', () => {
         printfLog(x, a, b, c, d);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -144,7 +144,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d, e, f);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -173,7 +173,7 @@ describe('arithmetic', () => {
         printfLog(a, b, c, d);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -191,11 +191,11 @@ describe('arithmetic', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int x = 5 / 0;
-        return 0;
-      }
-    `,
+        int main() {
+          int x = 5 / 0;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, CannotDivideByZero, 'Cannot divide by zero.')
   })
@@ -213,7 +213,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d);
         return 0;
       }
-    `,
+      `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
@@ -243,7 +243,7 @@ describe('arithmetic', () => {
         printfLog(x, y, a, b, c, d, e, f);
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -265,16 +265,16 @@ describe('arithmetic', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        float x = 5.0 & 3.0;
-        return 0;
-      }
-    `,
+        int main() {
+          float x = 5.0 & 3.0;
+          return 0;
+        }
+        `,
       )
     expectThrowError(
       program,
       CannotPerformOperation,
-      'Cannot perform operation between float and float.',
+      'Cannot perform operation BitwiseAnd between float and float.',
     )
   })
 
@@ -282,11 +282,11 @@ describe('arithmetic', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        float x = 5.0 / 0;
-        return 0;
-      }
-    `,
+        int main() {
+          float x = 5.0 / 0;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, CannotDivideByZero, 'Cannot divide by zero.')
   })

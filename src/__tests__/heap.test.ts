@@ -22,7 +22,7 @@ describe('heap', () => {
         printfLog(*(a+0), *(a+1), *(a+2), *(a+3), *(a+4));
         return 0;
       }
-    `,
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -40,16 +40,16 @@ describe('heap', () => {
   test('heap arithmetic', () => {
     const output = testProgram(
       `
-    int main() {
-      int* x = malloc(8 * sizeof(int));
+      int main() {
+        int* x = malloc(8 * sizeof(int));
         *x = 10;
         (*(x + 1)) = 20;
         printfLog(*x);
         printfLog(*(x + 1));
 
         return 0;
-    }
-    `,
+      }
+      `,
     )
 
     verifyProgramCompleted(output)
@@ -140,11 +140,11 @@ describe('heap', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int* a = malloc(-1);
-        return 0;
-      }
-    `,
+        int main() {
+          int* a = malloc(-1);
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, InvalidMallocSize, 'Cannot allocate memory of size -1.')
   })
@@ -153,13 +153,13 @@ describe('heap', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int* a = malloc(sizeof(int));
-        free(a);
-        free(a);
-        return 0;
-      }
-    `,
+        int main() {
+          int* a = malloc(sizeof(int));
+          free(a);
+          free(a);
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 124999.')
   })
@@ -168,13 +168,13 @@ describe('heap', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int* a = malloc(sizeof(int));
-        free(a);
-        *a = 10;
-        return 0;
-      }
-    `,
+        int main() {
+          int* a = malloc(sizeof(int));
+          free(a);
+          *a = 10;
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 124999.`)
   })
@@ -183,12 +183,12 @@ describe('heap', () => {
     const program = () =>
       testProgram(
         `
-      int main() {
-        int* a = 5;
-        free(a);
-        return 0;
-      }
-    `,
+        int main() {
+          int* a = 5;
+          free(a);
+          return 0;
+        }
+        `,
       )
     expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 5.')
   })

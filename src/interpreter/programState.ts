@@ -18,6 +18,7 @@ import {
   push,
   pushStackAndType,
 } from './utils/utils'
+import { Warning } from './utils/warning'
 
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
@@ -39,6 +40,8 @@ export class ProgramState {
 
   private GlobalLength: number
 
+  private warningOutput: Array<Warning>
+
   constructor() {
     this.A = []
     this.OS = []
@@ -49,6 +52,7 @@ export class ProgramState {
     this.LogOutput = []
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
+    this.warningOutput = []
   }
 
   initializeAST(ast: CASTNode) {
@@ -122,6 +126,10 @@ export class ProgramState {
     return this.A.length
   }
 
+  printA() {
+    console.log('A: ', this.A)
+  }
+
   getGlobalLength(): number {
     return this.GlobalLength
   }
@@ -188,6 +196,10 @@ export class ProgramState {
 
   getFDAtIndex(index: number): MicroCodeFunctionDefiniton {
     return this.FD[index]
+  }
+
+  printFD() {
+    console.log('FD: ', JSON.stringify(this.FD))
   }
 
   extendFunctionE() {
@@ -295,6 +307,10 @@ export class ProgramState {
     this.ReturnRegister.binary = returnRegister
   }
 
+  resetReturnRegister() {
+    this.ReturnRegister = { binary: undefined, assigned: false }
+  }
+
   getLogOutput(): Array<BinaryWithType> {
     return this.LogOutput
   }
@@ -309,5 +325,13 @@ export class ProgramState {
 
   printHeap() {
     this.RTM.printHeap()
+  }
+
+  pushWarning(...warnings: Array<Warning>) {
+    push(this.warningOutput, ...warnings)
+  }
+
+  getWarning(): Array<Warning> {
+    return this.warningOutput
   }
 }

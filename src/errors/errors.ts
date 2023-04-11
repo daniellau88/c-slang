@@ -284,21 +284,26 @@ export class CannotPerformLossyConversion extends RuntimeSourceError {
 
 export class CannotPerformOperation extends RuntimeSourceError {
   private types: Array<ProgramType>
-  constructor(node: CASTNode, types: Array<ProgramType>, stackTrace?: BaseError) {
+  constructor(
+    node: CASTNode,
+    private operation: string,
+    types: Array<ProgramType>,
+    stackTrace?: BaseError,
+  ) {
     super(node, stackTrace)
     this.types = types
   }
 
   public explain() {
     if (this.types.length === 0) {
-      return `Cannot perform operation.`
+      return `Cannot perform operation ${this.operation}.`
     }
     if (this.types.length === 1) {
-      return `Cannot perform operation on ${typeToString(this.types[0])}.`
+      return `Cannot perform operation ${this.operation} on ${typeToString(this.types[0])}.`
     }
     const typeStrings = this.types.map(x => typeToString(x))
     const typeCommas = typeStrings.slice(0, typeStrings.length - 1).join(',')
-    return `Cannot perform operation between ${typeCommas} and ${
+    return `Cannot perform operation ${this.operation} between ${typeCommas} and ${
       typeStrings[typeStrings.length - 1]
     }.`
   }
@@ -413,6 +418,48 @@ export class InvalidFreeMemoryValue extends RuntimeSourceError {
 
   public explain() {
     return `Invalid free value of ${binaryToFormattedString(this.value.binary, this.value.type)}.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class VoidHasNoValue extends RuntimeSourceError {
+  constructor(node: CASTNode, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Void does not have a value.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotReturnNonVoidValue extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot return non-void value.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class CannotReturnVoidValue extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Cannot return void value.`
   }
 
   public elaborate() {
