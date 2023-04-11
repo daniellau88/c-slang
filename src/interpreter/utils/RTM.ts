@@ -1,3 +1,4 @@
+import { WORD_SIZE } from '../../constants'
 import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
@@ -5,8 +6,6 @@ import {
 import { BinaryWithOptionalType, ProgramType } from '../typings'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
-
-const WORD_SIZE = 8
 
 interface MemoryEntry {
   Address: number
@@ -23,8 +22,8 @@ export class RTM {
   private AllocatedMemory: Map<number, number>
   private NextHeap: number
 
-  constructor(size: number) {
-    const dummy = new ArrayBuffer(size)
+  constructor(sizeInBytes: number) {
+    const dummy = new ArrayBuffer(sizeInBytes)
     this.Memory = new DataView(dummy)
     this.TypeAdditionalInfoStack = {}
     this.NextStack = 0
@@ -32,7 +31,7 @@ export class RTM {
 
     this.AllocatedMemory = new Map<number, number>()
     this.FreeList = []
-    this.NextHeap = size / 8
+    this.NextHeap = sizeInBytes / WORD_SIZE
   }
 
   allocateHeap(size: number): number {

@@ -1,10 +1,10 @@
+import { WORD_SIZE } from '../../constants'
 import createContext from '../../createContext'
 import {
   InternalUnreachableBaseError,
   NonPointerBaseError,
   ParseBaseError,
 } from '../../errors/baseErrors'
-import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import {
   CASTArrayExpression,
@@ -58,21 +58,21 @@ export const popStackAndType = (
 }
 
 export const intToBinary = (int: number): number => {
-  const data = new ArrayBuffer(8)
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setInt32(0, int) // Use 32 first
   return view.getFloat64(0)
 }
 
 export const binaryToInt = (binary: number): number => {
-  const data = new ArrayBuffer(8)
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setFloat64(0, binary)
   return view.getInt32(0)
 }
 
 export const binaryToRawString = (binary: number): string => {
-  const data = new ArrayBuffer(8)
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setFloat64(0, binary)
   const value = view.getBigUint64(0)

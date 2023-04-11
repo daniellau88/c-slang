@@ -1,5 +1,6 @@
 import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '../errors/baseErrors'
 import { CASTNode } from '../typings/programAST'
+import { WORD_SIZE } from './../constants'
 import {
   AgendaNode,
   BinaryWithOptionalType,
@@ -46,7 +47,7 @@ interface RuntimeVarsType {
   isRunning: boolean
 }
 
-const DEFAULT_MEMORY_SIZE = 1_000_000
+const DEFAULT_MEMORY_SIZE_IN_BYTES = 1_000_000
 
 export class ProgramState {
   private A: Array<AgendaNode>
@@ -68,14 +69,14 @@ export class ProgramState {
 
   private RuntimeVars: RuntimeVarsType
 
-  private MemorySize: number
+  private MemorySizeInWords: number
 
-  constructor(memorySize: number = DEFAULT_MEMORY_SIZE) {
+  constructor(memorySizeInBytes: number = DEFAULT_MEMORY_SIZE_IN_BYTES) {
     this.A = []
     this.OS = []
     this.OSType = {}
-    this.MemorySize = memorySize
-    this.RTM = new RTM(memorySize)
+    this.MemorySizeInWords = memorySizeInBytes / WORD_SIZE
+    this.RTM = new RTM(memorySizeInBytes)
     this.FD = []
     this.E = [{ name: 'global', varScope: { record: {} } }]
     this.LogOutput = []
@@ -394,9 +395,9 @@ export class ProgramState {
 
   getHeapSnapshot(): DeepReadonly<Record<number, BinaryWithOptionalType>> {
     const heapStart = this.RTM.getNextHeap()
-    const heapLength = this.MemorySize - heapStart
+    const heapLength = this.MemorySizeInWords - heapStart
     const array: Array<DeepReadonlyObject<BinaryWithOptionalType>> = Array(heapLength)
-    for (let i = heapStart + 1; i < this.MemorySize; i++) {
+    for (let i = heapStart + 1; i < this.MemorySizeInWords; i++) {
       array[i] = { binary: this.RTM.getHeapMemoryAtIndex(i), type: undefined }
     }
 

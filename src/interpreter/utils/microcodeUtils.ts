@@ -1,3 +1,4 @@
+import { WORD_SIZE } from '../../constants'
 import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
@@ -68,8 +69,6 @@ import {
   shouldDerefExpression,
 } from './utils'
 import { ImplicitCastWarning } from './warning'
-
-export const wordSize = 8
 
 // Microcode are allowed to touch any of the given structures
 export function executeMicrocode(state: ProgramState, node: MicroCode) {
@@ -398,7 +397,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: allocationSizeBinary, type } = state.popOS()
       const allocationSize = binaryToInt(allocationSizeBinary)
       const currentRTSAddress = state.getRTSLength()
-      state.allocateSizeOnRTS(allocationSize / wordSize, node.typeModifiers)
+      state.allocateSizeOnRTS(allocationSize / WORD_SIZE, node.typeModifiers)
 
       state.addRecordToE(node.name, {
         subtype: 'variable',
@@ -494,7 +493,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           operator: MicroCodeBinaryOperator.IntDivision,
           node: node.node,
         })
-        state.pushA({ tag: 'load_int', value: wordSize, node: node.node })
+        state.pushA({ tag: 'load_int', value: WORD_SIZE, node: node.node })
         state.pushA({
           tag: 'bin_op',
           operator: MicroCodeBinaryOperator.IntMultiply,
@@ -569,12 +568,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           }
           case 'BaseType': {
             if (typeModifier.baseType === 'void') throw new VoidHasNoValue(node.node)
-            expressions.push({ tag: 'load_int', value: 8, node: node.node })
+            expressions.push({ tag: 'load_int', value: WORD_SIZE, node: node.node })
             shouldBreak = true
             break
           }
           case 'Pointer': {
-            expressions.push({ tag: 'load_int', value: 8, node: node.node })
+            expressions.push({ tag: 'load_int', value: WORD_SIZE, node: node.node })
             shouldBreak = true
             break
           }
@@ -765,7 +764,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (binaryToInt(size) <= 0) {
         throw new InvalidMallocSize(node.node, binaryToInt(size))
       }
-      const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
+      const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / WORD_SIZE))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
       return
     }

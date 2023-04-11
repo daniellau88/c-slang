@@ -1,3 +1,4 @@
+import { WORD_SIZE } from '../../constants'
 import {
   InternalUnreachableBaseError,
   NonArrayBaseError,
@@ -89,12 +90,12 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
       }
       case 'BaseType': {
         if (typeModifier.baseType === 'void') throw new VoidHasNoValueBaseError()
-        sizes.push(8)
+        sizes.push(WORD_SIZE)
         shouldBreak = true
         break
       }
       case 'Pointer': {
-        sizes.push(8)
+        sizes.push(WORD_SIZE)
         shouldBreak = true
         break
       }

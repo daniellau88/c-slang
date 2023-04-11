@@ -28,3 +28,5 @@ export const JSSLANG_PROPERTIES = {
 export const sourceLanguages: Language[] = [{ chapter: Chapter.CALC, variant: Variant.DEFAULT }]
 
 export const ACORN_PARSE_OPTIONS: Options = { ecmaVersion: 2015 }
+
+export const WORD_SIZE = 8

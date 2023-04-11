@@ -1,8 +1,8 @@
+import { WORD_SIZE } from '../../constants'
 import { VoidHasNoValueBaseError } from '../../errors/baseErrors'
 import { CASTNode } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import { ProgramType, ProgramTypeModifierArray } from '../typings'
-import { wordSize } from './microcodeUtils'
 import { convertValueToType } from './typeConversionUtils'
 import {
   decrementPointerDepth,
@@ -55,7 +55,7 @@ export const doAssignmentList = (
       // Only allocate memory if it is a char pointer
       const nestedType = decrementPointerDepth(currentType)
       const staticSize = getStaticSizeFromProgramType(nestedType)
-      addressToAssgn = state.allocateSizeOnRTS((staticSize * lengthInt) / wordSize)
+      addressToAssgn = state.allocateSizeOnRTS((staticSize * lengthInt) / WORD_SIZE)
       iterateType = nestedType
     } else if (isArray(iterateType)) {
       // If it is an array, flatten the array
@@ -78,12 +78,12 @@ export const doAssignmentList = (
       if (isChanged) {
         state.pushWarning(new ImplicitCastWarning(node, valuesType[i], iterateType))
       }
-      state.setMemoryAtIndex(addressToAssgn + (i * staticSize) / wordSize, newVal, iterateType)
+      state.setMemoryAtIndex(addressToAssgn + (i * staticSize) / WORD_SIZE, newVal, iterateType)
     }
 
     for (let i = totalElements - 1; i >= limit; i--) {
       state.setMemoryAtIndex(
-        addressToAssgn + (i * staticSize) / wordSize,
+        addressToAssgn + (i * staticSize) / WORD_SIZE,
         intToBinary(0),
         iterateType,
       )
@@ -91,7 +91,7 @@ export const doAssignmentList = (
 
     for (let i = totalElements - 1; i >= limit; i--) {
       state.setMemoryAtIndex(
-        addressToAssgn + (i * staticSize) / wordSize,
+        addressToAssgn + (i * staticSize) / WORD_SIZE,
         intToBinary(0),
         iterateType,
       )
@@ -106,6 +106,6 @@ export const doAssignmentList = (
   const nestedType = getArrayItemsType(currentType)
   const staticSize = getStaticSizeFromProgramType(nestedType)
   for (let i = lengthInt - 1; i >= 0; i--) {
-    doAssignmentList(node, state, addressInt + (i * staticSize) / wordSize, nestedType)
+    doAssignmentList(node, state, addressInt + (i * staticSize) / WORD_SIZE, nestedType)
   }
 }
