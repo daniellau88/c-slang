@@ -372,6 +372,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       throw new InternalUnreachableRuntimeError(node)
     }
 
+    case 'LabeledStatement':
     case 'GotoStatement': {
       throw new NotImplementedRuntimeError(node)
     }
