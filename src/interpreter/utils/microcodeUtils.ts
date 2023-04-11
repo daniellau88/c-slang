@@ -788,10 +788,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       let newValue: number = value
       let isChanged: boolean = false
 
-      if (
-        isParameters(castType) ||
-        isParameters(valueType)
-      ) {
+      if (isParameters(castType) || isParameters(valueType)) {
         throw new NotImplementedRuntimeError(node.node)
       }
 
