@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals'
-import { CannotPerformLossyConversion } from '../errors/errors'
 
+import { CannotPerformLossyConversion } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   CHAR_BASE_TYPE,

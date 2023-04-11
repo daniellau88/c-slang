@@ -1,13 +1,13 @@
-import { CannotPerformLossyConversion } from "../errors/errors"
-import { testProgram } from "../interpreter/cInterpreter"
-import { CHAR_BASE_TYPE, FLOAT_BASE_TYPE, INT_BASE_TYPE } from "../interpreter/utils/typeUtils"
-import { intToBinary } from "../interpreter/utils/utils"
-import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from "../utils/testing"
+import { CannotPerformLossyConversion } from '../errors/errors'
+import { testProgram } from '../interpreter/cInterpreter'
+import { CHAR_BASE_TYPE, FLOAT_BASE_TYPE, INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
+import { intToBinary } from '../interpreter/utils/utils'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('type checking', () => {
-    test('simple types', () => {
-      const output = testProgram(
-        `
+  test('simple types', () => {
+    const output = testProgram(
+      `
         int main() {
           int a = 10;
           int b = 10.5;
@@ -20,23 +20,23 @@ describe('type checking', () => {
           return 0;
         }
         `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-        { binary: intToBinary(10), type: INT_BASE_TYPE },
-        { binary: intToBinary(10), type: INT_BASE_TYPE },
-        { binary: 5.5, type: FLOAT_BASE_TYPE },
-        { binary: 6, type: FLOAT_BASE_TYPE },
-        { binary: intToBinary(97), type: CHAR_BASE_TYPE },
-        { binary: intToBinary(97), type: CHAR_BASE_TYPE },
-        { binary: intToBinary(98), type: CHAR_BASE_TYPE },
-      ]
-      expectLogOutputToBe(logOutput, expectedLogOutput)
-    })
-    test('function implicit casting 1', () => {
-      const output = testProgram(
-        `
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: intToBinary(10), type: INT_BASE_TYPE },
+      { binary: 5.5, type: FLOAT_BASE_TYPE },
+      { binary: 6, type: FLOAT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+      { binary: intToBinary(98), type: CHAR_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+  test('function implicit casting 1', () => {
+    const output = testProgram(
+      `
         int test(int a, float b, char c) {
             printfLog(a, b, c);
             return 0;
@@ -47,19 +47,19 @@ describe('type checking', () => {
           return 0;
         }
         `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-        { binary: intToBinary(5), type: INT_BASE_TYPE },
-        { binary: 7, type: FLOAT_BASE_TYPE },
-        { binary: intToBinary(97), type: CHAR_BASE_TYPE },
-      ]
-      expectLogOutputToBe(logOutput, expectedLogOutput)
-    })
-    test('function implicit casting 2', () => {
-      const output = testProgram(
-        `
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(5), type: INT_BASE_TYPE },
+      { binary: 7, type: FLOAT_BASE_TYPE },
+      { binary: intToBinary(97), type: CHAR_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+  test('function implicit casting 2', () => {
+    const output = testProgram(
+      `
         int test(int a, float b, char c) {
             printfLog(a, b, c);
             return 0;
@@ -73,18 +73,18 @@ describe('type checking', () => {
           return 0;
         }
         `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-        { binary: intToBinary(25), type: INT_BASE_TYPE },
-        { binary: 49, type: FLOAT_BASE_TYPE },
-        { binary: intToBinary(49), type: CHAR_BASE_TYPE },
-      ]
-      expectLogOutputToBe(logOutput, expectedLogOutput)
-    })
-    test('float to pointer error', () => {
-      const program = () =>
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(25), type: INT_BASE_TYPE },
+      { binary: 49, type: FLOAT_BASE_TYPE },
+      { binary: intToBinary(49), type: CHAR_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+  test('float to pointer error', () => {
+    const program = () =>
       testProgram(
         `
         int main() {
@@ -93,10 +93,14 @@ describe('type checking', () => {
         }
         `,
       )
-      expectThrowError(program, CannotPerformLossyConversion, 'Cannot perform lossy conversion from float to pointer.')
-    })
-    test('float to array error', () => {
-      const program = () =>
+    expectThrowError(
+      program,
+      CannotPerformLossyConversion,
+      'Cannot perform lossy conversion from float to pointer.',
+    )
+  })
+  test('float to array error', () => {
+    const program = () =>
       testProgram(
         `
         int main() {
@@ -105,10 +109,14 @@ describe('type checking', () => {
         }
         `,
       )
-      expectThrowError(program, CannotPerformLossyConversion, 'Cannot perform lossy conversion from float to array.')
-    })
-    test('pointer to array error', () => {
-      const program = () =>
+    expectThrowError(
+      program,
+      CannotPerformLossyConversion,
+      'Cannot perform lossy conversion from float to array.',
+    )
+  })
+  test('pointer to array error', () => {
+    const program = () =>
       testProgram(
         `
         int main() {
@@ -118,11 +126,15 @@ describe('type checking', () => {
         }
         `,
       )
-      expectThrowError(program, CannotPerformLossyConversion, 'Cannot perform lossy conversion from pointer to array.')
-    })
-    test('array to pointer', () => {
-      const output = testProgram(
-        `
+    expectThrowError(
+      program,
+      CannotPerformLossyConversion,
+      'Cannot perform lossy conversion from pointer to array.',
+    )
+  })
+  test('array to pointer', () => {
+    const output = testProgram(
+      `
           int main() {
             int a[3] = {1, 2, 3};
             int *b = a;
@@ -130,19 +142,19 @@ describe('type checking', () => {
             return 0;
           }
         `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-        { binary: intToBinary(1), type: INT_BASE_TYPE },
-        { binary: intToBinary(2), type: INT_BASE_TYPE },
-        { binary: intToBinary(3), type: INT_BASE_TYPE },
-      ]
-      expectLogOutputToBe(logOutput, expectedLogOutput)
-    })
-    test('implicit array to pointer in function', () => {
-      const output = testProgram(
-        `
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+      { binary: intToBinary(3), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+  test('implicit array to pointer in function', () => {
+    const output = testProgram(
+      `
           void test(int* a) {
             printfLog(a[0], a[1]);
           }
@@ -152,14 +164,13 @@ describe('type checking', () => {
             return 0;
           }
         `,
-      )
-      verifyProgramCompleted(output)
-      const logOutput = output.getLogOutput()
-      const expectedLogOutput = [
-        { binary: intToBinary(1), type: INT_BASE_TYPE },
-        { binary: intToBinary(2), type: INT_BASE_TYPE },
-      ]
-      expectLogOutputToBe(logOutput, expectedLogOutput)
-    })
-      
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(2), type: INT_BASE_TYPE },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
 })

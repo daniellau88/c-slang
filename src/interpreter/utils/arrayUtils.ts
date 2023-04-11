@@ -74,7 +74,7 @@ export const doAssignmentList = (
     const staticSize = getStaticSizeFromProgramType(iterateType)
 
     for (let i = limit - 1; i >= 0; i--) {
-      let [newVal, isChanged] = convertValueToType(values[i], valuesType[i], iterateType)
+      const [newVal, isChanged] = convertValueToType(values[i], valuesType[i], iterateType)
       if (isChanged) {
         state.pushWarning(new ImplicitCastWarning(node, valuesType[i], iterateType))
       }

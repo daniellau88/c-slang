@@ -32,7 +32,7 @@ export const convertValueToType = (
         if (newArithmeticType < maxPriority) {
           val = intToBinary(Math.trunc(val))
         }
-      } 
+      }
       // BaseType to Non BaseType
       else if (!isBaseType(newType) && isBaseType(valType)) {
         const valArithmeticType = getBaseTypePromotionPriority(valType)
@@ -40,16 +40,16 @@ export const convertValueToType = (
           throw new Error('Cannot convert type')
         }
         // integer to non array, OK
-      } 
+      }
       // Non Basetype to BaseType
-      else if (isBaseType(newType) && !isBaseType(valType)){
+      else if (isBaseType(newType) && !isBaseType(valType)) {
         const newArithmeticType = getBaseTypePromotionPriority(newType)
         if (newArithmeticType == ArithmeticType.Float) {
           // Pointer to Float
           val = binaryToInt(val)
         }
         // Pointer to Integer, OK
-      } 
+      }
       // non BaseType to nonBaseType (Pointer to Pointer or Array to Pointer)
       else {
         // OK

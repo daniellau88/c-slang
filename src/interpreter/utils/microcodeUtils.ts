@@ -227,7 +227,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             variableType: variableType,
           })
 
-          let [newValue, isChanged] = convertValueToType(arg.binary, arg.type, variableType)
+          const [newValue, isChanged] = convertValueToType(arg.binary, arg.type, variableType)
           if (isChanged) {
             state.pushWarning(new ImplicitCastWarning(node.node, arg.type, variableType))
           }
@@ -419,7 +419,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       let newValue = 0
       let isChanged = false
       try {
-        [newValue, isChanged] = convertValueToType(val, valType, newType)
+        ;[newValue, isChanged] = convertValueToType(val, valType, newType)
         if (isChanged) {
           state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
         }
@@ -797,7 +797,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         throw new NotImplementedRuntimeError(node.node)
       }
 
-      [newValue, isChanged] = convertValueToType(newValue, valueType, castType)
+      ;[newValue, isChanged] = convertValueToType(newValue, valueType, castType)
       state.pushOS(newValue, castType)
       return
     }
