@@ -789,8 +789,6 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       let isChanged: boolean = false
 
       if (
-        // isArray(castType) ||
-        // isArray(valueType) ||
         isParameters(castType) ||
         isParameters(valueType)
       ) {

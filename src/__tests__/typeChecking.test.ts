@@ -38,9 +38,9 @@ describe('type checking', () => {
     const output = testProgram(
       `
         int test(int a, float b, char c) {
-            printfLog(a, b, c);
-            return 0;
-          }
+          printfLog(a, b, c);
+          return 0;
+        }
         
         int main() {
           test(5.5, 7, 97);
