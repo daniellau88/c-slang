@@ -18,6 +18,7 @@ import {
   push,
   pushStackAndType,
 } from './utils/utils'
+import { Warning } from './utils/warning'
 
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
@@ -39,6 +40,8 @@ export class ProgramState {
 
   private GlobalLength: number
 
+  private warningOutput: Array<Warning>
+
   constructor() {
     this.A = []
     this.OS = []
@@ -49,6 +52,7 @@ export class ProgramState {
     this.LogOutput = []
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
+    this.warningOutput = []
   }
 
   initializeAST(ast: CASTNode) {
@@ -321,5 +325,13 @@ export class ProgramState {
 
   printHeap() {
     this.RTM.printHeap()
+  }
+
+  pushWarning(...warnings: Array<Warning>) {
+    push(this.warningOutput, ...warnings)
+  }
+
+  getWarning(): Array<Warning> {
+    return this.warningOutput
   }
 }

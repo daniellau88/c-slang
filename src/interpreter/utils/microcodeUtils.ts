@@ -38,6 +38,7 @@ import {
   isNonArithmeticBinaryOperator,
 } from './arithmeticUtils'
 import { doAssignmentList } from './arrayUtils'
+import { convertValueToType } from './typeConversionUtils'
 import {
   CASTUnaryOperatorIncrement,
   CHAR_BASE_TYPE,
@@ -66,6 +67,7 @@ import {
   isTruthy,
   shouldDerefExpression,
 } from './utils'
+import { ImplicitCastWarning } from './warning'
 
 export const wordSize = 8
 
@@ -210,12 +212,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             state.addRecordToE(identifierName, {
               subtype: 'variable',
               address: binaryToInt(arg.binary),
-              variableType: paramTypeCopy.map(convertCASTTypeModifierToProgramTypeModifier), // TODO: Check that type is compatible
+              variableType: paramTypeCopy.map(convertCASTTypeModifierToProgramTypeModifier),
             })
             state.pushRTS(arg.binary, arg.type)
             continue
           }
-
           const variableType = parameter.paramType.typeModifiers.map(
             convertCASTTypeModifierToProgramTypeModifier,
           )
@@ -226,7 +227,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
             variableType: variableType,
           })
 
-          state.pushRTS(arg.binary, variableType)
+          const [newValue, isChanged] = convertValueToType(arg.binary, arg.type, variableType)
+          if (isChanged) {
+            state.pushWarning(new ImplicitCastWarning(node.node, arg.type, variableType))
+          }
+          state.pushRTS(newValue, variableType)
         }
       }
 
@@ -407,36 +412,20 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'assgn': {
       const { binary: addr, type: addrType } = state.popOS()
       const { binary: val, type: valType } = state.popOS()
-      if (isVoid(valType)) throw new VoidHasNoValue(node.node)
-
-      const newType = decrementPointerDepth(addrType)
-
       if (isVoid(valType)) {
         throw new VoidHasNoValue(node.node)
       }
-
-      let newValue = val // TODO: type checking
-      if (!isTypeEquivalent(valType, newType)) {
-        if (valType.length === 0) {
-        } // If value's type is unknown, use address's type
-        else {
-          if (isBaseType(newType) && isBaseType(valType)) {
-            const newArithmeticType = getBaseTypePromotionPriority(newType)
-            const valArithmeticType = getBaseTypePromotionPriority(valType)
-            const maxPriority = Math.max(newArithmeticType, valArithmeticType)
-
-            if (valArithmeticType < maxPriority) {
-              // Promote value if smaller
-              newValue = binaryToInt(val)
-            }
-
-            if (newArithmeticType < maxPriority) {
-              throw new CannotPerformLossyConversion(node.node, valType, newType)
-            }
-          }
+      const newType = decrementPointerDepth(addrType)
+      let newValue = 0
+      let isChanged = false
+      try {
+        ;[newValue, isChanged] = convertValueToType(val, valType, newType)
+        if (isChanged) {
+          state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
         }
+      } catch (e) {
+        throw new CannotPerformLossyConversion(node.node, valType, newType)
       }
-
       state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
       return
@@ -446,7 +435,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const addressInt = binaryToInt(address)
       const currentType = decrementPointerDepth(addressType)
 
-      doAssignmentList(state, addressInt, currentType)
+      doAssignmentList(node.node, state, addressInt, currentType)
       state.pushOS(address, addressType)
       return
     }
@@ -796,33 +785,19 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'cast_value': {
       const { binary: value, type: valueType } = state.popOS()
       const castType = node.castType
-      let newValue = value
+      let newValue: number = value
+      let isChanged: boolean = false
 
       if (
-        isArray(castType) ||
-        isArray(valueType) ||
+        // isArray(castType) ||
+        // isArray(valueType) ||
         isParameters(castType) ||
         isParameters(valueType)
       ) {
         throw new NotImplementedRuntimeError(node.node)
       }
 
-      if (isBaseType(valueType) && isBaseType(castType)) {
-        const valuePriority = getBaseTypePromotionPriority(valueType)
-        const castPriority = getBaseTypePromotionPriority(castType)
-
-        if (castPriority > valuePriority) {
-          newValue = binaryToInt(value)
-        } else if (castPriority < valuePriority) {
-          newValue = intToBinary(Math.trunc(value))
-        }
-      } else if (isPointer(castType) && isBaseType(valueType)) {
-        const valuePriority = getBaseTypePromotionPriority(valueType)
-        if (valuePriority === ArithmeticType.Float) {
-          newValue = intToBinary(Math.trunc(value))
-        }
-      }
-
+      ;[newValue, isChanged] = convertValueToType(newValue, valueType, castType)
       state.pushOS(newValue, castType)
       return
     }
