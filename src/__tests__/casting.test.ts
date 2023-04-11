@@ -1,5 +1,6 @@
 import { describe, test } from '@jest/globals'
 
+import { CannotPerformLossyConversion } from '../errors/errors'
 import { testProgram } from '../interpreter/cInterpreter'
 import {
   CHAR_BASE_TYPE,
@@ -8,7 +9,7 @@ import {
   INT_BASE_TYPE,
 } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
-import { expectLogOutputToBe, verifyProgramCompleted } from '../utils/testing'
+import { expectLogOutputToBe, expectThrowError, verifyProgramCompleted } from '../utils/testing'
 
 describe('casting', () => {
   test('cast base type', () => {
@@ -58,7 +59,7 @@ describe('casting', () => {
         }
         printfLog(x, y);
 
-        int* z = (int*) 5.5;
+        int* z = (int*) 5;
         printfLog(z);
         return 0;
       }

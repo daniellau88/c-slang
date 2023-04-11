@@ -158,11 +158,15 @@ Test case: ` +
       program +
       '\n',
   )
-  const programState = testProgram(program, true)
+  const programState = testProgram(program, false)
 
   console.log('Log outputs:')
   programState.getLogOutput().forEach(x => {
     console.log(binaryToFormattedString(x.binary, x.type))
+  })
+  console.log('Warning outputs:')
+  programState.getWarning().forEach(x => {
+    console.log(x.getMessage())
   })
 }
 
