@@ -9,7 +9,13 @@ import {
   VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
-import { BinaryWithType, ProgramType, ProgramTypeModifier } from '../typings'
+import {
+  BinaryWithOptionalType,
+  BinaryWithType,
+  ProgramType,
+  ProgramTypeModifier,
+} from '../typings'
+import { binaryToInt, intToBinary } from './utils'
 
 const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
 
@@ -206,4 +212,27 @@ export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolea
       return x[key] === y[key]
     })
   })
+}
+
+export const getArrayItems = (
+  array: BinaryWithType,
+  getValueByAddress: (address: number) => BinaryWithOptionalType | undefined,
+): Array<BinaryWithOptionalType | undefined> => {
+  if (!isArray(array.type) || array.type[0].subtype !== 'Array') return []
+
+  const arrayItems: Array<BinaryWithOptionalType | undefined> = []
+  const arrayItemType = getArrayItemsType(array.type)
+  const arrayAddress = binaryToInt(array.binary)
+  const arrayLength = array.type[0].size
+
+  const itemSize = getStaticSizeFromProgramType(arrayItemType) / WORD_SIZE
+  for (let i = 0; i < arrayLength; i++) {
+    const curAddress = arrayAddress + i * itemSize
+    if (arrayItemType[0].subtype === 'Array') {
+      arrayItems.push({ binary: intToBinary(curAddress), type: arrayItemType })
+    } else {
+      arrayItems.push(getValueByAddress(curAddress))
+    }
+  }
+  return arrayItems
 }

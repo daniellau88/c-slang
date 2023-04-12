@@ -3,7 +3,7 @@ import {
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
 } from '../../errors/baseErrors'
-import { BinaryWithOptionalType, ProgramType } from '../typings'
+import { BinaryWithOptionalType, DeepReadonly, ProgramType } from '../typings'
 import { POINTER_BASE_TYPE } from './typeUtils'
 import { binaryToInt, intToBinary, printBinariesWithTypes } from './utils'
 
@@ -161,6 +161,10 @@ export class RTM {
 
   getStartRTS(): number {
     return this.StartStack
+  }
+
+  getAllocatedMemory(): DeepReadonly<Map<number, number>> {
+    return this.AllocatedMemory
   }
 
   saveAndUpdateStartOntoStack() {

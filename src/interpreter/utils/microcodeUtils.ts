@@ -397,7 +397,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: allocationSizeBinary, type } = state.popOS()
       const allocationSize = binaryToInt(allocationSizeBinary)
       const currentRTSAddress = state.getRTSLength()
-      state.allocateSizeOnRTS(allocationSize / WORD_SIZE, node.typeModifiers)
+      let typeModifiersOfMemory = node.typeModifiers
+      // Within memory, each memory box will be of array item's type
+      if (isArray(typeModifiersOfMemory)) {
+        typeModifiersOfMemory = getArrayItemsType(typeModifiersOfMemory)
+      }
+      state.allocateSizeOnRTS(allocationSize / WORD_SIZE, typeModifiersOfMemory)
 
       state.addRecordToE(node.name, {
         subtype: 'variable',

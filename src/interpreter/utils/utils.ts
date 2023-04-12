@@ -15,7 +15,7 @@ import {
 } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import { BinaryWithType, MicroCode, ProgramType } from '../typings'
-import { decrementPointerDepth, isArray, isPointer } from './typeUtils'
+import { decrementPointerDepth, isArray, isParameters, isPointer } from './typeUtils'
 
 export const stringify = (x: any) => JSON.stringify(x)
 
@@ -99,8 +99,11 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
         case 'void':
           return 'void'
       }
-    case 'Pointer':
+    case 'Pointer': {
+      const pointerType = decrementPointerDepth(type)
+      if (isParameters(pointerType)) return 'function pointer ' + binaryToInt(binary)
       return 'pointer ' + binaryToInt(binary)
+    }
     case 'Array':
       return 'array ' + binaryToInt(binary)
     case 'Parameters':

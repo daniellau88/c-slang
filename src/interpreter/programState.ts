@@ -6,6 +6,7 @@ import {
   BinaryWithOptionalType,
   BinaryWithType,
   BuiltinFunctionDefinition,
+  DeepReadonly,
   ERecord,
   EScope,
   MicroCodeFunctionDefiniton,
@@ -22,20 +23,6 @@ import {
   pushStackAndType,
 } from './utils/utils'
 import { Warning } from './utils/warning'
-
-type DeepReadonly<T> = T extends (infer R)[]
-  ? DeepReadonlyArray<R>
-  : T extends Function
-  ? T
-  : T extends object
-  ? DeepReadonlyObject<T>
-  : T
-
-type DeepReadonlyArray<T> = ReadonlyArray<DeepReadonly<T>>
-
-type DeepReadonlyObject<T> = {
-  readonly [P in keyof T]: DeepReadonly<T[P]>
-}
 
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
@@ -231,12 +218,12 @@ export class ProgramState {
 
   getRTSSnapshot(): DeepReadonly<Array<BinaryWithOptionalType>> {
     const rtsLength = this.getRTSLength()
-    const array: Array<DeepReadonlyObject<BinaryWithOptionalType>> = Array(rtsLength)
+    const array: Array<DeepReadonly<BinaryWithOptionalType>> = Array(rtsLength)
     for (let i = 0; i < rtsLength; i++) {
       array[i] = this.RTM.getRTSAtIndexWithType(i)
     }
 
-    const finalArray: DeepReadonlyArray<DeepReadonlyObject<BinaryWithOptionalType>> = array
+    const finalArray: DeepReadonly<Array<BinaryWithOptionalType>> = array
     return finalArray
   }
 
@@ -394,15 +381,15 @@ export class ProgramState {
   }
 
   getHeapSnapshot(): DeepReadonly<Record<number, BinaryWithOptionalType>> {
-    const heapStart = this.RTM.getNextHeap()
-    const heapLength = this.MemorySizeInWords - heapStart
-    const array: Array<DeepReadonlyObject<BinaryWithOptionalType>> = Array(heapLength)
-    for (let i = heapStart + 1; i < this.MemorySizeInWords; i++) {
-      array[i] = { binary: this.RTM.getHeapMemoryAtIndex(i), type: undefined }
-    }
-
-    const finalArray: DeepReadonlyArray<DeepReadonlyObject<BinaryWithOptionalType>> = array
-    return finalArray
+    const record: Record<number, BinaryWithOptionalType> = {}
+    const allocatedMemory = this.RTM.getAllocatedMemory()
+    allocatedMemory.forEach((size, address) => {
+      for (let i = 0; i < size; i++) {
+        const newAddress = address + i
+        record[newAddress] = { binary: this.RTM.getHeapMemoryAtIndex(newAddress) }
+      }
+    })
+    return record
   }
 
   pushWarning(...warnings: Array<Warning>) {
