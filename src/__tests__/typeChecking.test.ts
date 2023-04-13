@@ -173,4 +173,21 @@ describe('type checking', () => {
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
+  test('implicit array in function return value', () => {
+    const output = testProgram(
+      `
+          float test() {
+            return 3;
+          }
+          int main() {
+            printfLog(test());
+            return 0;
+          }
+        `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: 3, type: FLOAT_BASE_TYPE }]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
 })

@@ -266,7 +266,21 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (isVoidReturn) {
         state.pushOS(0, VOID_BASE_TYPE)
       } else if (binaryWithType) {
-        state.pushOS(binaryWithType.binary, binaryWithType.type)
+        let newValue = 0
+        let isChanged = false
+        try {
+          ;[newValue, isChanged] = convertValueToType(
+            binaryWithType.binary,
+            binaryWithType.type,
+            returnType,
+          )
+          if (isChanged) {
+            state.pushWarning(new ImplicitCastWarning(node.node, binaryWithType.type, returnType))
+          }
+          state.pushOS(newValue, returnType)
+        } catch (e) {
+          throw new CannotPerformLossyConversion(node.node, binaryWithType.type, returnType)
+        }
       } else {
         throw new InternalUnreachableRuntimeError(node.node)
       }
