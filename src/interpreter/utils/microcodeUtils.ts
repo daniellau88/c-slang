@@ -646,6 +646,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (node.withExpression) {
         const returnValueAndType = state.popOS()
         if (isVoid(returnValueAndType.type)) throw new VoidHasNoValue(node.node)
+        if (isArray(returnValueAndType.type)) throw new FunctionCannotReturnArray(node.node)
         state.setReturnRegisterBinary(returnValueAndType)
       }
       let nextInstruction = state.peekA()

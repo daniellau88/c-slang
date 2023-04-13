@@ -1,6 +1,6 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CannotDereferenceTypeError } from '../../errors/errors'
+import { CannotDereferenceTypeError, FunctionCannotReturnArray } from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
   NotImplementedRuntimeError,
@@ -251,6 +251,13 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     case 'ReturnStatement': {
       const hasExpression = Boolean(node.expression)
       state.pushA({ tag: 'return', withExpression: hasExpression, node: node })
+
+      if (
+        node.expression?.type === 'ArrayExpression' ||
+        node.expression?.type === 'StringLiteral'
+      ) {
+        throw new FunctionCannotReturnArray(node)
+      }
 
       if (node.expression) {
         if (shouldDerefExpression(node.expression))
