@@ -96,7 +96,7 @@ describe('type checking', () => {
     expectThrowError(
       program,
       CannotPerformLossyConversion,
-      'Cannot perform lossy conversion from float to pointer.',
+      'Cannot perform lossy conversion from float to int pointer.',
     )
   })
   test('float to array error', () => {
@@ -129,7 +129,7 @@ describe('type checking', () => {
     expectThrowError(
       program,
       CannotPerformLossyConversion,
-      'Cannot perform lossy conversion from pointer to array.',
+      'Cannot perform lossy conversion from int pointer to array.',
     )
   })
   test('array to pointer', () => {

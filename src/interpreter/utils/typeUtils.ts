@@ -1,3 +1,6 @@
+import { isEqual } from 'lodash'
+import omitDeep from 'omit-deep-lodash'
+
 import { WORD_SIZE } from '../../constants'
 import {
   InternalUnreachableBaseError,
@@ -208,9 +211,16 @@ export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolea
   return type1.every((x, i) => {
     const y = type2[i]
     if (x.subtype !== y.subtype) return false
-    return Object.keys(x).every(key => {
-      return x[key] === y[key]
-    })
+    if (x.subtype === 'Parameters' && y.subtype === 'Parameters') {
+      return x.parameterTypeList.every((xParamType, i) => {
+        const yParamType = y.parameterTypeList[i]
+         // Remove identifier and loc from function parameters before comparing
+        const omitX = omitDeep(xParamType, ['identifier', 'loc'])
+        const omitY = omitDeep(yParamType, ['identifier', 'loc'])
+        return isEqual(omitX, omitY)
+      })
+    }
+    return isEqual(x, y)
   })
 }
 
