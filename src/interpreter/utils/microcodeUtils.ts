@@ -775,11 +775,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: caseCheck, type: typeLeft } = state.popOS()
       const { binary: passedCheck, type: typeCheck } = state.popOS()
       if (isTruthy(passedCheck) || isTruthy(caseCheck)) {
+        state.pushA({ tag: 'load_int', value: 1, node: node.node })
         ;[...node.statements].reverse().forEach(x => {
           state.pushA(x)
         })
         // "case" has been passed. Update status to 1
-        state.pushOS(intToBinary(1), INT_BASE_TYPE)
       } else {
         state.pushOS(intToBinary(0), INT_BASE_TYPE)
       }
