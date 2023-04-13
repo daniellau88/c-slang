@@ -1,4 +1,3 @@
-import { InterruptedError } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import { TimeoutError } from '../errors/timeoutErrors'
 import { Context, CustomBuiltIns } from '../types'

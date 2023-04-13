@@ -34,7 +34,7 @@ export class RTM {
     this.NextHeap = sizeInBytes / WORD_SIZE
   }
 
-  allocateHeap(size: number): number {
+  allocateHeap(size: number, type?: ProgramType): number {
     let dummy: MemoryEntry | undefined = undefined
     for (let i = 0; i < this.FreeList.length; i++) {
       if (this.FreeList[i].Size >= size) {
@@ -53,6 +53,11 @@ export class RTM {
     }
     this.NextHeap -= size
     this.AllocatedMemory.set(this.NextHeap, size)
+    if (type) {
+      for (let i = 0; i < size; i++) {
+        this.TypeAdditionalInfoStack[this.NextStack + i] = type
+      }
+    }
     return this.NextHeap
   }
 
@@ -72,6 +77,14 @@ export class RTM {
   getHeapMemoryAtIndex(address: number): number {
     if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
     return this.Memory.getFloat32(address * WORD_SIZE)
+  }
+
+  getHeapMemoryAtIndexWithSuggestedType(address: number): BinaryWithOptionalType {
+    if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
+    return {
+      binary: this.Memory.getFloat32(address * WORD_SIZE),
+      type: this.TypeAdditionalInfoStack[address],
+    }
   }
 
   isAtHeap(index: number): Boolean {
@@ -124,7 +137,7 @@ export class RTM {
     return this.Memory.getFloat32(index * WORD_SIZE)
   }
 
-  getRTSAtIndexWithType(index: number): BinaryWithOptionalType {
+  getRTSAtIndexWithSuggestedType(index: number): BinaryWithOptionalType {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     return {
       binary: this.Memory.getFloat32(index * WORD_SIZE),
@@ -135,7 +148,6 @@ export class RTM {
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     this.Memory.setFloat32(index * WORD_SIZE, binary)
-    if (type) this.TypeAdditionalInfoStack[index] = type
   }
 
   getLengthRTS(): number {

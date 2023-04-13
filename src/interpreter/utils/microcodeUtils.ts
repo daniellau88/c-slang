@@ -137,10 +137,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         case 'func': {
           const fd = state.getFDAtIndex(record.funcIndex)
           const params = fd.subtype === 'func' ? fd.parameters : []
-          const functionType: ProgramType = [{
-            subtype: 'Parameters',
-            parameterTypeList: params
-          }, ...fd.returnProgType]
+          const functionType: ProgramType = [
+            {
+              subtype: 'Parameters',
+              parameterTypeList: params,
+            },
+            ...fd.returnProgType,
+          ]
           state.pushOS(intToBinary(record.funcIndex), incrementPointerDepth(functionType))
           return
         }

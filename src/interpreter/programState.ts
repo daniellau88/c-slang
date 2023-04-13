@@ -1,6 +1,5 @@
 import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '../errors/baseErrors'
 import { CASTNode } from '../typings/programAST'
-import { WORD_SIZE } from './../constants'
 import {
   AgendaNode,
   BinaryWithOptionalType,
@@ -56,13 +55,10 @@ export class ProgramState {
 
   private RuntimeVars: RuntimeVarsType
 
-  private MemorySizeInWords: number
-
   constructor(memorySizeInBytes: number = DEFAULT_MEMORY_SIZE_IN_BYTES) {
     this.A = []
     this.OS = []
     this.OSType = {}
-    this.MemorySizeInWords = memorySizeInBytes / WORD_SIZE
     this.RTM = new RTM(memorySizeInBytes)
     this.FD = []
     this.E = [{ name: 'global', varScope: { record: {} } }]
@@ -220,7 +216,7 @@ export class ProgramState {
     const rtsLength = this.getRTSLength()
     const array: Array<DeepReadonly<BinaryWithOptionalType>> = Array(rtsLength)
     for (let i = 0; i < rtsLength; i++) {
-      array[i] = this.RTM.getRTSAtIndexWithType(i)
+      array[i] = this.RTM.getRTSAtIndexWithSuggestedType(i)
     }
 
     const finalArray: DeepReadonly<Array<BinaryWithOptionalType>> = array
@@ -368,8 +364,12 @@ export class ProgramState {
     return this.LogOutput
   }
 
-  allocateHeap(size: number): number {
-    return this.RTM.allocateHeap(size)
+  getWarningOutputs(): Array<Warning> {
+    return this.warningOutput
+  }
+
+  allocateHeap(size: number, type?: ProgramType): number {
+    return this.RTM.allocateHeap(size, type)
   }
 
   freeHeapMemory(address: number) {
@@ -386,7 +386,7 @@ export class ProgramState {
     allocatedMemory.forEach((size, address) => {
       for (let i = 0; i < size; i++) {
         const newAddress = address + i
-        record[newAddress] = { binary: this.RTM.getHeapMemoryAtIndex(newAddress) }
+        record[newAddress] = this.RTM.getHeapMemoryAtIndexWithSuggestedType(newAddress)
       }
     })
     return record

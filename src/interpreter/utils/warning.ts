@@ -22,6 +22,6 @@ export class ImplicitCastWarning extends Warning {
   }
 
   getMessage() {
-    return `WARNING:\n${this.message} \n  at ${JSON.stringify(this.node.loc)}\n`
+    return `WARNING:\n${this.message} at Line ${this.node.loc.start.line}\n`
   }
 }

@@ -214,7 +214,7 @@ export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolea
     if (x.subtype === 'Parameters' && y.subtype === 'Parameters') {
       return x.parameterTypeList.every((xParamType, i) => {
         const yParamType = y.parameterTypeList[i]
-         // Remove identifier and loc from function parameters before comparing
+        // Remove identifier and loc from function parameters before comparing
         const omitX = omitDeep(xParamType, ['identifier', 'loc'])
         const omitY = omitDeep(yParamType, ['identifier', 'loc'])
         return isEqual(omitX, omitY)

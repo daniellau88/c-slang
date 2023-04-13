@@ -138,7 +138,7 @@ export const typeToString = (type: ProgramType): string => {
     case 'Pointer':
       const pointerType = decrementPointerDepth(type)
       if (isParameters(pointerType) || isBaseType(pointerType) || isArray(pointerType)) {
-        return `${typeToString(pointerType)} pointer` 
+        return `${typeToString(pointerType)} pointer`
       }
       return 'pointer'
     case 'Array':
