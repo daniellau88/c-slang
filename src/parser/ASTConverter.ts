@@ -289,7 +289,7 @@ function visitCCSTStatement(node: CCSTStatement): CASTStatement {
   const statementType = statement.type
   switch (statementType) {
     case 'LabeledStatement':
-      throw visitCCSTLabeledStatement(statement)
+      return visitCCSTLabeledStatement(statement)
     case 'DeclarationStatement':
       return visitCCSTDeclarationStatement(statement)
     case 'ExpressionStatement':
@@ -311,7 +311,7 @@ function visitCCSTStatement(node: CCSTStatement): CASTStatement {
     case 'BreakStatement':
       return visitCCSTBreakStatement(statement)
     case 'GotoStatement':
-      throw visitCCSTGotoStatement(statement)
+      return visitCCSTGotoStatement(statement)
     case 'ReturnStatement':
       return visitCCSTReturnStatement(statement)
     default:
