@@ -17,7 +17,7 @@ import {
 } from '../typings'
 import { binaryToInt, intToBinary } from './utils'
 
-const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
+const ONE_INT_BINARY = 1.401298464324817e-45 // import of intToBinary causes issues during testing
 
 export const INT_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'int' }]
 

@@ -66,12 +66,12 @@ export class RTM {
 
   setHeapMemoryAtIndex(address: number, binary: number, type?: ProgramType) {
     if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
-    this.Memory.setFloat64(address * WORD_SIZE, binary)
+    this.Memory.setFloat32(address * WORD_SIZE, binary)
   }
 
   getHeapMemoryAtIndex(address: number): number {
     if (!this.isAtHeap(address)) throw new RTMInvalidMemoryAccessBaseError(address)
-    return this.Memory.getFloat64(address * WORD_SIZE)
+    return this.Memory.getFloat32(address * WORD_SIZE)
   }
 
   isAtHeap(index: number): Boolean {
@@ -99,14 +99,14 @@ export class RTM {
   }
 
   pushRTS(binary: number, type?: ProgramType) {
-    this.Memory.setFloat64(this.NextStack * WORD_SIZE, binary)
+    this.Memory.setFloat32(this.NextStack * WORD_SIZE, binary)
     if (type) this.TypeAdditionalInfoStack[this.NextStack] = type
     this.NextStack++
   }
 
   popRTS(): number {
     this.NextStack--
-    const result = this.Memory.getFloat64(this.NextStack * WORD_SIZE)
+    const result = this.Memory.getFloat32(this.NextStack * WORD_SIZE)
     delete this.TypeAdditionalInfoStack[this.NextStack]
     return result
   }
@@ -114,27 +114,27 @@ export class RTM {
   printRTS() {
     const dummy: Array<number> = []
     for (let i = 0; i < this.getLengthRTS(); i++) {
-      dummy.push(this.Memory.getFloat64(i * WORD_SIZE))
+      dummy.push(this.Memory.getFloat32(i * WORD_SIZE))
     }
     printBinariesWithTypes(dummy, this.TypeAdditionalInfoStack, 'RTS: ')
   }
 
   getRTSAtIndex(index: number): number {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
-    return this.Memory.getFloat64(index * WORD_SIZE)
+    return this.Memory.getFloat32(index * WORD_SIZE)
   }
 
   getRTSAtIndexWithType(index: number): BinaryWithOptionalType {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
     return {
-      binary: this.Memory.getFloat64(index * WORD_SIZE),
+      binary: this.Memory.getFloat32(index * WORD_SIZE),
       type: this.TypeAdditionalInfoStack[index],
     }
   }
 
   setRTSAtIndex(index: number, binary: number, type?: ProgramType) {
     if (!this.isAtRTS(index)) throw new RTMInvalidMemoryAccessBaseError(index)
-    this.Memory.setFloat64(index * WORD_SIZE, binary)
+    this.Memory.setFloat32(index * WORD_SIZE, binary)
     if (type) this.TypeAdditionalInfoStack[index] = type
   }
 

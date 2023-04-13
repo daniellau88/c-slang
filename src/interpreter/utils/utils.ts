@@ -61,21 +61,28 @@ export const intToBinary = (int: number): number => {
   const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setInt32(0, int) // Use 32 first
-  return view.getFloat64(0)
+  return view.getFloat32(0)
 }
 
 export const binaryToInt = (binary: number): number => {
   const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
-  view.setFloat64(0, binary)
+  view.setFloat32(0, binary)
   return view.getInt32(0)
+}
+
+export const truncateFloatPrecision = (binary: number): number => {
+  const data = new ArrayBuffer(WORD_SIZE)
+  const view = new DataView(data)
+  view.setFloat32(0, binary)
+  return view.getFloat32(0)
 }
 
 export const binaryToRawString = (binary: number): string => {
   const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
-  view.setFloat64(0, binary)
-  const value = view.getBigUint64(0)
+  view.setFloat32(0, binary)
+  const value = view.getUint32(0)
   const binString = value.toString(2)
   return '0'.repeat(64 - binString.length) + binString
 }

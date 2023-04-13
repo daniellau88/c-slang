@@ -1,7 +1,7 @@
 import { ProgramState } from '../interpreter/programState'
 import { BinaryWithType } from '../interpreter/typings'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
-import { binaryToInt, intToBinary } from '../interpreter/utils/utils'
+import { binaryToInt, intToBinary, truncateFloatPrecision } from '../interpreter/utils/utils'
 import { SourceError } from '../types'
 
 export const verifyProgramCompleted = (output: ProgramState) => {
@@ -24,8 +24,13 @@ export const expectLogOutputToBe = (
     const isInt =
       expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'int'
     const isPointer = expectedResult.type[0].subtype === 'Pointer'
+    const isFloat =
+      expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'float'
     if (isInt || isPointer) {
       expect(binaryToInt(result.binary)).toBe(binaryToInt(expectedResult.binary))
+      return
+    } else if (isFloat) {
+      expect(result.binary).toBe(truncateFloatPrecision(expectedResult.binary))
       return
     }
     expect(result.binary).toBe(expectedResult.binary)

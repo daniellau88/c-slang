@@ -161,7 +161,7 @@ describe('heap', () => {
         }
         `,
       )
-    expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 124999.')
+    expectThrowError(program, MemoryFreeNotAllocatedError, 'Cannot free memory at 249999.')
   })
 
   test('use after free', () => {
@@ -176,7 +176,7 @@ describe('heap', () => {
         }
         `,
       )
-    expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 124999.`)
+    expectThrowError(program, InvalidMemoryAccess, `Invalid memory access to 249999.`)
   })
 
   test('invalid free', () => {
