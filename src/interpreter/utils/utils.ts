@@ -163,6 +163,7 @@ export const parseStringToAST = (program: string): CASTNode => {
   const context = createContext()
   const parsedProgram = parse(program, context)
   if (!parsedProgram) {
+    console.error(context.errors)
     throw new ParseBaseError()
   }
   return parsedProgram

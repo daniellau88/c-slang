@@ -6,6 +6,7 @@ import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import * as es from 'estree'
 
+import { ParseSourceError } from '../errors/parseSourceError'
 import { CalcLexer } from '../lang/CalcLexer'
 import {
   AbstractDeclaratorTypeDirectAbstractDeclaratorContext,
@@ -19,7 +20,6 @@ import {
   AssignmentExpressionTypeAssignmentContext,
   AssignmentExpressionTypeConditionalContext,
   Break_statementContext,
-  CalcParser,
   CastExpressionTypeCastContext,
   CastExpressionTypeUnaryContext,
   Character_constantContext,
@@ -204,6 +204,7 @@ import {
 import { dummyLocation } from '../utils/dummyAstCreator'
 import { stripIndent } from '../utils/formatters'
 import { removeQuotes, unescapeString } from '../utils/parser'
+import { ActualCalcParser } from './ActualCalcParser'
 import { convertCSTProgramToAST } from './ASTConverter'
 
 export class DisallowedConstructError implements SourceError {
@@ -1767,20 +1768,25 @@ function convertSource(expression: ProgramContext): CCSTProgram {
   return convertExpression(expression) as CCSTProgram
 }
 
-export function parse(source: string, context: Context) {
+export function parse(source: string, context: Context): CASTProgram | undefined {
   let parsedProgram: CASTProgram | undefined
 
   if (context.variant === 'calc') {
     const inputStream = CharStreams.fromString(source)
     const lexer = new CalcLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
-    const parser = new CalcParser(tokenStream)
+
+    const parser = new ActualCalcParser(tokenStream)
     parser.buildParseTree = true
     try {
       const tree = parser.program()
-      const cstProgram = convertSource(tree)
-      if (!cstProgram) throw new FatalSyntaxError(dummyLocation(), 'Cannot parse program')
-      parsedProgram = convertCSTProgramToAST(cstProgram)
+      if (parser.errors.length > 0) {
+        context.errors.push(...parser.errors.map(x => new ParseSourceError(x.msg, x.token)))
+      } else {
+        const cstProgram = convertSource(tree)
+        if (!cstProgram) throw new FatalSyntaxError(dummyLocation(), 'Cannot parse program')
+        parsedProgram = convertCSTProgramToAST(cstProgram)
+      }
     } catch (error) {
       if (error instanceof FatalSyntaxError) {
         context.errors.push(error)

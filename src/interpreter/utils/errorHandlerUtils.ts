@@ -22,7 +22,6 @@ import {
 } from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
-  ParseRuntimeError,
   RuntimeSourceError,
 } from '../../errors/runtimeSourceError'
 import { CASTNode } from '../../typings/programAST'
@@ -68,10 +67,6 @@ export const errorHandler = (e: any, node: CASTNode) => {
   staticSizeErrorHandler(e, node)
   typeConversionErrorHandler(e, node)
   voidHasNoValueErrorHandler(e, node)
-
-  if (e instanceof ParseBaseError) {
-    throw new ParseRuntimeError(node, e)
-  }
 
   if (e instanceof NonPointerBaseError) {
     throw new CannotDereferenceTypeError(node, e)

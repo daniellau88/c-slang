@@ -3,7 +3,6 @@ import * as es from 'estree'
 import { UNKNOWN_LOCATION } from '../constants'
 import { ErrorSeverity, ErrorType, SourceError } from '../types'
 import { CASTNode } from '../typings/programAST'
-import { stringify } from '../utils/stringify'
 import { BaseError } from './baseErrors'
 
 export class RuntimeSourceError implements SourceError {
@@ -45,15 +44,5 @@ export class InternalUnreachableRuntimeError extends RuntimeSourceError {
 
   public explain() {
     return `Internal error. Please check with the developers.`
-  }
-}
-
-export class ParseRuntimeError extends RuntimeSourceError {
-  constructor(node: CASTNode, stackTrace?: BaseError) {
-    super(node, stackTrace)
-  }
-
-  public explain() {
-    return `Parsing error. Please check with the developers.`
   }
 }
