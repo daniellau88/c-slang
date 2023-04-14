@@ -78,13 +78,22 @@ export const truncateFloatPrecision = (binary: number): number => {
   return view.getFloat32(0)
 }
 
+export const binaryToHexString = (binary: number): string => {
+  const data = new ArrayBuffer(WORD_SIZE)
+  const view = new DataView(data)
+  view.setFloat32(0, binary)
+  const value = view.getUint32(0)
+  const hexString = value.toString(16)
+  return '0x' + '0'.repeat((WORD_SIZE * 8) / 4 - hexString.length) + hexString
+}
+
 export const binaryToRawString = (binary: number): string => {
   const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setFloat32(0, binary)
   const value = view.getUint32(0)
   const binString = value.toString(2)
-  return '0'.repeat(64 - binString.length) + binString
+  return '0'.repeat(WORD_SIZE * 8 - binString.length) + binString
 }
 
 export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
@@ -92,7 +101,7 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
 }
 
 export const binaryToFormattedString = (binary: number, type?: ProgramType): string => {
-  if (!type || type.length === 0) return 'unknown ' + binary
+  if (!type || type.length === 0) return 'unknown ' + binaryToHexString(binary)
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':
