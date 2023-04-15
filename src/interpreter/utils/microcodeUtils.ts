@@ -704,6 +704,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (isTruthy(indexBinary)) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
+        if (shouldDerefExpression(node.condition))
+          state.pushA({ tag: 'deref', node: node.condition })
         state.pushA(node.condition)
         state.pushA({ tag: 'continue_marker', node: node.node })
         state.pushA(node.statement)
@@ -721,7 +723,11 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (testExpressionValue) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
-        if (node.testExpression) state.pushA(node.testExpression)
+        if (node.testExpression) {
+          if (shouldDerefExpression(node.testExpression))
+            state.pushA({ tag: 'deref', node: node.testExpression })
+          state.pushA(node.testExpression)
+        }
         if (node.updateExpression) {
           state.pushA({ tag: 'pop_os', node: node.node })
           state.pushA(node.updateExpression)

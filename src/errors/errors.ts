@@ -267,8 +267,13 @@ export class InvalidArraySize extends RuntimeSourceError {
 }
 
 export class CannotPerformLossyConversion extends RuntimeSourceError {
-  constructor(node: CASTNode, private fromType: ProgramType, private toType: ProgramType) {
-    super(node)
+  constructor(
+    node: CASTNode,
+    private fromType: ProgramType,
+    private toType: ProgramType,
+    stackTrace?: BaseError,
+  ) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -474,6 +479,20 @@ export class UnknownError extends RuntimeSourceError {
 
   public explain() {
     return `Unknown error. Please check with the developers.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class SwitchCaseCannotBeVariable extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Switch case cannot be a variable.`
   }
 
   public elaborate() {

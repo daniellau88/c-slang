@@ -1,6 +1,10 @@
 // AST to Microcode should not touch OS, RTS, E or FD
 
-import { CannotDereferenceTypeError, FunctionCannotReturnArray } from '../../errors/errors'
+import {
+  CannotDereferenceTypeError,
+  FunctionCannotReturnArray,
+  SwitchCaseCannotBeVariable,
+} from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
   NotImplementedRuntimeError,
@@ -274,6 +278,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         ifFalse: node.ifFalse,
         node: node,
       })
+      if (shouldDerefExpression(node.condition)) state.pushA({ tag: 'deref', node: node.condition })
       state.pushA(node.condition)
       return
     }
@@ -285,6 +290,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         statement: node.statement,
         node: node,
       })
+      if (shouldDerefExpression(node.condition)) state.pushA({ tag: 'deref', node: node.condition })
       state.pushA(node.condition)
       return
     }
@@ -296,6 +302,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         statement: node.statement,
         node: node,
       })
+      if (shouldDerefExpression(node.condition)) state.pushA({ tag: 'deref', node: node.condition })
       state.pushA(node.condition)
       state.pushA({ tag: 'continue_marker', node: node })
       state.pushA(node.statement)
@@ -318,6 +325,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         node: node,
       })
       if (node.testExpression) {
+        if (shouldDerefExpression(node.testExpression))
+          state.pushA({ tag: 'deref', node: node.testExpression })
         state.pushA(node.testExpression)
       }
       if (node.initDeclaration) state.pushA(node.initDeclaration)
@@ -362,6 +371,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
             operator: CASTBinaryOperator.EqualityEqual,
             node: node,
           })
+          if (shouldDerefExpression(x.expression))
+            throw new SwitchCaseCannotBeVariable(x.expression)
           state.pushA(x.expression)
           if (shouldDerefExpression(node.expression))
             state.pushA({ tag: 'deref', node: node.expression })
