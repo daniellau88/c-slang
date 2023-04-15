@@ -105,25 +105,22 @@ export const doAllocateString = (
 
   const valuesWithType = getValuesFromOS(state, lengthInt)
 
+  let allocatedItemsSize: number
+  let staticSize: number
+  let itemType: ProgramType
   if (!isPointer(currentType)) {
-    const [newVal, isChanged] = convertValueToType(
-      valuesWithType[0].binary,
-      CHAR_BASE_TYPE,
-      currentType,
-    )
-    if (isChanged) {
-      state.pushWarning(new ImplicitCastWarning(node, CHAR_BASE_TYPE, currentType))
-    }
-    state.pushOS(newVal, currentType)
-    return
+    allocatedItemsSize = 1
+    staticSize = getStaticSizeFromProgramType(currentType)
+    itemType = currentType
+  } else {
+    allocatedItemsSize = valuesWithType.length
+    itemType = decrementPointerDepth(currentType)
+    staticSize = getStaticSizeFromProgramType(itemType)
   }
 
   // Prevents overwriting into other spaces
-  const allocatedItemsSize = valuesWithType.length
-  const itemType = decrementPointerDepth(currentType)
-  const staticSize = getStaticSizeFromProgramType(itemType)
   const addressToAssgn = state.allocateSizeOnRTS(
-    (staticSize * lengthInt) / WORD_SIZE,
+    (staticSize * allocatedItemsSize) / WORD_SIZE,
     CHAR_BASE_TYPE,
   )
   writeListValuesToAddress(

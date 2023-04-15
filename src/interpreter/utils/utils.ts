@@ -201,10 +201,22 @@ export const shouldAllocateString = (expression: CASTExpression): boolean => {
   }
 }
 
-export const isExpressionList = (
+export const isCASTExpressionList = (
   expression: CASTExpression,
 ): expression is CASTArrayExpression | CASTStringLiteral => {
   return expression.type === 'ArrayExpression' || expression.type === 'StringLiteral'
+}
+
+export const isCASTArrayExpression = (
+  expression: CASTExpression,
+): expression is CASTArrayExpression => {
+  return expression.type === 'ArrayExpression'
+}
+
+export const isCASTStringLiteral = (
+  expression: CASTExpression,
+): expression is CASTStringLiteral => {
+  return expression.type === 'StringLiteral'
 }
 
 export const getExpressionLength = (

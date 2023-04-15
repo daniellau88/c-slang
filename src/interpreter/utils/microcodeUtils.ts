@@ -4,6 +4,7 @@ import {
   CannotPerformOperation,
   CannotReturnNonVoidValue,
   CannotReturnVoidValue,
+  ExpressionCannotBeString,
   FunctionCannotReturnArray,
   InvalidArraySize,
   InvalidFreeMemoryValue,
@@ -63,9 +64,10 @@ import {
   derefBinary,
   getExpressionLength,
   intToBinary,
-  isExpressionList,
+  isCASTExpressionList,
   isMicrocode,
   isTruthy,
+  shouldAllocateString,
   shouldDerefExpression,
 } from './utils'
 import { ImplicitCastWarning } from './warning'
@@ -333,7 +335,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       })
 
       if (init) {
-        if (isExpressionList(init)) {
+        if (isCASTExpressionList(init)) {
           state.pushA({ tag: 'assgn_list', node: node.declaration })
 
           const expressionLength = getExpressionLength(init)
@@ -361,6 +363,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       })
 
       if (init) {
+        // Could possibly be assigning to char[], and thus should not be allocated separately
+        // (i.e. strings should be treated as an array)
         if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
         state.pushA(init)
       }
@@ -397,6 +401,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const currentModifier = oldTypeModifiers[i]
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
+          if (shouldAllocateString(currentModifier.size))
+            throw new ExpressionCannotBeString(node.node)
           if (shouldDerefExpression(currentModifier.size))
             state.pushA({ tag: 'deref', node: currentModifier.size })
           state.pushA(currentModifier.size)
@@ -584,6 +590,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'conditional_op': {
       const predicate = state.popOS()
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
+      if (shouldAllocateString(expressionToPush))
+        state.pushA({ tag: 'allocate_str', node: expressionToPush })
       if (shouldDerefExpression(expressionToPush))
         state.pushA({ tag: 'deref', node: expressionToPush })
       state.pushA(expressionToPush)
@@ -712,6 +720,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (isTruthy(indexBinary)) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
+        if (shouldAllocateString(node.condition))
+          state.pushA({ tag: 'allocate_str', node: node.condition })
         if (shouldDerefExpression(node.condition))
           state.pushA({ tag: 'deref', node: node.condition })
         state.pushA(node.condition)
@@ -732,6 +742,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
         if (node.testExpression) {
+          if (shouldAllocateString(node.testExpression))
+            state.pushA({ tag: 'allocate_str', node: node.testExpression })
           if (shouldDerefExpression(node.testExpression))
             state.pushA({ tag: 'deref', node: node.testExpression })
           state.pushA(node.testExpression)
