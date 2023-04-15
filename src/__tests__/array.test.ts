@@ -411,6 +411,27 @@ describe('array', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
+  test('type mismatch string literal', () => {
+    const output = testProgram(
+      `
+      int main() {
+        int x = { "abcd" };
+        int* y = "abcd";
+        printfLog(x, y);
+        return 0;
+      }
+      `,
+    )
+
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [
+      { binary: intToBinary(97), type: INT_BASE_TYPE },
+      { binary: intToBinary(97), type: incrementPointerDepth(INT_BASE_TYPE) },
+    ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+
   test('array as function parameter', () => {
     const output = testProgram(
       `

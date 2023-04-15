@@ -1,5 +1,6 @@
 import { ProgramState } from '../interpreter/programState'
-import { BinaryWithType } from '../interpreter/typings'
+import { BinaryWithType, ProgramType } from '../interpreter/typings'
+import { ArithmeticType } from '../interpreter/utils/arithmeticUtils'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { binaryToInt, intToBinary, truncateFloatPrecision } from '../interpreter/utils/utils'
 import { SourceError } from '../types'
@@ -13,6 +14,25 @@ export const verifyProgramCompleted = (output: ProgramState) => {
   expect(output.getRTSStart()).toBe(-1)
 }
 
+export const getBaseTypePromotionPriority = (type: ProgramType): ArithmeticType | undefined => {
+  if (type.length === 0) return undefined
+
+  if (type[0].subtype === 'Pointer') {
+    return ArithmeticType.Integer
+  }
+
+  if (type[0].subtype !== 'BaseType') return undefined
+
+  switch (type[0].baseType) {
+    case 'int':
+    case 'char':
+    case 'void':
+      return ArithmeticType.Integer
+    case 'float':
+      return ArithmeticType.Float
+  }
+}
+
 export const expectLogOutputToBe = (
   logOutput: Array<BinaryWithType>,
   expectedLogOutput: Array<BinaryWithType>,
@@ -21,15 +41,12 @@ export const expectLogOutputToBe = (
   logOutput.forEach((result, i) => {
     const expectedResult = expectedLogOutput[i]
     expect(result.type).toEqual(expectedResult.type)
-    const isInt =
-      expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'int'
-    const isPointer = expectedResult.type[0].subtype === 'Pointer'
-    const isFloat =
-      expectedResult.type[0].subtype === 'BaseType' && expectedResult.type[0].baseType === 'float'
-    if (isInt || isPointer) {
+    const arithmeticType = getBaseTypePromotionPriority(expectedResult.type)
+
+    if (arithmeticType === ArithmeticType.Integer) {
       expect(binaryToInt(result.binary)).toBe(binaryToInt(expectedResult.binary))
       return
-    } else if (isFloat) {
+    } else if (arithmeticType === ArithmeticType.Float) {
       expect(result.binary).toBe(truncateFloatPrecision(expectedResult.binary))
       return
     }

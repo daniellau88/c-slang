@@ -84,6 +84,10 @@ interface AssignmentListMicroCode extends MicroCodeBase {
   tag: 'assgn_list'
 }
 
+interface AllocateStringMicroCode extends MicroCodeBase {
+  tag: 'allocate_str'
+}
+
 export enum MicroCodeBinaryOperator {
   IntAddition,
   IntSubtraction,
@@ -188,6 +192,7 @@ export type MicroCode =
   | DeclarationMicroCode
   | AssignmentMicroCode
   | AssignmentListMicroCode
+  | AllocateStringMicroCode
   | BinaryOperationMicroCode
   | BinaryOperationAutoPromotionMicroCode
   | ExitFuncMicroCode

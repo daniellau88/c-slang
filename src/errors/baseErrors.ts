@@ -85,3 +85,9 @@ export class VoidHasNoValueBaseError extends BaseError {
     super()
   }
 }
+
+export class CannotPerformLossyConversionBaseError extends BaseError {
+  constructor(readonly fromType: ProgramType, readonly toType: ProgramType) {
+    super()
+  }
+}

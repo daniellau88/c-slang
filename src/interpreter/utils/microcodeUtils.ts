@@ -38,7 +38,7 @@ import {
   getBaseTypePromotionPriority,
   isNonArithmeticBinaryOperator,
 } from './arithmeticUtils'
-import { doAssignmentList } from './arrayUtils'
+import { doAllocateString, doAssignmentList, setIsNestedFlag, setIsStringFlag } from './arrayUtils'
 import { convertValueToType } from './typeConversionUtils'
 import {
   CASTUnaryOperatorIncrement,
@@ -122,7 +122,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushOS(intToBinary(node.value.charCodeAt(i)), CHAR_BASE_TYPE)
       }
       state.pushOS(0, CHAR_BASE_TYPE) // C strings end with \0
-      state.pushOS(0, INT_BASE_TYPE)
+      let flags = 0
+      flags = setIsNestedFlag(flags, false)
+      flags = setIsStringFlag(flags, true)
+      state.pushOS(intToBinary(flags), INT_BASE_TYPE)
       state.pushOS(intToBinary(node.value.length + 1), INT_BASE_TYPE)
       return
     }
@@ -444,13 +447,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const newType = decrementPointerDepth(addrType)
       let newValue = 0
       let isChanged = false
-      try {
-        ;[newValue, isChanged] = convertValueToType(val, valType, newType)
-        if (isChanged) {
-          state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
-        }
-      } catch (e) {
-        throw new CannotPerformLossyConversion(node.node, valType, newType)
+      ;[newValue, isChanged] = convertValueToType(val, valType, newType)
+      if (isChanged) {
+        state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
       }
       state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
@@ -461,8 +460,17 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const addressInt = binaryToInt(address)
       const currentType = decrementPointerDepth(addressType)
 
-      doAssignmentList(node.node, state, addressInt, currentType)
+      const { binary: lengthBinary, type: lengthType } = state.popOS()
+      const { binary: flagsBinary, type: flagsType } = state.popOS()
+      doAssignmentList(node.node, state, addressInt, currentType, lengthBinary, flagsBinary)
       state.pushOS(address, addressType)
+      return
+    }
+    case 'allocate_str': {
+      const { binary: lengthBinary, type: lengthType } = state.popOS()
+      const { binary: flagsBinary, type: flagsType } = state.popOS()
+      const charPointer = incrementPointerDepth(CHAR_BASE_TYPE)
+      doAllocateString(node.node, state, charPointer, lengthBinary, flagsBinary)
       return
     }
     case 'bin_op_auto_promotion': {

@@ -2,6 +2,7 @@
 
 import {
   CannotDereferenceTypeError,
+  ExpressionCannotBeString,
   FunctionCannotReturnArray,
   SwitchCaseCannotBeVariable,
 } from '../../errors/errors'
@@ -15,6 +16,7 @@ import {
   CASTDeclaration,
   CASTExpression,
   CASTNode,
+  CASTUnaryOperator,
 } from '../../typings/programAST'
 import { dummyLocation } from '../../utils/dummyAstCreator'
 import { ProgramState } from '../programState'
@@ -22,12 +24,13 @@ import {
   CASTUnaryOperatorWithoutDerefence,
   convertAssignmentOperatorToBinaryOperator,
 } from './arithmeticUtils'
+import { setIsNestedFlag, setIsStringFlag } from './arrayUtils'
 import {
   CASTUnaryOperatorIncrement,
   convertCASTTypeModifierToProgramTypeModifier,
   getUnaryOperatorIncrementType,
 } from './typeUtils'
-import { isExpressionList, shouldDerefExpression } from './utils'
+import { isExpressionList, shouldAllocateString, shouldDerefExpression } from './utils'
 
 // It should only insert microcodes that will subsequently change the above structures
 export function astToMicrocode(state: ProgramState, node: CASTNode) {
@@ -110,10 +113,13 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     case 'ArrayExpression': {
       state.pushA({ tag: 'load_int', value: node.elements.length, node: node })
       const allNested = node.elements.every(isExpressionList)
+      let flags = 0
+      flags = setIsNestedFlag(flags, allNested)
+      flags = setIsStringFlag(flags, false)
       if (allNested) {
-        state.pushA({ tag: 'load_int', value: 1, node: node })
+        state.pushA({ tag: 'load_int', value: flags, node: node })
       } else {
-        state.pushA({ tag: 'load_int', value: 0, node: node })
+        state.pushA({ tag: 'load_int', value: flags, node: node })
       }
       ;[...node.elements].reverse().forEach(x => {
         let currentNode: CASTExpression = x
@@ -121,12 +127,9 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
           if (currentNode.type === 'ArrayExpression') {
             currentNode = currentNode.elements[0] // Take only first element if not all are nested
           } else if (currentNode.type === 'StringLiteral') {
-            currentNode = {
-              type: 'Literal',
-              subtype: 'Char',
-              value: currentNode.value.charAt(0),
-              loc: currentNode.loc,
-            }
+            state.pushA({ tag: 'allocate_str', node: x })
+            state.pushA(currentNode)
+            return
           } else {
             break
           }
@@ -163,14 +166,18 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     }
     case 'BinaryExpression': {
       state.pushA({ tag: 'bin_op_auto_promotion', operator: node.operator, node: node })
+      if (shouldAllocateString(node.right)) state.pushA({ tag: 'allocate_str', node: node.right })
       if (shouldDerefExpression(node.right)) state.pushA({ tag: 'deref', node: node.right })
       state.pushA(node.right)
+      if (shouldAllocateString(node.left)) state.pushA({ tag: 'allocate_str', node: node.left })
       if (shouldDerefExpression(node.left)) state.pushA({ tag: 'deref', node: node.left })
       state.pushA(node.left) // Do the left first
       return
     }
     case 'ConditionalExpression': {
       state.pushA({ tag: 'conditional_op', ifFalse: node.ifFalse, ifTrue: node.ifTrue, node: node })
+      if (shouldAllocateString(node.predicate))
+        state.pushA({ tag: 'allocate_str', node: node.predicate })
       if (shouldDerefExpression(node.predicate)) state.pushA({ tag: 'deref', node: node.predicate })
       state.pushA(node.predicate)
       return
@@ -181,6 +188,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
         castType: node.castType.typeModifiers.map(convertCASTTypeModifierToProgramTypeModifier),
         node: node,
       })
+      if (shouldAllocateString(node.expression))
+        state.pushA({ tag: 'allocate_str', node: node.expression })
       if (shouldDerefExpression(node.expression))
         state.pushA({ tag: 'deref', node: node.expression })
       state.pushA(node.expression)
@@ -199,6 +208,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
             ? CASTBinaryOperator.Plus
             : CASTBinaryOperator.Minus
 
+        if (shouldAllocateString(node.expression))
+          throw new ExpressionCannotBeString(node.expression)
         if (incrementType.unaryType === 'post') {
           state.pushA({ tag: 'pop_os', node: node })
         }
@@ -219,6 +230,19 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       const shouldDeref = shouldDerefExpression(node.expression)
       const isSkipDerefenceOperator = CASTUnaryOperatorWithoutDerefence.includes(node.operator)
 
+      const shouldAllocateStr = shouldAllocateString(node.expression)
+      const canConvertStringToUnary = [
+        CASTUnaryOperator.Address,
+        CASTUnaryOperator.Dereference,
+        CASTUnaryOperator.LogicalNot,
+      ].includes(node.operator)
+
+      // Only these operations are allowed for string literals
+      if (shouldAllocateStr) {
+        if (canConvertStringToUnary) state.pushA({ tag: 'allocate_str', node: node })
+        else throw new ExpressionCannotBeString(node)
+      }
+
       if (!shouldDeref && isSkipDerefenceOperator) {
         throw new CannotDereferenceTypeError(node.expression)
       }
@@ -233,6 +257,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       if (shouldDerefExpression(node.indexExpression))
         state.pushA({ tag: 'deref', node: node.indexExpression })
       state.pushA(node.indexExpression)
+      if (shouldAllocateString(node.expression))
+        state.pushA({ tag: 'allocate_str', node: node.expression })
       if (shouldDerefExpression(node.expression))
         state.pushA({ tag: 'deref', node: node.expression })
       state.pushA(node.expression)
@@ -246,6 +272,7 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       state.pushA({ tag: 'func_apply', arity: node.argumentExpression.length, node: node })
       // Insert from left to right into OS (i.e. evaluate left first)
       node.argumentExpression.forEach(x => {
+        if (shouldAllocateString(x)) state.pushA({ tag: 'allocate_str', node: x })
         if (shouldDerefExpression(x)) state.pushA({ tag: 'deref', node: x })
         state.pushA(x)
       })
@@ -264,6 +291,8 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
       }
 
       if (node.expression) {
+        if (shouldAllocateString(node.expression))
+          state.pushA({ tag: 'allocate_str', node: node.expression })
         if (shouldDerefExpression(node.expression))
           state.pushA({ tag: 'deref', node: node.expression })
         state.pushA(node.expression)

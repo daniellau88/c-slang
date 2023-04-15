@@ -486,6 +486,20 @@ export class UnknownError extends RuntimeSourceError {
   }
 }
 
+export class ExpressionCannotBeString extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Expression cannot be a string literal.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
 export class SwitchCaseCannotBeVariable extends RuntimeSourceError {
   constructor(node: CASTNode) {
     super(node)

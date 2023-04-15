@@ -18,7 +18,7 @@ export class Warning {
 
 export class ImplicitCastWarning extends Warning {
   constructor(node: CASTNode, fromType: ProgramType, toType: ProgramType) {
-    super(node, `Implicit casting from ${typeToString(fromType)} to ${typeToString(toType)}.`)
+    super(node, `Implicit casting from ${typeToString(fromType)} to ${typeToString(toType)}`)
   }
 
   getMessage() {

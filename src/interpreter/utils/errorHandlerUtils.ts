@@ -1,10 +1,10 @@
 import {
   CannotDivideByZeroBaseError,
+  CannotPerformLossyConversionBaseError,
   CannotPerformOperationBaseError,
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
-  ParseBaseError,
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
   UnknownTypeBaseError,
@@ -13,6 +13,7 @@ import {
 import {
   CannotDereferenceTypeError,
   CannotDivideByZero,
+  CannotPerformLossyConversion,
   CannotPerformOperation,
   InvalidMemoryAccess,
   MemoryFreeNotAllocatedError,
@@ -47,9 +48,13 @@ const arithmeticUtilsErrorHandler = (e: any, node: CASTNode) => {
   }
 }
 
-const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
+const typeConversionErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof CannotPerformLossyConversionBaseError) {
+    throw new CannotPerformLossyConversion(node, e.fromType, e.toType, e)
+  }
+}
 
-const typeConversionErrorHandler = (e: any, node: CASTNode) => {}
+const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
 
 const voidHasNoValueErrorHandler = (e: any, node: CASTNode) => {
   if (e instanceof VoidHasNoValueBaseError) {

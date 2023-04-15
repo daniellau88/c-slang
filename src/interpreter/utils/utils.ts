@@ -192,6 +192,15 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   }
 }
 
+export const shouldAllocateString = (expression: CASTExpression): boolean => {
+  switch (expression.type) {
+    case 'StringLiteral':
+      return true
+    default:
+      return false
+  }
+}
+
 export const isExpressionList = (
   expression: CASTExpression,
 ): expression is CASTArrayExpression | CASTStringLiteral => {
