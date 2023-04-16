@@ -1,28 +1,34 @@
 import {
   CannotDivideByZeroBaseError,
+  CannotPerformLossyConversionBaseError,
   CannotPerformOperationBaseError,
+  FunctionCannotBeDereferencedBaseError,
+  FunctionHasNoSizeBaseError,
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
-  ParseBaseError,
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
+  UnknownArrayLengthBaseError,
   UnknownTypeBaseError,
   VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import {
   CannotDereferenceTypeError,
   CannotDivideByZero,
+  CannotPerformLossyConversion,
   CannotPerformOperation,
+  FunctionCannotBeDereferenced,
+  FunctionHasNoSize,
   InvalidMemoryAccess,
   MemoryFreeNotAllocatedError,
+  UnknownArrayLength,
   UnknownError,
   UnknownType,
   VoidHasNoValue,
 } from '../../errors/errors'
 import {
   InternalUnreachableRuntimeError,
-  ParseRuntimeError,
   RuntimeSourceError,
 } from '../../errors/runtimeSourceError'
 import { CASTNode } from '../../typings/programAST'
@@ -48,9 +54,37 @@ const arithmeticUtilsErrorHandler = (e: any, node: CASTNode) => {
   }
 }
 
-const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
+const typeConversionErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof CannotPerformLossyConversionBaseError) {
+    throw new CannotPerformLossyConversion(node, e.fromType, e.toType, e)
+  }
+}
 
-const typeConversionErrorHandler = (e: any, node: CASTNode) => {}
+const typeDerefErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof NonPointerBaseError) {
+    throw new CannotDereferenceTypeError(node, e)
+  }
+
+  if (e instanceof NonArrayBaseError) {
+    throw new CannotDereferenceTypeError(node, e)
+  }
+
+  if (e instanceof FunctionCannotBeDereferencedBaseError) {
+    throw new FunctionCannotBeDereferenced(node)
+  }
+}
+
+const arrayErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof UnknownArrayLengthBaseError) {
+    throw new UnknownArrayLength(node, e.type, e)
+  }
+}
+
+const staticSizeErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof FunctionHasNoSizeBaseError) {
+    throw new FunctionHasNoSize(node, e.programType, e)
+  }
+}
 
 const voidHasNoValueErrorHandler = (e: any, node: CASTNode) => {
   if (e instanceof VoidHasNoValueBaseError) {
@@ -67,19 +101,9 @@ export const errorHandler = (e: any, node: CASTNode) => {
   arithmeticUtilsErrorHandler(e, node)
   staticSizeErrorHandler(e, node)
   typeConversionErrorHandler(e, node)
+  typeDerefErrorHandler(e, node)
+  arrayErrorHandler(e, node)
   voidHasNoValueErrorHandler(e, node)
-
-  if (e instanceof ParseBaseError) {
-    throw new ParseRuntimeError(node, e)
-  }
-
-  if (e instanceof NonPointerBaseError) {
-    throw new CannotDereferenceTypeError(node, e)
-  }
-
-  if (e instanceof NonArrayBaseError) {
-    throw new CannotDereferenceTypeError(node, e)
-  }
 
   if (e instanceof InternalUnreachableBaseError) {
     throw new InternalUnreachableRuntimeError(node, e)

@@ -73,9 +73,6 @@ export class EnvTreeNode {
 }
 
 const createEmptyRuntime = () => ({
-  break: false,
-  debuggerOn: true,
-  isRunning: false,
   environmentTree: new EnvTree(),
   environments: [],
   value: undefined,

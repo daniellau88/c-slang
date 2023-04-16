@@ -7,7 +7,7 @@ export class PreemptiveScheduler implements Scheduler {
 
   public run(it: IterableIterator<Value>, context: Context): Promise<Result> {
     return new Promise((resolve, _reject) => {
-      context.runtime.isRunning = true
+      context.programState.setRuntimeIsRunning(true)
       // This is used in the evaluation of the REPL during a paused state.
       // The debugger is turned off while the code evaluates just above the debugger statement.
       let actuallyBreak: boolean = false
@@ -19,19 +19,20 @@ export class PreemptiveScheduler implements Scheduler {
             step++
             itValue = it.next()
 
-            actuallyBreak = context.runtime.break && context.runtime.debuggerOn
+            const runtimeVars = context.programState.getRuntimeVars()
+            actuallyBreak = runtimeVars.break && runtimeVars.debuggerOn
             if (actuallyBreak) {
               itValue.done = true
             }
           }
         } catch (e) {
           checkForStackOverflow(e, context)
-          context.runtime.isRunning = false
+          context.programState.setRuntimeIsRunning(false)
           clearInterval(interval)
           resolve({ status: 'error' })
         }
         if (itValue.done) {
-          context.runtime.isRunning = false
+          context.programState.setRuntimeIsRunning(false)
           clearInterval(interval)
           if (actuallyBreak) {
             resolve({

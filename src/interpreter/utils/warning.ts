@@ -18,10 +18,10 @@ export class Warning {
 
 export class ImplicitCastWarning extends Warning {
   constructor(node: CASTNode, fromType: ProgramType, toType: ProgramType) {
-    super(node, `Implicit casting from ${typeToString(fromType)} to ${typeToString(toType)}.`)
+    super(node, `Implicit casting from ${typeToString(fromType)} to ${typeToString(toType)}`)
   }
 
   getMessage() {
-    return `WARNING:\n${this.message} \n  at ${JSON.stringify(this.node.loc)}\n`
+    return `WARNING:\n${this.message} at Line ${this.node.loc.start.line}\n`
   }
 }

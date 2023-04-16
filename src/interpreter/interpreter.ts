@@ -29,7 +29,7 @@ function* visit(context: Context, node: CASTNode) {
 }
 
 function* leave(context: Context) {
-  context.runtime.break = false
+  context.programState.setRuntimeIsRunning(false)
   context.runtime.nodes.shift()
   yield context
 }
@@ -43,10 +43,6 @@ export const pushEnvironment = (context: Context, environment: Environment) => {
 // tslint:enable:object-literal-shorthand
 
 export function* evaluate(node: CASTNode, context: Context) {
-  if (context.programState) {
-    context.programState.initializeAST(node as CASTProgram)
-  }
-
   try {
     const executeGenerator = execute(context.programState)
     let programStep = executeGenerator.next()

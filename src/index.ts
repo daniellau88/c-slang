@@ -84,6 +84,7 @@ export function resume(result: Result): Finished | ResultError | Promise<Result>
   if (result.status === 'finished' || result.status === 'error') {
     return result
   } else {
+    result.context.programState.setRuntimeBreak(false)
     return result.scheduler.run(result.it, result.context)
   }
 }
@@ -91,7 +92,7 @@ export function resume(result: Result): Finished | ResultError | Promise<Result>
 export function interrupt(context: Context) {
   const globalEnvironment = context.runtime.environments[context.runtime.environments.length - 1]
   context.runtime.environments = [globalEnvironment]
-  context.runtime.isRunning = false
+  context.programState.setRuntimeIsRunning(false)
   context.errors.push(new InterruptedError(context.runtime.nodes[0]))
 }
 

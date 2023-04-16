@@ -1,6 +1,7 @@
+import { CannotPerformLossyConversionBaseError } from '../../errors/baseErrors'
 import { ProgramType } from '../typings'
 import { ArithmeticType, getBaseTypePromotionPriority } from './arithmeticUtils'
-import { isArray, isBaseType, isPointer, isTypeEquivalent } from './typeUtils'
+import { isArray, isBaseType, isTypeEquivalent } from './typeUtils'
 import { binaryToInt, intToBinary } from './utils'
 
 export const convertValueToType = (
@@ -16,7 +17,7 @@ export const convertValueToType = (
     else {
       // BaseType to BaseType
       if (isArray(newType)) {
-        throw new Error('Cannot convert type')
+        throw new CannotPerformLossyConversionBaseError(valType, newType)
       }
       if (isBaseType(newType) && isBaseType(valType)) {
         const newArithmeticType = getBaseTypePromotionPriority(newType)
@@ -37,7 +38,7 @@ export const convertValueToType = (
       else if (!isBaseType(newType) && isBaseType(valType)) {
         const valArithmeticType = getBaseTypePromotionPriority(valType)
         if (valArithmeticType == ArithmeticType.Float) {
-          throw new Error('Cannot convert type')
+          throw new CannotPerformLossyConversionBaseError(valType, newType)
         }
         // integer to non array, OK
       }

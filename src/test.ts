@@ -1,7 +1,6 @@
 import assert from 'assert'
 
 import createContext from './createContext'
-import { convertCSTProgramToAST } from './parser/ASTConverter'
 import { parse } from './parser/parser'
 
 type CompletePartial<K> = {
@@ -42,9 +41,6 @@ const testExpression = (expr: string, expectedMustHave: Array<ParserValues>) => 
   if (!parsedProgram || !parsedProgram) {
     assert(false)
   }
-
-  const ast = convertCSTProgramToAST(parsedProgram)
-  console.log(JSON.stringify(ast))
 
   const bodyExpr = parsedProgram.children as Array<ParserValues>
   if (bodyExpr.length !== expectedMustHave.length) {

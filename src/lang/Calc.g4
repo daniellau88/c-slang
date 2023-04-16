@@ -67,6 +67,9 @@ RETURN: 'return';
 STRUCT: 'struct';
 UNION: 'union';
 
+COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
+
 unary_operator
    : AMPERSAND // As address
    | ASTERICK // As deref

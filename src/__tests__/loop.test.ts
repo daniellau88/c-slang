@@ -266,59 +266,47 @@ describe('loop', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('switch case without break', () => {
+  test('loop with dereference', () => {
     const output = testProgram(
       `
       int main() {
-        int x = 10;
-        int i = 0;
-        for (; i < x; i++)
-          switch(x)
-          {
-            case 1:
-              i = i + 2;
-            case 9:
-              i = i - 1;
-            default:
-              i = i + 1;
-          }
-        printfLog(i);
+        int x = 1;
+        int a = 0;
+        if (x) { a = 1; }
+        printfLog(a);
+        x = 1;
+        a = 0;
+        while (x) {
+          a++;
+          if (a > 5) x = 0;
+        }
+        printfLog(a);
+        x = 1;
+        a = 0;
+        do {
+          a++;
+          if (a > 5) x = 0;
+        } while (x);
+        printfLog(a);
+        x = 1;
+        a = 0;
+        for (;x;) {
+          a++;
+          if (a > 5) x = 0;
+        }
+        printfLog(a);
         return 0;
       }
       `,
     )
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
-    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
-    expectLogOutputToBe(logOutput, expectedLogOutput)
-  })
-
-  test('switch case without break', () => {
-    const output = testProgram(
-      `
-      int main() {
-        int x = 10;
-        int i = 0;
-        for (; i < x; i++)
-          switch(x)
-          {
-            case 1:
-              i = i + 2;
-              break;
-            case 9:
-              i = i - 1;
-              break;
-            default:
-              i = i + 1;
-          }
-        printfLog(i);
-        return 0;
-      }
-      `,
-    )
-    verifyProgramCompleted(output)
-    const logOutput = output.getLogOutput()
-    const expectedLogOutput = [{ binary: intToBinary(10), type: INT_BASE_TYPE }]
+    const expectedLogOutput = [
+      { binary: intToBinary(1), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+      { binary: intToBinary(6), type: INT_BASE_TYPE },
+    ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })

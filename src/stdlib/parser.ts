@@ -1,8 +1,6 @@
-import { convertCSTProgramToAST } from '../parser/ASTConverter'
 import { parse as sourceParse } from '../parser/parser'
-import { Context, ContiguousArrayElements, Value } from '../types'
+import { Context } from '../types'
 import { CASTProgram } from '../typings/programAST'
-import { CCSTProgram } from '../typings/programCST'
 import { oneLine } from '../utils/formatters'
 
 class ParseError extends Error {
@@ -22,10 +20,6 @@ function unreachable() {
   `)
 }
 
-function transform(node: CCSTProgram): CASTProgram {
-  return convertCSTProgramToAST(node)
-}
-
 export function parse(x: string, context: Context): CASTProgram {
   const program = sourceParse(x, context)
   if (context.errors.length > 0) {
@@ -33,7 +27,7 @@ export function parse(x: string, context: Context): CASTProgram {
   }
 
   if (program !== undefined) {
-    return transform(program)
+    return program
   } else {
     unreachable()
     throw new ParseError('Invalid parse')

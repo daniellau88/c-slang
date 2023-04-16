@@ -87,22 +87,24 @@ export class CalcParser extends Parser {
   public static readonly RETURN = 60
   public static readonly STRUCT = 61
   public static readonly UNION = 62
-  public static readonly VOID_TYPE_SPECIFIER = 63
-  public static readonly CHAR_TYPE_SPECIFIER = 64
-  public static readonly SHORT_TYPE_SPECIFIER = 65
-  public static readonly INT_TYPE_SPECIFIER = 66
-  public static readonly LONG_TYPE_SPECIFIER = 67
-  public static readonly FLOAT_TYPE_SPECIFIER = 68
-  public static readonly DOUBLE_TYPE_SPECIFIER = 69
-  public static readonly SIGNED_TYPE_SPECIFIER = 70
-  public static readonly UNSIGNED_TYPE_SPECIFIER = 71
-  public static readonly CONST_TYPE_QUALIFIER = 72
-  public static readonly VOLATILE_TYPE_QUALIFIER = 73
-  public static readonly INTEGER = 74
-  public static readonly FLOAT = 75
-  public static readonly CHAR = 76
-  public static readonly STRING = 77
-  public static readonly IDENTIFIER = 78
+  public static readonly COMMENT = 63
+  public static readonly LINE_COMMENT = 64
+  public static readonly VOID_TYPE_SPECIFIER = 65
+  public static readonly CHAR_TYPE_SPECIFIER = 66
+  public static readonly SHORT_TYPE_SPECIFIER = 67
+  public static readonly INT_TYPE_SPECIFIER = 68
+  public static readonly LONG_TYPE_SPECIFIER = 69
+  public static readonly FLOAT_TYPE_SPECIFIER = 70
+  public static readonly DOUBLE_TYPE_SPECIFIER = 71
+  public static readonly SIGNED_TYPE_SPECIFIER = 72
+  public static readonly UNSIGNED_TYPE_SPECIFIER = 73
+  public static readonly CONST_TYPE_QUALIFIER = 74
+  public static readonly VOLATILE_TYPE_QUALIFIER = 75
+  public static readonly INTEGER = 76
+  public static readonly FLOAT = 77
+  public static readonly CHAR = 78
+  public static readonly STRING = 79
+  public static readonly IDENTIFIER = 80
   public static readonly RULE_unary_operator = 0
   public static readonly RULE_assignment_operator = 1
   public static readonly RULE_end_statement_delimiter = 2
@@ -313,6 +315,8 @@ export class CalcParser extends Parser {
     "'return'",
     "'struct'",
     "'union'",
+    undefined,
+    undefined,
     "'void'",
     "'char'",
     "'short'",
@@ -389,6 +393,8 @@ export class CalcParser extends Parser {
     'RETURN',
     'STRUCT',
     'UNION',
+    'COMMENT',
+    'LINE_COMMENT',
     'VOID_TYPE_SPECIFIER',
     'CHAR_TYPE_SPECIFIER',
     'SHORT_TYPE_SPECIFIER',
@@ -918,9 +924,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.FLOAT_TYPE_SPECIFIER - 48)) |
                 (1 << (CalcParser.DOUBLE_TYPE_SPECIFIER - 48)) |
                 (1 << (CalcParser.SIGNED_TYPE_SPECIFIER - 48)) |
-                (1 << (CalcParser.UNSIGNED_TYPE_SPECIFIER - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.UNSIGNED_TYPE_SPECIFIER - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             this.state = 192
@@ -2005,9 +2011,9 @@ export class CalcParser extends Parser {
                             (1 << (CalcParser.INTEGER - 48)) |
                             (1 << (CalcParser.FLOAT - 48)) |
                             (1 << (CalcParser.CHAR - 48)) |
-                            (1 << (CalcParser.STRING - 48)) |
-                            (1 << (CalcParser.IDENTIFIER - 48)))) !==
-                          0)
+                            (1 << (CalcParser.STRING - 48)))) !==
+                          0) ||
+                      _la === CalcParser.IDENTIFIER
                     ) {
                       {
                         this.state = 347
@@ -3674,9 +3680,9 @@ export class CalcParser extends Parser {
                       (1 << (CalcParser.INTEGER - 48)) |
                       (1 << (CalcParser.FLOAT - 48)) |
                       (1 << (CalcParser.CHAR - 48)) |
-                      (1 << (CalcParser.STRING - 48)) |
-                      (1 << (CalcParser.IDENTIFIER - 48)))) !==
-                    0)
+                      (1 << (CalcParser.STRING - 48)))) !==
+                    0) ||
+                _la === CalcParser.IDENTIFIER
               ) {
                 {
                   this.state = 583
@@ -3778,9 +3784,9 @@ export class CalcParser extends Parser {
                             (1 << (CalcParser.INTEGER - 48)) |
                             (1 << (CalcParser.FLOAT - 48)) |
                             (1 << (CalcParser.CHAR - 48)) |
-                            (1 << (CalcParser.STRING - 48)) |
-                            (1 << (CalcParser.IDENTIFIER - 48)))) !==
-                          0)
+                            (1 << (CalcParser.STRING - 48)))) !==
+                          0) ||
+                      _la === CalcParser.IDENTIFIER
                     ) {
                       {
                         this.state = 596
@@ -4043,9 +4049,9 @@ export class CalcParser extends Parser {
                             (1 << (CalcParser.INTEGER - 48)) |
                             (1 << (CalcParser.FLOAT - 48)) |
                             (1 << (CalcParser.CHAR - 48)) |
-                            (1 << (CalcParser.STRING - 48)) |
-                            (1 << (CalcParser.IDENTIFIER - 48)))) !==
-                          0)
+                            (1 << (CalcParser.STRING - 48)))) !==
+                          0) ||
+                      _la === CalcParser.IDENTIFIER
                     ) {
                       {
                         this.state = 636
@@ -4420,9 +4426,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             {
@@ -4631,9 +4637,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             {
@@ -4717,9 +4723,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             {
@@ -4856,9 +4862,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             this.state = 746
@@ -4890,9 +4896,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             this.state = 750
@@ -4924,9 +4930,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             this.state = 754
@@ -5133,9 +5139,9 @@ export class CalcParser extends Parser {
                 (1 << (CalcParser.INTEGER - 48)) |
                 (1 << (CalcParser.FLOAT - 48)) |
                 (1 << (CalcParser.CHAR - 48)) |
-                (1 << (CalcParser.STRING - 48)) |
-                (1 << (CalcParser.IDENTIFIER - 48)))) !==
-              0)
+                (1 << (CalcParser.STRING - 48)))) !==
+              0) ||
+          _la === CalcParser.IDENTIFIER
         ) {
           {
             this.state = 777
@@ -5445,7 +5451,7 @@ export class CalcParser extends Parser {
 
   private static readonly _serializedATNSegments: number = 2
   private static readonly _serializedATNSegment0: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03P\u0311\x04\x02' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03R\u0311\x04\x02' +
     '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
     '\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r\x04' +
     '\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12\x04' +
@@ -5522,8 +5528,8 @@ export class CalcParser extends Parser {
     'B\x02D\x02F\x02H\x02J\x02L\x02N\x02P\x02R\x02T\x02V\x02X\x02Z\x02\\\x02' +
     '^\x02`\x02b\x02d\x02f\x02h\x02j\x02l\x02n\x02p\x02r\x02t\x02v\x02x\x02' +
     'z\x02|\x02~\x02\x80\x02\x82\x02\x84\x02\x86\x02\x88\x02\x8A\x02\x8C\x02' +
-    '\x8E\x02\x02\x07\x05\x02\x04\x04\x06\x07\t\v\x03\x02\x1B%\x03\x02HI\x03' +
-    '\x02JK\x04\x0222PP\x02\u033D\x02\x90\x03\x02\x02\x02\x04\x92\x03\x02\x02' +
+    '\x8E\x02\x02\x07\x05\x02\x04\x04\x06\x07\t\v\x03\x02\x1B%\x03\x02JK\x03' +
+    '\x02LM\x04\x0222RR\x02\u033D\x02\x90\x03\x02\x02\x02\x04\x92\x03\x02\x02' +
     '\x02\x06\x94\x03\x02\x02\x02\b\x97\x03\x02\x02\x02\n\x9B\x03\x02\x02\x02' +
     '\f\xB2\x03\x02\x02\x02\x0E\xB4\x03\x02\x02\x02\x10\xB6\x03\x02\x02\x02' +
     '\x12\xB8\x03\x02\x02\x02\x14\xC4\x03\x02\x02\x02\x16\xC8\x03\x02\x02\x02' +
@@ -5552,14 +5558,14 @@ export class CalcParser extends Parser {
     '\x03\x02\x02\x02\x96\x98\x07\x04\x02\x02\x97\x96\x03\x02\x02\x02\x98\x99' +
     '\x03\x02\x02\x02\x99\x97\x03\x02\x02\x02\x99\x9A\x03\x02\x02\x02\x9A\t' +
     '\x03\x02\x02\x02\x9B\x9C\t\x04\x02\x02\x9C\v\x03\x02\x02\x02\x9D\xB3\x07' +
-    'A\x02\x02\x9E\xA0\x05\n\x06\x02\x9F\x9E\x03\x02\x02\x02\x9F\xA0\x03\x02' +
-    '\x02\x02\xA0\xA1\x03\x02\x02\x02\xA1\xB3\x07B\x02\x02\xA2\xA4\x05\n\x06' +
+    'C\x02\x02\x9E\xA0\x05\n\x06\x02\x9F\x9E\x03\x02\x02\x02\x9F\xA0\x03\x02' +
+    '\x02\x02\xA0\xA1\x03\x02\x02\x02\xA1\xB3\x07D\x02\x02\xA2\xA4\x05\n\x06' +
     '\x02\xA3\xA2\x03\x02\x02\x02\xA3\xA4\x03\x02\x02\x02\xA4\xA5\x03\x02\x02' +
-    '\x02\xA5\xB3\x07C\x02\x02\xA6\xA8\x05\n\x06\x02\xA7\xA6\x03\x02\x02\x02' +
-    '\xA7\xA8\x03\x02\x02\x02\xA8\xA9\x03\x02\x02\x02\xA9\xB3\x07D\x02\x02' +
+    '\x02\xA5\xB3\x07E\x02\x02\xA6\xA8\x05\n\x06\x02\xA7\xA6\x03\x02\x02\x02' +
+    '\xA7\xA8\x03\x02\x02\x02\xA8\xA9\x03\x02\x02\x02\xA9\xB3\x07F\x02\x02' +
     '\xAA\xAC\x05\n\x06\x02\xAB\xAA\x03\x02\x02\x02\xAB\xAC\x03\x02\x02\x02' +
-    '\xAC\xAD\x03\x02\x02\x02\xAD\xB3\x07E\x02\x02\xAE\xB3\x07F\x02\x02\xAF' +
-    '\xB3\x07G\x02\x02\xB0\xB3\x05\x1E\x10\x02\xB1\xB3\x05 \x11\x02\xB2\x9D' +
+    '\xAC\xAD\x03\x02\x02\x02\xAD\xB3\x07G\x02\x02\xAE\xB3\x07H\x02\x02\xAF' +
+    '\xB3\x07I\x02\x02\xB0\xB3\x05\x1E\x10\x02\xB1\xB3\x05 \x11\x02\xB2\x9D' +
     '\x03\x02\x02\x02\xB2\x9F\x03\x02\x02\x02\xB2\xA3\x03\x02\x02\x02\xB2\xA7' +
     '\x03\x02\x02\x02\xB2\xAB\x03\x02\x02\x02\xB2\xAE\x03\x02\x02\x02\xB2\xAF' +
     '\x03\x02\x02\x02\xB2\xB0\x03\x02\x02\x02\xB2\xB1\x03\x02\x02\x02\xB3\r' +
@@ -5773,12 +5779,12 @@ export class CalcParser extends Parser {
     '\u0293\u0299\x05j6\x02\u0294\u0295\x07\x13\x02\x02\u0295\u0296\x05@!\x02' +
     '\u0296\u0297\x07\x14\x02\x02\u0297\u0299\x03\x02\x02\x02\u0298\u0291\x03' +
     '\x02\x02\x02\u0298\u0292\x03\x02\x02\x02\u0298\u0293\x03\x02\x02\x02\u0298' +
-    '\u0294\x03\x02\x02\x02\u0299i\x03\x02\x02\x02\u029A\u029B\x07O\x02\x02' +
+    '\u0294\x03\x02\x02\x02\u0299i\x03\x02\x02\x02\u029A\u029B\x07Q\x02\x02' +
     '\u029Bk\x03\x02\x02\x02\u029C\u02A0\x05n8\x02\u029D\u02A0\x05p9\x02\u029E' +
     '\u02A0\x05r:\x02\u029F\u029C\x03\x02\x02\x02\u029F\u029D\x03\x02\x02\x02' +
-    '\u029F\u029E\x03\x02\x02\x02\u02A0m\x03\x02\x02\x02\u02A1\u02A2\x07L\x02' +
-    '\x02\u02A2o\x03\x02\x02\x02\u02A3\u02A4\x07M\x02\x02\u02A4q\x03\x02\x02' +
-    '\x02\u02A5\u02A6\x07N\x02\x02\u02A6s\x03\x02\x02\x02\u02A7\u02AB\x07\x17' +
+    '\u029F\u029E\x03\x02\x02\x02\u02A0m\x03\x02\x02\x02\u02A1\u02A2\x07N\x02' +
+    '\x02\u02A2o\x03\x02\x02\x02\u02A3\u02A4\x07O\x02\x02\u02A4q\x03\x02\x02' +
+    '\x02\u02A5\u02A6\x07P\x02\x02\u02A6s\x03\x02\x02\x02\u02A7\u02AB\x07\x17' +
     '\x02\x02\u02A8\u02AA\x05*\x16\x02\u02A9\u02A8\x03\x02\x02\x02\u02AA\u02AD' +
     '\x03\x02\x02\x02\u02AB\u02A9\x03\x02\x02\x02\u02AB\u02AC\x03\x02\x02\x02' +
     '\u02AC\u02AE\x03\x02\x02\x02\u02AD\u02AB\x03\x02\x02\x02\u02AE\u02AF\x07' +

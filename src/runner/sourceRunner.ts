@@ -41,7 +41,7 @@ export async function sourceRunner(
   context.errors = []
 
   // Parse and validate
-  const program: CCSTProgram | undefined = parse(code, context)
+  const program: CASTProgram | undefined = parse(code, context)
   if (!program) {
     return resolvedErrorPromise
   }
@@ -50,9 +50,7 @@ export async function sourceRunner(
     return resolvedErrorPromise
   }
 
-  const programAST: CASTProgram = convertCSTProgramToAST(program)
-
-  return runInterpreter(programAST, context, theOptions)
+  return runInterpreter(program, context, theOptions)
 }
 
 export async function sourceFilesRunner(

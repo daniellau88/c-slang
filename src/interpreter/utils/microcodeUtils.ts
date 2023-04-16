@@ -1,8 +1,10 @@
+import { WORD_SIZE } from '../../constants'
 import {
   CannotPerformLossyConversion,
   CannotPerformOperation,
   CannotReturnNonVoidValue,
   CannotReturnVoidValue,
+  ExpressionCannotBeString,
   FunctionCannotReturnArray,
   InvalidArraySize,
   InvalidFreeMemoryValue,
@@ -37,7 +39,7 @@ import {
   getBaseTypePromotionPriority,
   isNonArithmeticBinaryOperator,
 } from './arithmeticUtils'
-import { doAssignmentList } from './arrayUtils'
+import { doAllocateString, doAssignmentList, setIsNestedFlag, setIsStringFlag } from './arrayUtils'
 import { convertValueToType } from './typeConversionUtils'
 import {
   CASTUnaryOperatorIncrement,
@@ -62,14 +64,13 @@ import {
   derefBinary,
   getExpressionLength,
   intToBinary,
-  isExpressionList,
+  isCASTExpressionList,
   isMicrocode,
   isTruthy,
+  shouldAllocateString,
   shouldDerefExpression,
 } from './utils'
 import { ImplicitCastWarning } from './warning'
-
-export const wordSize = 8
 
 // Microcode are allowed to touch any of the given structures
 export function executeMicrocode(state: ProgramState, node: MicroCode) {
@@ -123,7 +124,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         state.pushOS(intToBinary(node.value.charCodeAt(i)), CHAR_BASE_TYPE)
       }
       state.pushOS(0, CHAR_BASE_TYPE) // C strings end with \0
-      state.pushOS(0, INT_BASE_TYPE)
+      let flags = 0
+      flags = setIsNestedFlag(flags, false)
+      flags = setIsStringFlag(flags, true)
+      state.pushOS(intToBinary(flags), INT_BASE_TYPE)
       state.pushOS(intToBinary(node.value.length + 1), INT_BASE_TYPE)
       return
     }
@@ -137,7 +141,15 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       switch (record.subtype) {
         case 'func': {
           const fd = state.getFDAtIndex(record.funcIndex)
-          state.pushOS(intToBinary(record.funcIndex), incrementPointerDepth(fd.returnProgType))
+          const params = fd.subtype === 'func' ? fd.parameters : []
+          const functionType: ProgramType = [
+            {
+              subtype: 'Parameters',
+              parameterTypeList: params,
+            },
+            ...fd.returnProgType,
+          ]
+          state.pushOS(intToBinary(record.funcIndex), incrementPointerDepth(functionType))
           return
         }
         case 'variable': {
@@ -184,7 +196,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
 
       state.saveAndUpdateRTSStartOntoStack()
 
-      state.extendFunctionE()
+      state.extendFunctionE(functionToCall.identifier.name)
       state.extendScopeE()
 
       const funcParameters = functionToCall.parameters
@@ -267,7 +279,21 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (isVoidReturn) {
         state.pushOS(0, VOID_BASE_TYPE)
       } else if (binaryWithType) {
-        state.pushOS(binaryWithType.binary, binaryWithType.type)
+        let newValue = 0
+        let isChanged = false
+        try {
+          ;[newValue, isChanged] = convertValueToType(
+            binaryWithType.binary,
+            binaryWithType.type,
+            returnType,
+          )
+          if (isChanged) {
+            state.pushWarning(new ImplicitCastWarning(node.node, binaryWithType.type, returnType))
+          }
+          state.pushOS(newValue, returnType)
+        } catch (e) {
+          throw new CannotPerformLossyConversion(node.node, binaryWithType.type, returnType)
+        }
       } else {
         throw new InternalUnreachableRuntimeError(node.node)
       }
@@ -309,7 +335,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       })
 
       if (init) {
-        if (isExpressionList(init)) {
+        if (isCASTExpressionList(init)) {
           state.pushA({ tag: 'assgn_list', node: node.declaration })
 
           const expressionLength = getExpressionLength(init)
@@ -337,6 +363,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       })
 
       if (init) {
+        // Could possibly be assigning to char[], and thus should not be allocated separately
+        // (i.e. strings should be treated as an array)
         if (shouldDerefExpression(init)) state.pushA({ tag: 'deref', node: init })
         state.pushA(init)
       }
@@ -373,6 +401,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
         const currentModifier = oldTypeModifiers[i]
         if (currentModifier.subtype == 'Array' && currentModifier.size !== undefined) {
           state.pushA({ ...node, currentIndex: i })
+          if (shouldAllocateString(currentModifier.size))
+            throw new ExpressionCannotBeString(node.node)
           if (shouldDerefExpression(currentModifier.size))
             state.pushA({ tag: 'deref', node: currentModifier.size })
           state.pushA(currentModifier.size)
@@ -398,7 +428,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: allocationSizeBinary, type } = state.popOS()
       const allocationSize = binaryToInt(allocationSizeBinary)
       const currentRTSAddress = state.getRTSLength()
-      state.allocateSizeOnRTS(allocationSize / wordSize, node.typeModifiers)
+      let typeModifiersOfMemory = node.typeModifiers
+      // Within memory, each memory box will be of array item's type
+      if (isArray(typeModifiersOfMemory)) {
+        typeModifiersOfMemory = getArrayItemsType(typeModifiersOfMemory)
+      }
+      state.allocateSizeOnRTS(allocationSize / WORD_SIZE, typeModifiersOfMemory)
 
       state.addRecordToE(node.name, {
         subtype: 'variable',
@@ -418,13 +453,9 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const newType = decrementPointerDepth(addrType)
       let newValue = 0
       let isChanged = false
-      try {
-        ;[newValue, isChanged] = convertValueToType(val, valType, newType)
-        if (isChanged) {
-          state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
-        }
-      } catch (e) {
-        throw new CannotPerformLossyConversion(node.node, valType, newType)
+      ;[newValue, isChanged] = convertValueToType(val, valType, newType)
+      if (isChanged) {
+        state.pushWarning(new ImplicitCastWarning(node.node, valType, newType))
       }
       state.setMemoryAtIndex(binaryToInt(addr), newValue, newType)
       state.pushOS(newValue, newType)
@@ -435,8 +466,17 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const addressInt = binaryToInt(address)
       const currentType = decrementPointerDepth(addressType)
 
-      doAssignmentList(node.node, state, addressInt, currentType)
+      const { binary: lengthBinary, type: lengthType } = state.popOS()
+      const { binary: flagsBinary, type: flagsType } = state.popOS()
+      doAssignmentList(node.node, state, addressInt, currentType, lengthBinary, flagsBinary)
       state.pushOS(address, addressType)
+      return
+    }
+    case 'allocate_str': {
+      const { binary: lengthBinary, type: lengthType } = state.popOS()
+      const { binary: flagsBinary, type: flagsType } = state.popOS()
+      const charPointer = incrementPointerDepth(CHAR_BASE_TYPE)
+      doAllocateString(node.node, state, charPointer, lengthBinary, flagsBinary)
       return
     }
     case 'bin_op_auto_promotion': {
@@ -494,7 +534,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           operator: MicroCodeBinaryOperator.IntDivision,
           node: node.node,
         })
-        state.pushA({ tag: 'load_int', value: wordSize, node: node.node })
+        state.pushA({ tag: 'load_int', value: WORD_SIZE, node: node.node })
         state.pushA({
           tag: 'bin_op',
           operator: MicroCodeBinaryOperator.IntMultiply,
@@ -550,6 +590,8 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
     case 'conditional_op': {
       const predicate = state.popOS()
       const expressionToPush = predicate.binary === 0 ? node.ifFalse : node.ifTrue
+      if (shouldAllocateString(expressionToPush))
+        state.pushA({ tag: 'allocate_str', node: expressionToPush })
       if (shouldDerefExpression(expressionToPush))
         state.pushA({ tag: 'deref', node: expressionToPush })
       state.pushA(expressionToPush)
@@ -569,12 +611,12 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
           }
           case 'BaseType': {
             if (typeModifier.baseType === 'void') throw new VoidHasNoValue(node.node)
-            expressions.push({ tag: 'load_int', value: 8, node: node.node })
+            expressions.push({ tag: 'load_int', value: WORD_SIZE, node: node.node })
             shouldBreak = true
             break
           }
           case 'Pointer': {
-            expressions.push({ tag: 'load_int', value: 8, node: node.node })
+            expressions.push({ tag: 'load_int', value: WORD_SIZE, node: node.node })
             shouldBreak = true
             break
           }
@@ -620,6 +662,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (node.withExpression) {
         const returnValueAndType = state.popOS()
         if (isVoid(returnValueAndType.type)) throw new VoidHasNoValue(node.node)
+        if (isArray(returnValueAndType.type)) throw new FunctionCannotReturnArray(node.node)
         state.setReturnRegisterBinary(returnValueAndType)
       }
       let nextInstruction = state.peekA()
@@ -677,6 +720,10 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (isTruthy(indexBinary)) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
+        if (shouldAllocateString(node.condition))
+          state.pushA({ tag: 'allocate_str', node: node.condition })
+        if (shouldDerefExpression(node.condition))
+          state.pushA({ tag: 'deref', node: node.condition })
         state.pushA(node.condition)
         state.pushA({ tag: 'continue_marker', node: node.node })
         state.pushA(node.statement)
@@ -694,7 +741,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (testExpressionValue) {
         state.pushA({ tag: 'break_marker', node: node.node })
         state.pushA(node)
-        if (node.testExpression) state.pushA(node.testExpression)
+        if (node.testExpression) {
+          if (shouldAllocateString(node.testExpression))
+            state.pushA({ tag: 'allocate_str', node: node.testExpression })
+          if (shouldDerefExpression(node.testExpression))
+            state.pushA({ tag: 'deref', node: node.testExpression })
+          state.pushA(node.testExpression)
+        }
         if (node.updateExpression) {
           state.pushA({ tag: 'pop_os', node: node.node })
           state.pushA(node.updateExpression)
@@ -748,12 +801,13 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       const { binary: caseCheck, type: typeLeft } = state.popOS()
       const { binary: passedCheck, type: typeCheck } = state.popOS()
       if (isTruthy(passedCheck) || isTruthy(caseCheck)) {
+        // "case" has been passed. Update status to 1
+        state.pushA({ tag: 'load_int', value: 1, node: node.node })
         ;[...node.statements].reverse().forEach(x => {
           state.pushA(x)
         })
-        // "case" has been passed. Update status to 1
-        state.pushOS(intToBinary(1), INT_BASE_TYPE)
       } else {
+        // Can just load integer directly into OS as no break or return statements will be called
         state.pushOS(intToBinary(0), INT_BASE_TYPE)
       }
       return
@@ -765,7 +819,7 @@ export function executeMicrocode(state: ProgramState, node: MicroCode) {
       if (binaryToInt(size) <= 0) {
         throw new InvalidMallocSize(node.node, binaryToInt(size))
       }
-      const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / wordSize))
+      const allocatedAddress = state.allocateHeap(Math.ceil(binaryToInt(size) / WORD_SIZE))
       state.pushOS(intToBinary(allocatedAddress), incrementPointerDepth(VOID_BASE_TYPE))
       return
     }

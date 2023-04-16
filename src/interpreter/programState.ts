@@ -2,12 +2,15 @@ import { InternalUnreachableBaseError, RTMInvalidMemoryAccessBaseError } from '.
 import { CASTNode } from '../typings/programAST'
 import {
   AgendaNode,
+  BinaryWithOptionalType,
   BinaryWithType,
   BuiltinFunctionDefinition,
+  DeepReadonly,
   ERecord,
   EScope,
   MicroCodeFunctionDefiniton,
   ProgramType,
+  VariableScope,
 } from './typings'
 import { RTM } from './utils/RTM'
 import {
@@ -23,6 +26,14 @@ import { Warning } from './utils/warning'
 type ReturnRegisterType =
   | { binary: BinaryWithType | undefined; assigned: true }
   | { binary: undefined; assigned: false }
+
+interface RuntimeVarsType {
+  break: boolean
+  debuggerOn: boolean
+  isRunning: boolean
+}
+
+const DEFAULT_MEMORY_SIZE_IN_BYTES = 1_000_000
 
 export class ProgramState {
   private A: Array<AgendaNode>
@@ -42,17 +53,40 @@ export class ProgramState {
 
   private warningOutput: Array<Warning>
 
-  constructor() {
+  private RuntimeVars: RuntimeVarsType
+
+  constructor(memorySizeInBytes: number = DEFAULT_MEMORY_SIZE_IN_BYTES) {
     this.A = []
     this.OS = []
     this.OSType = {}
-    this.RTM = new RTM(1000000)
+    this.RTM = new RTM(memorySizeInBytes)
     this.FD = []
-    this.E = [{ record: {} }]
+    this.E = [{ name: 'global', varScope: { record: {} } }]
     this.LogOutput = []
     this.GlobalLength = 0
     this.ReturnRegister = { binary: undefined, assigned: false }
     this.warningOutput = []
+    this.RuntimeVars = {
+      break: false,
+      debuggerOn: true,
+      isRunning: false,
+    }
+  }
+
+  getRuntimeVars(): Readonly<RuntimeVarsType> {
+    return this.RuntimeVars
+  }
+
+  setRuntimeIsRunning(isRunning: boolean) {
+    this.RuntimeVars.isRunning = isRunning
+  }
+
+  setRuntimeDebuggerOn(debuggerOn: boolean) {
+    this.RuntimeVars.debuggerOn = debuggerOn
+  }
+
+  setRuntimeBreak(isBreak: boolean) {
+    this.RuntimeVars.break = isBreak
   }
 
   initializeAST(ast: CASTNode) {
@@ -61,7 +95,7 @@ export class ProgramState {
 
   defineBuiltInFunction(key: string, builtinFunctionDefintion: BuiltinFunctionDefinition) {
     const newIndex = this.FD.length
-    if (this.E[0].record[key] !== undefined) {
+    if (this.E[0].varScope.record[key] !== undefined) {
       throw new InternalUnreachableBaseError(
         'Builtin function ' + key + ' has already been defined',
       )
@@ -127,7 +161,7 @@ export class ProgramState {
   }
 
   printA() {
-    console.log('A: ', this.A)
+    console.log('A: ', JSON.stringify(this.A))
   }
 
   getGlobalLength(): number {
@@ -178,6 +212,17 @@ export class ProgramState {
     return this.RTM.getLengthRTS()
   }
 
+  getRTSSnapshot(): DeepReadonly<Array<BinaryWithOptionalType>> {
+    const rtsLength = this.getRTSLength()
+    const array: Array<DeepReadonly<BinaryWithOptionalType>> = Array(rtsLength)
+    for (let i = 0; i < rtsLength; i++) {
+      array[i] = this.RTM.getRTSAtIndexWithSuggestedType(i)
+    }
+
+    const finalArray: DeepReadonly<Array<BinaryWithOptionalType>> = array
+    return finalArray
+  }
+
   shrinkRTSToIndex(index: number) {
     this.RTM.shrinkToIndexRTS(index)
   }
@@ -202,24 +247,24 @@ export class ProgramState {
     console.log('FD: ', JSON.stringify(this.FD))
   }
 
-  extendFunctionE() {
-    push(this.E, this.getGlobalE())
+  extendFunctionE(name: string) {
+    push(this.E, { name: name, varScope: { parent: this.getGlobalE().varScope, record: {} } })
   }
 
   extendScopeE() {
     const currentTopE = peek(this.E)
-    this.E[this.E.length - 1] = {
-      parent: currentTopE,
+    this.E[this.E.length - 1].varScope = {
+      parent: currentTopE?.varScope,
       record: {},
     }
   }
 
   popScopeE() {
     const currentTopE = peek(this.E)
-    if (!currentTopE || !currentTopE.parent) {
+    if (!currentTopE || !currentTopE.varScope.parent) {
       throw new InternalUnreachableBaseError('No more scope to pop')
     }
-    this.E[this.E.length - 1] = currentTopE.parent
+    this.E[this.E.length - 1].varScope = currentTopE.varScope.parent
   }
 
   popFunctionE() {
@@ -238,7 +283,7 @@ export class ProgramState {
       return undefined
     }
 
-    let currentEntry: EScope | undefined = currentEnv
+    let currentEntry: VariableScope | undefined = currentEnv.varScope
     while (currentEntry) {
       if (key in currentEntry.record) {
         return currentEntry.record[key]
@@ -249,7 +294,7 @@ export class ProgramState {
   }
 
   addRecordToE(key: string, record: ERecord) {
-    this.E[this.E.length - 1].record[key] = record
+    this.E[this.E.length - 1].varScope.record[key] = record
   }
 
   getGlobalE() {
@@ -257,15 +302,19 @@ export class ProgramState {
   }
 
   hasKeyGlobalE(key: string) {
-    return this.E[0].record[key] !== undefined
+    return this.E[0].varScope.record[key] !== undefined
   }
 
   addRecordToGlobalE(key: string, record: ERecord) {
-    this.E[0].record[key] = record
+    this.E[0].varScope.record[key] = record
   }
 
   getELength(): number {
     return this.E.length
+  }
+
+  getE(): DeepReadonly<Array<EScope>> {
+    return this.E
   }
 
   printState() {
@@ -315,8 +364,12 @@ export class ProgramState {
     return this.LogOutput
   }
 
-  allocateHeap(size: number): number {
-    return this.RTM.allocateHeap(size)
+  getWarningOutputs(): Array<Warning> {
+    return this.warningOutput
+  }
+
+  allocateHeap(size: number, type?: ProgramType): number {
+    return this.RTM.allocateHeap(size, type)
   }
 
   freeHeapMemory(address: number) {
@@ -325,6 +378,18 @@ export class ProgramState {
 
   printHeap() {
     this.RTM.printHeap()
+  }
+
+  getHeapSnapshot(): DeepReadonly<Record<number, BinaryWithOptionalType>> {
+    const record: Record<number, BinaryWithOptionalType> = {}
+    const allocatedMemory = this.RTM.getAllocatedMemory()
+    allocatedMemory.forEach((size, address) => {
+      for (let i = 0; i < size; i++) {
+        const newAddress = address + i
+        record[newAddress] = this.RTM.getHeapMemoryAtIndexWithSuggestedType(newAddress)
+      }
+    })
+    return record
   }
 
   pushWarning(...warnings: Array<Warning>) {

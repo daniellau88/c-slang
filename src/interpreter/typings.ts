@@ -84,6 +84,10 @@ interface AssignmentListMicroCode extends MicroCodeBase {
   tag: 'assgn_list'
 }
 
+interface AllocateStringMicroCode extends MicroCodeBase {
+  tag: 'allocate_str'
+}
+
 export enum MicroCodeBinaryOperator {
   IntAddition,
   IntSubtraction,
@@ -188,6 +192,7 @@ export type MicroCode =
   | DeclarationMicroCode
   | AssignmentMicroCode
   | AssignmentListMicroCode
+  | AllocateStringMicroCode
   | BinaryOperationMicroCode
   | BinaryOperationAutoPromotionMicroCode
   | ExitFuncMicroCode
@@ -279,9 +284,14 @@ interface ERecordVariable extends ERecordBase {
 
 export type ERecord = ERecordFunction | ERecordVariable
 
-export interface EScope {
-  parent?: EScope
+export interface VariableScope {
+  parent?: VariableScope
   record: Record<string, ERecord>
+}
+
+export interface EScope {
+  name: string
+  varScope: VariableScope
 }
 
 export type Env = Array<EScope>
@@ -346,7 +356,7 @@ export type BinaryWithType = {
 }
 
 type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
-export type BinaryWithLoseType = WithOptional<BinaryWithType, 'type'>
+export type BinaryWithOptionalType = WithOptional<BinaryWithType, 'type'>
 
 export interface BuiltinFunctionDefinition {
   func: (state: ProgramState, args: Array<BinaryWithType>, node: CASTNode) => void
@@ -355,3 +365,17 @@ export interface BuiltinFunctionDefinition {
 }
 
 export type AgendaNode = CASTNode | MicroCode
+
+export type DeepReadonly<T> = T extends (infer R)[]
+  ? DeepReadonlyArray<R>
+  : T extends Function
+  ? T
+  : T extends object
+  ? DeepReadonlyObject<T>
+  : T
+
+type DeepReadonlyArray<T> = ReadonlyArray<DeepReadonly<T>>
+
+type DeepReadonlyObject<T> = {
+  readonly [P in keyof T]: DeepReadonly<T[P]>
+}

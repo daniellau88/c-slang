@@ -96,7 +96,7 @@ describe('type checking', () => {
     expectThrowError(
       program,
       CannotPerformLossyConversion,
-      'Cannot perform lossy conversion from float to pointer.',
+      'Cannot perform lossy conversion from float to int pointer.',
     )
   })
   test('float to array error', () => {
@@ -129,7 +129,7 @@ describe('type checking', () => {
     expectThrowError(
       program,
       CannotPerformLossyConversion,
-      'Cannot perform lossy conversion from pointer to array.',
+      'Cannot perform lossy conversion from int pointer to array.',
     )
   })
   test('array to pointer', () => {
@@ -171,6 +171,23 @@ describe('type checking', () => {
       { binary: intToBinary(1), type: INT_BASE_TYPE },
       { binary: intToBinary(2), type: INT_BASE_TYPE },
     ]
+    expectLogOutputToBe(logOutput, expectedLogOutput)
+  })
+  test('implicit array in function return value', () => {
+    const output = testProgram(
+      `
+          float test() {
+            return 3;
+          }
+          int main() {
+            printfLog(test());
+            return 0;
+          }
+        `,
+    )
+    verifyProgramCompleted(output)
+    const logOutput = output.getLogOutput()
+    const expectedLogOutput = [{ binary: 3, type: FLOAT_BASE_TYPE }]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 })

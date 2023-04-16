@@ -94,9 +94,6 @@ export interface Context<T = any> {
 
   /** Runtime Sepecific state */
   runtime: {
-    break: boolean
-    debuggerOn: boolean
-    isRunning: boolean
     environmentTree: EnvTree
     environments: Environment[]
     nodes: CASTNode[]

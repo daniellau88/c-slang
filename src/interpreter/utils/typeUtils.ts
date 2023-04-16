@@ -1,16 +1,26 @@
+import { isEqual } from 'lodash'
+import omitDeep from 'omit-deep-lodash'
+
+import { WORD_SIZE } from '../../constants'
 import {
+  FunctionHasNoSizeBaseError,
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
-  StaticSizeInvalidTypeBaseError,
-  StaticSizeUnknownSizeBaseError,
-  TypeConversionBaseError,
+  UnknownArrayLengthBaseError,
+  UnknownTypeBaseError,
   VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
-import { BinaryWithType, ProgramType, ProgramTypeModifier } from '../typings'
+import {
+  BinaryWithOptionalType,
+  BinaryWithType,
+  ProgramType,
+  ProgramTypeModifier,
+} from '../typings'
+import { binaryToInt, intToBinary } from './utils'
 
-const ONE_INT_BINARY = 2.121995791e-314 // import of intToBinary causes issues during testing
+const ONE_INT_BINARY = 1.401298464324817e-45 // import of intToBinary causes issues during testing
 
 export const INT_BASE_TYPE: ProgramType = [{ subtype: 'BaseType', baseType: 'int' }]
 
@@ -54,10 +64,10 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
   switch (castTypeModifier.subtype) {
     case 'Array': {
       if (castTypeModifier.size !== undefined && castTypeModifier.size.type !== 'Literal') {
-        throw new TypeConversionBaseError(castTypeModifier)
+        throw new UnknownArrayLengthBaseError(castTypeModifier)
       }
       if (castTypeModifier.size === undefined) {
-        throw new TypeConversionBaseError(castTypeModifier)
+        throw new UnknownArrayLengthBaseError(castTypeModifier)
       }
       const size = parseInt(castTypeModifier.size.value)
       return { subtype: 'Array', size: size }
@@ -75,7 +85,7 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
 }
 
 export const getStaticSizeFromProgramType = (programType: ProgramType): number => {
-  if (programType.length === 0) throw new StaticSizeInvalidTypeBaseError(programType)
+  if (programType.length === 0) throw new UnknownTypeBaseError(programType)
   const sizes = []
 
   for (let i = 0; i < programType.length; i++) {
@@ -83,23 +93,22 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
     let shouldBreak = false
     switch (typeModifier.subtype) {
       case 'Array': {
-        if (typeModifier.size === undefined) throw new StaticSizeUnknownSizeBaseError(programType)
         sizes.push(typeModifier.size)
         break
       }
       case 'BaseType': {
         if (typeModifier.baseType === 'void') throw new VoidHasNoValueBaseError()
-        sizes.push(8)
+        sizes.push(WORD_SIZE)
         shouldBreak = true
         break
       }
       case 'Pointer': {
-        sizes.push(8)
+        sizes.push(WORD_SIZE)
         shouldBreak = true
         break
       }
       case 'Parameters': {
-        throw new StaticSizeUnknownSizeBaseError(programType)
+        throw new FunctionHasNoSizeBaseError(programType)
       }
     }
     if (shouldBreak) break
@@ -201,8 +210,38 @@ export const isTypeEquivalent = (type1: ProgramType, type2: ProgramType): boolea
   return type1.every((x, i) => {
     const y = type2[i]
     if (x.subtype !== y.subtype) return false
-    return Object.keys(x).every(key => {
-      return x[key] === y[key]
-    })
+    if (x.subtype === 'Parameters' && y.subtype === 'Parameters') {
+      return x.parameterTypeList.every((xParamType, i) => {
+        const yParamType = y.parameterTypeList[i]
+        // Remove identifier and loc from function parameters before comparing
+        const omitX = omitDeep(xParamType, ['identifier', 'loc'])
+        const omitY = omitDeep(yParamType, ['identifier', 'loc'])
+        return isEqual(omitX, omitY)
+      })
+    }
+    return isEqual(x, y)
   })
+}
+
+export const getArrayItems = (
+  array: BinaryWithType,
+  getValueByAddress: (address: number) => BinaryWithOptionalType | undefined,
+): Array<BinaryWithOptionalType | undefined> => {
+  if (!isArray(array.type) || array.type[0].subtype !== 'Array') return []
+
+  const arrayItems: Array<BinaryWithOptionalType | undefined> = []
+  const arrayItemType = getArrayItemsType(array.type)
+  const arrayAddress = binaryToInt(array.binary)
+  const arrayLength = array.type[0].size
+
+  const itemSize = getStaticSizeFromProgramType(arrayItemType) / WORD_SIZE
+  for (let i = 0; i < arrayLength; i++) {
+    const curAddress = arrayAddress + i * itemSize
+    if (arrayItemType[0].subtype === 'Array') {
+      arrayItems.push({ binary: intToBinary(curAddress), type: arrayItemType })
+    } else {
+      arrayItems.push(getValueByAddress(curAddress))
+    }
+  }
+  return arrayItems
 }

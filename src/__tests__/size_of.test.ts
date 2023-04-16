@@ -1,5 +1,6 @@
 import { describe, test } from '@jest/globals'
 
+import { WORD_SIZE } from '../constants'
 import { testProgram } from '../interpreter/cInterpreter'
 import { INT_BASE_TYPE } from '../interpreter/utils/typeUtils'
 import { intToBinary } from '../interpreter/utils/utils'
@@ -22,10 +23,10 @@ describe('size of', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
-      { binary: intToBinary(8), type: INT_BASE_TYPE },
-      { binary: intToBinary(40), type: INT_BASE_TYPE },
-      { binary: intToBinary(240), type: INT_BASE_TYPE },
-      { binary: intToBinary(32), type: INT_BASE_TYPE },
+      { binary: intToBinary(WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(5 * WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(5 * 6 * WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(4 * WORD_SIZE), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -47,10 +48,10 @@ describe('size of', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
-      { binary: intToBinary(8), type: INT_BASE_TYPE },
-      { binary: intToBinary(40), type: INT_BASE_TYPE },
-      { binary: intToBinary(240), type: INT_BASE_TYPE },
-      { binary: intToBinary(32), type: INT_BASE_TYPE },
+      { binary: intToBinary(WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(5 * WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(5 * 6 * WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(4 * WORD_SIZE), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
@@ -72,8 +73,8 @@ describe('size of', () => {
     verifyProgramCompleted(output)
     const logOutput = output.getLogOutput()
     const expectedLogOutput = [
-      { binary: intToBinary(24), type: INT_BASE_TYPE },
-      { binary: intToBinary(24), type: INT_BASE_TYPE },
+      { binary: intToBinary(3 * WORD_SIZE), type: INT_BASE_TYPE },
+      { binary: intToBinary(3 * WORD_SIZE), type: INT_BASE_TYPE },
     ]
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })

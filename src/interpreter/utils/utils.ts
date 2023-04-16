@@ -1,10 +1,11 @@
+import { WORD_SIZE } from '../../constants'
 import createContext from '../../createContext'
 import {
+  FunctionCannotBeDereferencedBaseError,
   InternalUnreachableBaseError,
   NonPointerBaseError,
   ParseBaseError,
 } from '../../errors/baseErrors'
-import { convertCSTProgramToAST } from '../../parser/ASTConverter'
 import { parse } from '../../parser/parser'
 import {
   CASTArrayExpression,
@@ -15,7 +16,7 @@ import {
 } from '../../typings/programAST'
 import { ProgramState } from '../programState'
 import { BinaryWithType, MicroCode, ProgramType } from '../typings'
-import { decrementPointerDepth, isArray, isPointer } from './typeUtils'
+import { decrementPointerDepth, isArray, isBaseType, isParameters, isPointer } from './typeUtils'
 
 export const stringify = (x: any) => JSON.stringify(x)
 
@@ -58,26 +59,42 @@ export const popStackAndType = (
 }
 
 export const intToBinary = (int: number): number => {
-  const data = new ArrayBuffer(8)
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
   view.setInt32(0, int) // Use 32 first
-  return view.getFloat64(0)
+  return view.getFloat32(0)
 }
 
 export const binaryToInt = (binary: number): number => {
-  const data = new ArrayBuffer(8)
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
-  view.setFloat64(0, binary)
+  view.setFloat32(0, binary)
   return view.getInt32(0)
 }
 
-export const binaryToRawString = (binary: number): string => {
-  const data = new ArrayBuffer(8)
+export const truncateFloatPrecision = (binary: number): number => {
+  const data = new ArrayBuffer(WORD_SIZE)
   const view = new DataView(data)
-  view.setFloat64(0, binary)
-  const value = view.getBigUint64(0)
+  view.setFloat32(0, binary)
+  return view.getFloat32(0)
+}
+
+export const binaryToHexString = (binary: number): string => {
+  const data = new ArrayBuffer(WORD_SIZE)
+  const view = new DataView(data)
+  view.setFloat32(0, binary)
+  const value = view.getUint32(0)
+  const hexString = value.toString(16)
+  return '0x' + '0'.repeat((WORD_SIZE * 8) / 4 - hexString.length) + hexString
+}
+
+export const binaryToRawString = (binary: number): string => {
+  const data = new ArrayBuffer(WORD_SIZE)
+  const view = new DataView(data)
+  view.setFloat32(0, binary)
+  const value = view.getUint32(0)
   const binString = value.toString(2)
-  return '0'.repeat(64 - binString.length) + binString
+  return '0'.repeat(WORD_SIZE * 8 - binString.length) + binString
 }
 
 export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
@@ -85,7 +102,7 @@ export const isMicrocode = (test: MicroCode | CASTNode): test is MicroCode => {
 }
 
 export const binaryToFormattedString = (binary: number, type?: ProgramType): string => {
-  if (!type || type.length === 0) return 'unknown ' + binary
+  if (!type || type.length === 0) return 'unknown ' + binaryToHexString(binary)
   const baseType = type[0]
   switch (baseType.subtype) {
     case 'BaseType':
@@ -99,8 +116,11 @@ export const binaryToFormattedString = (binary: number, type?: ProgramType): str
         case 'void':
           return 'void'
       }
-    case 'Pointer':
+    case 'Pointer': {
+      const pointerType = decrementPointerDepth(type)
+      if (isParameters(pointerType)) return 'function pointer ' + binaryToInt(binary)
       return 'pointer ' + binaryToInt(binary)
+    }
     case 'Array':
       return 'array ' + binaryToInt(binary)
     case 'Parameters':
@@ -126,6 +146,10 @@ export const typeToString = (type: ProgramType): string => {
           return 'void'
       }
     case 'Pointer':
+      const pointerType = decrementPointerDepth(type)
+      if (isParameters(pointerType) || isBaseType(pointerType) || isArray(pointerType)) {
+        return `${typeToString(pointerType)} pointer`
+      }
       return 'pointer'
     case 'Array':
       return 'array'
@@ -140,11 +164,10 @@ export const parseStringToAST = (program: string): CASTNode => {
   const context = createContext()
   const parsedProgram = parse(program, context)
   if (!parsedProgram) {
+    console.error(context.errors)
     throw new ParseBaseError()
   }
-
-  const ast = convertCSTProgramToAST(parsedProgram)
-  return ast
+  return parsedProgram
 }
 
 export const printBinariesWithTypes = (
@@ -170,10 +193,31 @@ export const shouldDerefExpression = (expression: CASTExpression): boolean => {
   }
 }
 
-export const isExpressionList = (
+export const shouldAllocateString = (expression: CASTExpression): boolean => {
+  switch (expression.type) {
+    case 'StringLiteral':
+      return true
+    default:
+      return false
+  }
+}
+
+export const isCASTExpressionList = (
   expression: CASTExpression,
 ): expression is CASTArrayExpression | CASTStringLiteral => {
   return expression.type === 'ArrayExpression' || expression.type === 'StringLiteral'
+}
+
+export const isCASTArrayExpression = (
+  expression: CASTExpression,
+): expression is CASTArrayExpression => {
+  return expression.type === 'ArrayExpression'
+}
+
+export const isCASTStringLiteral = (
+  expression: CASTExpression,
+): expression is CASTStringLiteral => {
+  return expression.type === 'StringLiteral'
 }
 
 export const getExpressionLength = (
@@ -199,6 +243,7 @@ export const derefBinary = (
   }
 
   const newType = decrementPointerDepth(type)
+  if (isParameters(newType)) throw new FunctionCannotBeDereferencedBaseError()
   if (isArray(newType)) {
     return { binary, type: newType }
   }

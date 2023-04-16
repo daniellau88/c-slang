@@ -6,7 +6,12 @@ import * as es from 'estree'
 import { BinaryWithType, MicroCodeFunctionDefiniton, ProgramType } from '../interpreter/typings'
 import { binaryToFormattedString, stringify, typeToString } from '../interpreter/utils/utils'
 import { ErrorSeverity, ErrorType, SourceError, Value } from '../types'
-import { CASTDeclaration, CASTFunctionDefinition, CASTNode } from '../typings/programAST'
+import {
+  CASTDeclaration,
+  CASTFunctionDefinition,
+  CASTNode,
+  CASTTypeModifier,
+} from '../typings/programAST'
 import { BaseError } from './baseErrors'
 import { RuntimeSourceError } from './runtimeSourceError'
 
@@ -267,8 +272,13 @@ export class InvalidArraySize extends RuntimeSourceError {
 }
 
 export class CannotPerformLossyConversion extends RuntimeSourceError {
-  constructor(node: CASTNode, private fromType: ProgramType, private toType: ProgramType) {
-    super(node)
+  constructor(
+    node: CASTNode,
+    private fromType: ProgramType,
+    private toType: ProgramType,
+    stackTrace?: BaseError,
+  ) {
+    super(node, stackTrace)
   }
 
   public explain() {
@@ -474,6 +484,76 @@ export class UnknownError extends RuntimeSourceError {
 
   public explain() {
     return `Unknown error. Please check with the developers.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class ExpressionCannotBeString extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Expression cannot be a string literal.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class SwitchCaseCannotBeVariable extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Switch case cannot be a variable.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class UnknownArrayLength extends RuntimeSourceError {
+  constructor(node: CASTNode, private typeModifier: CASTTypeModifier, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Unknown array length.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class FunctionHasNoSize extends RuntimeSourceError {
+  constructor(node: CASTNode, private programType: ProgramType, stackTrace?: BaseError) {
+    super(node, stackTrace)
+  }
+
+  public explain() {
+    return `Function has no size.`
+  }
+
+  public elaborate() {
+    return 'TODO'
+  }
+}
+
+export class FunctionCannotBeDereferenced extends RuntimeSourceError {
+  constructor(node: CASTNode) {
+    super(node)
+  }
+
+  public explain() {
+    return `Function cannot be dereferenced. Use it as a function pointer instead.`
   }
 
   public elaborate() {
