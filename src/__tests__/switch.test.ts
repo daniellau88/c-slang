@@ -33,7 +33,7 @@ describe('switch', () => {
     expectLogOutputToBe(logOutput, expectedLogOutput)
   })
 
-  test('switch case without break', () => {
+  test('switch case with break', () => {
     const output = testProgram(
       `
       int main() {

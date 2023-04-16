@@ -386,9 +386,9 @@ export function astToMicrocode(state: ProgramState, node: CASTNode) {
     }
 
     case 'SwitchStatement': {
+      state.pushA({ tag: 'break_marker', node: node })
       // cleaning up OS
       state.pushA({ tag: 'pop_os', node: node })
-      state.pushA({ tag: 'break_marker', node: node })
       ;[...node.body.clauses].reverse().forEach(x => {
         if (x.subtype === 'Default') {
           state.pushA({
