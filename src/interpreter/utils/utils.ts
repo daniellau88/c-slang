@@ -1,6 +1,7 @@
 import { WORD_SIZE } from '../../constants'
 import createContext from '../../createContext'
 import {
+  FunctionCannotBeDereferencedBaseError,
   InternalUnreachableBaseError,
   NonPointerBaseError,
   ParseBaseError,
@@ -242,6 +243,7 @@ export const derefBinary = (
   }
 
   const newType = decrementPointerDepth(type)
+  if (isParameters(newType)) throw new FunctionCannotBeDereferencedBaseError()
   if (isArray(newType)) {
     return { binary, type: newType }
   }

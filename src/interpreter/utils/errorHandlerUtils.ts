@@ -2,11 +2,14 @@ import {
   CannotDivideByZeroBaseError,
   CannotPerformLossyConversionBaseError,
   CannotPerformOperationBaseError,
+  FunctionCannotBeDereferencedBaseError,
+  FunctionHasNoSizeBaseError,
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
   RTMInvalidMemoryAccessBaseError,
   RTMMemoryNotAllocatedBaseError,
+  UnknownArrayLengthBaseError,
   UnknownTypeBaseError,
   VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
@@ -15,8 +18,11 @@ import {
   CannotDivideByZero,
   CannotPerformLossyConversion,
   CannotPerformOperation,
+  FunctionCannotBeDereferenced,
+  FunctionHasNoSize,
   InvalidMemoryAccess,
   MemoryFreeNotAllocatedError,
+  UnknownArrayLength,
   UnknownError,
   UnknownType,
   VoidHasNoValue,
@@ -54,7 +60,31 @@ const typeConversionErrorHandler = (e: any, node: CASTNode) => {
   }
 }
 
-const staticSizeErrorHandler = (e: any, node: CASTNode) => {}
+const typeDerefErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof NonPointerBaseError) {
+    throw new CannotDereferenceTypeError(node, e)
+  }
+
+  if (e instanceof NonArrayBaseError) {
+    throw new CannotDereferenceTypeError(node, e)
+  }
+
+  if (e instanceof FunctionCannotBeDereferencedBaseError) {
+    throw new FunctionCannotBeDereferenced(node)
+  }
+}
+
+const arrayErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof UnknownArrayLengthBaseError) {
+    throw new UnknownArrayLength(node, e.type, e)
+  }
+}
+
+const staticSizeErrorHandler = (e: any, node: CASTNode) => {
+  if (e instanceof FunctionHasNoSizeBaseError) {
+    throw new FunctionHasNoSize(node, e.programType, e)
+  }
+}
 
 const voidHasNoValueErrorHandler = (e: any, node: CASTNode) => {
   if (e instanceof VoidHasNoValueBaseError) {
@@ -71,15 +101,9 @@ export const errorHandler = (e: any, node: CASTNode) => {
   arithmeticUtilsErrorHandler(e, node)
   staticSizeErrorHandler(e, node)
   typeConversionErrorHandler(e, node)
+  typeDerefErrorHandler(e, node)
+  arrayErrorHandler(e, node)
   voidHasNoValueErrorHandler(e, node)
-
-  if (e instanceof NonPointerBaseError) {
-    throw new CannotDereferenceTypeError(node, e)
-  }
-
-  if (e instanceof NonArrayBaseError) {
-    throw new CannotDereferenceTypeError(node, e)
-  }
 
   if (e instanceof InternalUnreachableBaseError) {
     throw new InternalUnreachableRuntimeError(node, e)

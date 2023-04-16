@@ -3,12 +3,12 @@ import omitDeep from 'omit-deep-lodash'
 
 import { WORD_SIZE } from '../../constants'
 import {
+  FunctionHasNoSizeBaseError,
   InternalUnreachableBaseError,
   NonArrayBaseError,
   NonPointerBaseError,
-  StaticSizeInvalidTypeBaseError,
-  StaticSizeUnknownSizeBaseError,
-  TypeConversionBaseError,
+  UnknownArrayLengthBaseError,
+  UnknownTypeBaseError,
   VoidHasNoValueBaseError,
 } from '../../errors/baseErrors'
 import { CASTTypeModifier, CASTUnaryOperator } from '../../typings/programAST'
@@ -64,10 +64,10 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
   switch (castTypeModifier.subtype) {
     case 'Array': {
       if (castTypeModifier.size !== undefined && castTypeModifier.size.type !== 'Literal') {
-        throw new TypeConversionBaseError(castTypeModifier)
+        throw new UnknownArrayLengthBaseError(castTypeModifier)
       }
       if (castTypeModifier.size === undefined) {
-        throw new TypeConversionBaseError(castTypeModifier)
+        throw new UnknownArrayLengthBaseError(castTypeModifier)
       }
       const size = parseInt(castTypeModifier.size.value)
       return { subtype: 'Array', size: size }
@@ -85,7 +85,7 @@ export const convertCASTTypeModifierToProgramTypeModifier = (
 }
 
 export const getStaticSizeFromProgramType = (programType: ProgramType): number => {
-  if (programType.length === 0) throw new StaticSizeInvalidTypeBaseError(programType)
+  if (programType.length === 0) throw new UnknownTypeBaseError(programType)
   const sizes = []
 
   for (let i = 0; i < programType.length; i++) {
@@ -93,7 +93,6 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
     let shouldBreak = false
     switch (typeModifier.subtype) {
       case 'Array': {
-        if (typeModifier.size === undefined) throw new StaticSizeUnknownSizeBaseError(programType)
         sizes.push(typeModifier.size)
         break
       }
@@ -109,7 +108,7 @@ export const getStaticSizeFromProgramType = (programType: ProgramType): number =
         break
       }
       case 'Parameters': {
-        throw new StaticSizeUnknownSizeBaseError(programType)
+        throw new FunctionHasNoSizeBaseError(programType)
       }
     }
     if (shouldBreak) break

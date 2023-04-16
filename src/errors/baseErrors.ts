@@ -62,19 +62,13 @@ export class CannotDivideByZeroBaseError extends BaseError {
   }
 }
 
-export class TypeConversionBaseError extends BaseError {
+export class UnknownArrayLengthBaseError extends BaseError {
   constructor(public type: CASTTypeModifier) {
     super()
   }
 }
 
-export class StaticSizeInvalidTypeBaseError extends BaseError {
-  constructor(public programType: ProgramType) {
-    super()
-  }
-}
-
-export class StaticSizeUnknownSizeBaseError extends BaseError {
+export class FunctionHasNoSizeBaseError extends BaseError {
   constructor(public programType: ProgramType) {
     super()
   }
@@ -88,6 +82,12 @@ export class VoidHasNoValueBaseError extends BaseError {
 
 export class CannotPerformLossyConversionBaseError extends BaseError {
   constructor(readonly fromType: ProgramType, readonly toType: ProgramType) {
+    super()
+  }
+}
+
+export class FunctionCannotBeDereferencedBaseError extends BaseError {
+  constructor() {
     super()
   }
 }
